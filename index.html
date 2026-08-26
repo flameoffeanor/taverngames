@@ -56,12 +56,12 @@
       letter-spacing: 1px;
     }
 
-    /* Instagram Bağlantı Stili */
+    /* Instagram Bağlantısı */
     .instagram-link {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-top: 6px;
+      margin-top: 8px;
       color: var(--text-muted);
       text-decoration: none;
       font-size: 0.85rem;
@@ -79,7 +79,7 @@
       fill: currentColor;
     }
 
-    /* Link Yapıştırma Alanı */
+    /* Link Yapıştırma Kutusu */
     .input-section {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -149,7 +149,7 @@
       border-collapse: collapse;
       text-align: center;
       font-size: 0.85rem;
-      min-width: 500px;
+      min-width: 480px;
     }
 
     .dist-table th, .dist-table td {
@@ -170,4 +170,307 @@
     }
 
     .dist-row-townsfolk { color: #54a0ff; }
-    .dist-row-outsider { color:
+    .dist-row-outsider { color: #54a0ff; }
+    .dist-row-minion { color: #ff4757; }
+    .dist-row-demon { color: #ff4757; }
+
+    /* Karakter Kartları */
+    .team-group { margin-bottom: 24px; }
+
+    .team-header {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .team-townsfolk { background: rgba(41, 128, 185, 0.2); color: #54a0ff; border-left: 4px solid var(--team-townsfolk); }
+    .team-outsider { background: rgba(22, 160, 133, 0.2); color: #1dd1a1; border-left: 4px solid var(--team-outsider); }
+    .team-minion { background: rgba(142, 68, 173, 0.2); color: #be2edd; border-left: 4px solid var(--team-minion); }
+    .team-demon { background: rgba(192, 57, 43, 0.2); color: #ff6b6b; border-left: 4px solid var(--team-demon); }
+    .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
+    .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .card-ability {
+      font-size: 0.88rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+
+    #qrcode-container {
+      margin-top: 25px;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+      display: none;
+    }
+
+    #qrcode-container h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+    }
+
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 8px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="logo.png" alt="Tavern Games" class="logo" onerror="this.style.display='none'">
+    <h1>Tavern Games</h1>
+    <a href="https://www.instagram.com/taverngamesclub/" target="_blank" rel="noopener noreferrer" class="instagram-link">
+      <svg class="instagram-icon" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+      </svg>
+      @taverngamesclub
+    </a>
+  </header>
+
+  <div class="input-section">
+    <label for="linkInput">Pocket Grimoire Linki Yapıştırın:</label>
+    <div class="input-wrapper">
+      <input type="text" id="linkInput" placeholder="https://www.pocketgrimoire.co.uk/..." />
+      <button onclick="processInputLink()">Getir</button>
+    </div>
+  </div>
+
+  <div id="distribution-container">
+    <table class="dist-table">
+      <thead>
+        <tr>
+          <th>Oyuncular</th>
+          <th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15+</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="dist-row-townsfolk">
+          <td>Kasabalılar</td>
+          <td>3</td><td>3</td><td>5</td><td>5</td><td>5</td><td>7</td><td>7</td><td>7</td><td>9</td><td>9</td><td>9</td>
+        </tr>
+        <tr class="dist-row-outsider">
+          <td>Yabancılar</td>
+          <td>0</td><td>1</td><td>0</td><td>1</td><td>2</td><td>0</td><td>1</td><td>2</td><td>0</td><td>1</td><td>2</td>
+        </tr>
+        <tr class="dist-row-minion">
+          <td>Minyonlar</td>
+          <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>2</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td>
+        </tr>
+        <tr class="dist-row-demon">
+          <td>İblisler</td>
+          <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
+  <div id="content">
+    <div id="emptyState" class="empty-state">
+      Lütfen yukarıdaki alana Pocket Grimoire linkini yapıştırıp "Getir" butonuna basınız.
+    </div>
+  </div>
+
+  <div id="qrcode-container">
+    <h3>Oyuncular İçin QR Kod</h3>
+    <div id="qrcode"></div>
+  </div>
+
+  <script>
+    const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+    let allRolesData = [];
+
+    function extractCharactersFromUrl(urlStr) {
+      if (!urlStr) return [];
+      let rawChars = '';
+      if (urlStr.includes('characters=')) {
+        rawChars = urlStr.split('characters=')[1].split('&')[0];
+      } else {
+        rawChars = urlStr;
+      }
+
+      return decodeURIComponent(rawChars)
+        .split(',')
+        .map(c => c.trim().toLowerCase())
+        .filter(c => c.length > 0);
+    }
+
+    function processInputLink() {
+      const inputVal = document.getElementById('linkInput').value.trim();
+      if (!inputVal) return;
+
+      const charIds = extractCharactersFromUrl(inputVal);
+      if (charIds.length > 0) {
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
+        window.history.pushState({path: newUrl}, '', newUrl);
+
+        loadAndRender(charIds);
+      }
+    }
+
+    function parseCSV(text) {
+      const lines = text.split('\n');
+      const result = [];
+      if (lines.length === 0) return result;
+
+      const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const currentline = [];
+        let insideQuote = false;
+        let entry = '';
+
+        for (let char of lines[i]) {
+          if (char === '"') {
+            insideQuote = !insideQuote;
+          } else if (char === ',' && !insideQuote) {
+            currentline.push(entry.trim().replace(/^"|"$/g, ''));
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        currentline.push(entry.trim().replace(/^"|"$/g, ''));
+
+        const obj = {};
+        headers.forEach((h, index) => {
+          obj[h] = currentline[index] || '';
+        });
+        result.push(obj);
+      }
+      return result;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialChars = urlParams.get('characters');
+
+      if (initialChars) {
+        const charIds = extractCharactersFromUrl(initialChars);
+        if (charIds.length > 0) {
+          loadAndRender(charIds);
+        }
+      }
+    });
+
+    function loadAndRender(charIds) {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('content').innerHTML = '';
+      document.getElementById('distribution-container').style.display = 'none';
+      document.getElementById('qrcode-container').style.display = 'none';
+
+      const fetchPromise = allRolesData.length > 0 
+        ? Promise.resolve() 
+        : fetch(CSV_URL).then(res => res.text()).then(csvText => { allRolesData = parseCSV(csvText); });
+
+      fetchPromise.then(() => {
+        document.getElementById('loading').style.display = 'none';
+        renderRoles(charIds);
+      }).catch(err => {
+        document.getElementById('loading').innerText = 'Veriler yüklenirken hata oluştu.';
+        console.error(err);
+      });
+    }
+
+    function renderRoles(selectedIds) {
+      const filteredRoles = allRolesData.filter(r => r.id && selectedIds.includes(r.id.toLowerCase()));
+
+      if (filteredRoles.length === 0) {
+        document.getElementById('content').innerHTML = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
+        return;
+      }
+
+      const container = document.getElementById('content');
+      const groups = {};
+      
+      filteredRoles.forEach(role => {
+        const teamKey = role.team ? role.team.toLowerCase() : 'other';
+        if (!groups[teamKey]) {
+          groups[teamKey] = {
+            title: role.team_tr || role.team,
+            roles: []
+          };
+        }
+        groups[teamKey].roles.push(role);
+      });
+
+      let html = '';
+      for (const [teamKey, group] of Object.entries(groups)) {
+        html += `
+          <div class="team-group">
+            <div class="team-header team-${teamKey}">${group.title}</div>
+            ${group.roles.map(r => `
+              <div class="card">
+                <div class="card-title">${r.name}</div>
+                <div class="card-ability">${r.ability}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+      
+      document.getElementById('distribution-container').style.display = 'block';
+      document.getElementById('qrcode-container').style.display = 'block';
+      generateQRCode();
+    }
+
+    function generateQRCode() {
+      const qrDiv = document.getElementById("qrcode");
+      qrDiv.innerHTML = '';
+
+      new QRCode(qrDiv, {
+        text: window.location.href,
+        width: 140,
+        height: 140,
+        colorDark : "#0f0f11",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+    }
+  </script>
+</body>
+</html>
