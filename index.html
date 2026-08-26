@@ -33,7 +33,7 @@
       background-color: var(--bg-color);
       color: var(--text-main);
       padding: 16px;
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
     }
 
@@ -153,8 +153,50 @@
       color: var(--text-muted);
     }
 
+    /* Rol Dağılım Tablosu Stilleri */
+    .distribution-section {
+      margin-top: 35px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .distribution-section h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .dist-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 0.8rem;
+      min-width: 500px;
+    }
+
+    .dist-table th, .dist-table td {
+      border: 1px solid var(--border-color);
+      padding: 6px 4px;
+    }
+
+    .dist-table th {
+      background: rgba(212, 175, 55, 0.1);
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+
+    .dist-row-townsfolk { color: #54a0ff; font-weight: 600; }
+    .dist-row-outsider { color: #1dd1a1; font-weight: 600; }
+    .dist-row-minion { color: #ff6b6b; font-weight: 600; }
+    .dist-row-demon { color: #ff4757; font-weight: 700; }
+
     #qrcode-container {
-      margin-top: 40px;
+      margin-top: 25px;
       padding: 20px;
       background: var(--card-bg);
       border-radius: 12px;
@@ -179,11 +221,12 @@
       margin: 0 auto;
     }
 
-    .loading {
+    .empty-state {
       text-align: center;
-      padding: 30px;
+      padding: 40px 20px;
       color: var(--text-muted);
       font-style: italic;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -194,7 +237,6 @@
     <h1>Tavern Games</h1>
   </header>
 
-  <!-- En başa eklenen Link Giriş Kutusu -->
   <div class="input-section">
     <label for="linkInput">Pocket Grimoire Linki Yapıştırın:</label>
     <div class="input-wrapper">
@@ -203,12 +245,51 @@
     </div>
   </div>
 
-  <div id="loading" class="loading" style="display:none;">Karakter bilgileri yükleniyor...</div>
-  <div id="content"></div>
+  <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
+  <div id="content">
+    <div id="emptyState" class="empty-state">
+      Lütfen yukarıdaki alana Pocket Grimoire linkini yapıştırıp "Getir" butonuna basınız.
+    </div>
+  </div>
 
-  <div id="qrcode-container" style="display: none;">
-    <h3>Oyuncular İçin QR Kod</h3>
-    <div id="qrcode"></div>
+  <!-- Dinamik İçerik Alanı Hazır Olduğunda Görünecek Bölümler -->
+  <div id="bottomSections" style="display: none;">
+    <!-- Rol Dağılım Tablosu -->
+    <div class="distribution-section">
+      <h3>Oyuncu Sayısına Göre Rol Dağılımı</h3>
+      <table class="dist-table">
+        <thead>
+          <tr>
+            <th>Oyuncular</th>
+            <th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15+</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="dist-row-townsfolk">
+            <td style="color:#fff; text-align:left; font-weight:bold;">Kasabalılar</td>
+            <td>3</td><td>3</td><td>5</td><td>5</td><td>5</td><td>7</td><td>7</td><td>7</td><td>9</td><td>9</td><td>9</td>
+          </tr>
+          <tr class="dist-row-outsider">
+            <td style="color:#fff; text-align:left; font-weight:bold;">Yabancılar</td>
+            <td>0</td><td>1</td><td>0</td><td>1</td><td>2</td><td>0</td><td>1</td><td>2</td><td>0</td><td>1</td><td>2</td>
+          </tr>
+          <tr class="dist-row-minion">
+            <td style="color:#fff; text-align:left; font-weight:bold;">Minyonlar</td>
+            <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>2</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td>
+          </tr>
+          <tr class="dist-row-demon">
+            <td style="color:#fff; text-align:left; font-weight:bold;">İblisler</td>
+            <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- QR Kod -->
+    <div id="qrcode-container">
+      <h3>Oyuncular İçin QR Kod</h3>
+      <div id="qrcode"></div>
+    </div>
   </div>
 
   <script>
@@ -217,10 +298,8 @@
 
     let allRolesData = [];
 
-    // Linkten Karakter İsimlerini Ayıklama
     function extractCharactersFromUrl(urlStr) {
       if (!urlStr) return [];
-      
       let rawChars = '';
       if (urlStr.includes('characters=')) {
         rawChars = urlStr.split('characters=')[1].split('&')[0];
@@ -234,18 +313,16 @@
         .filter(c => c.length > 0);
     }
 
-    // "Getir" butonuna basılınca çalışacak fonksiyon
     function processInputLink() {
       const inputVal = document.getElementById('linkInput').value.trim();
       if (!inputVal) return;
 
       const charIds = extractCharactersFromUrl(inputVal);
       if (charIds.length > 0) {
-        // Adres çubuğundaki URL'yi de günceller (sayfa yenilenmeden)
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
         window.history.pushState({path: newUrl}, '', newUrl);
 
-        renderRoles(charIds);
+        loadAndRender(charIds);
       }
     }
 
@@ -281,34 +358,44 @@
       return result;
     }
 
-    // İlk Yüklenme: Eğer URL'de hazır parametre varsa direkt getir
     window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('loading').style.display = 'block';
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialChars = urlParams.get('characters');
 
-      fetch(CSV_URL)
-        .then(res => res.text())
-        .then(csvText => {
-          allRolesData = parseCSV(csvText);
-          document.getElementById('loading').style.display = 'none';
-
-          const urlParams = new URLSearchParams(window.location.search);
-          const initialChars = urlParams.get('characters');
-
-          if (initialChars) {
-            const charIds = extractCharactersFromUrl(initialChars);
-            renderRoles(charIds);
-          }
-        })
-        .catch(err => {
-          document.getElementById('loading').innerText = 'Veriler yüklenirken hata oluştu.';
-          console.error(err);
-        });
+      // Yalnızca URL'de karakter parametresi varsa yükleme yap
+      if (initialChars) {
+        const charIds = extractCharactersFromUrl(initialChars);
+        if (charIds.length > 0) {
+          loadAndRender(charIds);
+        }
+      }
     });
 
+    function loadAndRender(charIds) {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('content').innerHTML = '';
+
+      const fetchPromise = allRolesData.length > 0 
+        ? Promise.resolve() 
+        : fetch(CSV_URL).then(res => res.text()).then(csvText => { allRolesData = parseCSV(csvText); });
+
+      fetchPromise.then(() => {
+        document.getElementById('loading').style.display = 'none';
+        renderRoles(charIds);
+      }).catch(err => {
+        document.getElementById('loading').innerText = 'Veriler yüklenirken hata oluştu.';
+        console.error(err);
+      });
+    }
+
     function renderRoles(selectedIds) {
-      const filteredRoles = selectedIds.length > 0
-        ? allRolesData.filter(r => selectedIds.includes(r.id.toLowerCase()))
-        : allRolesData;
+      const filteredRoles = allRolesData.filter(r => selectedIds.includes(r.id.toLowerCase()));
+
+      if (filteredRoles.length === 0) {
+        document.getElementById('content').innerHTML = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
+        document.getElementById('bottomSections').style.display = 'none';
+        return;
+      }
 
       const container = document.getElementById('content');
       const groups = {};
@@ -340,14 +427,13 @@
       }
 
       container.innerHTML = html;
+      document.getElementById('bottomSections').style.display = 'block';
       generateQRCode();
     }
 
     function generateQRCode() {
-      const qrBox = document.getElementById('qrcode-container');
       const qrDiv = document.getElementById("qrcode");
       qrDiv.innerHTML = '';
-      qrBox.style.display = 'block';
 
       new QRCode(qrDiv, {
         text: window.location.href,
