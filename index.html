@@ -463,13 +463,13 @@
       qrDiv.innerHTML = '';
 
       new QRCode(qrDiv, {
-        text: window.location.href,
-        width: 140,
-        height: 140,
-        colorDark : "#0f0f11",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-      });
+  text: window.location.href,
+  width: 180,
+  height: 180,
+  colorDark : "#0f0f11",
+  colorLight : "#ffffff",
+  correctLevel : QRCode.CorrectLevel.L // H yerine L (Low) yaptık, kare sayısı azaldı
+});
     }
   </script>
 </body>
