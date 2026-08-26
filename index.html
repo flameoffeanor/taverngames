@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tavern Games - Karakter Referansı</title>
+  <!-- Google Fonts & QR Code Library -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -56,7 +57,6 @@
       letter-spacing: 1px;
     }
 
-    /* Instagram Bağlantısı */
     .instagram-link {
       display: inline-flex;
       align-items: center;
@@ -79,7 +79,6 @@
       fill: currentColor;
     }
 
-    /* Link Yapıştırma Kutusu */
     .input-section {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -133,7 +132,6 @@
       background: #c5a028;
     }
 
-    /* Rol Dağılım Tablosu */
     #distribution-container {
       display: none;
       margin-bottom: 24px;
@@ -174,7 +172,6 @@
     .dist-row-minion { color: #ff4757; }
     .dist-row-demon { color: #ff4757; }
 
-    /* Karakter Kartları */
     .team-group { margin-bottom: 24px; }
 
     .team-header {
@@ -267,9 +264,9 @@
   </header>
 
   <div class="input-section">
-    <label for="linkInput">Pocket Grimoire Linki Yapıştırın:</label>
+    <label for="linkInput">Script Linki Yapıştırın (Pocket Grimoire veya BOTC Tool):</label>
     <div class="input-wrapper">
-      <input type="text" id="linkInput" placeholder="https://www.pocketgrimoire.co.uk/..." />
+      <input type="text" id="linkInput" placeholder="Link yapıştırın..." />
       <button onclick="processInputLink()">Getir</button>
     </div>
   </div>
@@ -306,7 +303,7 @@
   <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
   <div id="content">
     <div id="emptyState" class="empty-state">
-      Lütfen yukarıdaki alana Pocket Grimoire linkini yapıştırıp "Getir" butonuna basınız.
+      Lütfen yukarıdaki alana Script linkini yapıştırıp "Getir" butonuna basınız.
     </div>
   </div>
 
@@ -321,26 +318,50 @@
 
     let allRolesData = [];
 
-    function extractCharactersFromUrl(urlStr) {
+    // Pocket Grimoire ve Resmi BOTC Tool linklerini ayrıştırma fonksiyonu
+    async function extractCharactersFromUrl(urlStr) {
       if (!urlStr) return [];
-      let rawChars = '';
+      
+      // 1. Pocket Grimoire formatı
       if (urlStr.includes('characters=')) {
-        rawChars = urlStr.split('characters=')[1].split('&')[0];
-      } else {
-        rawChars = urlStr;
+        const rawChars = urlStr.split('characters=')[1].split('&')[0];
+        return decodeURIComponent(rawChars)
+          .split(',')
+          .map(c => c.trim().toLowerCase())
+          .filter(c => c.length > 0);
+      }
+      
+      // 2. Resmi Script Tool formatı (script.bloodontheclocktower.com)
+      if (urlStr.includes('script.bloodontheclocktower.com')) {
+        try {
+          // Resmi tool'un JSON export verisini çek veya id parametresini oku
+          let fetchUrl = urlStr;
+          if (urlStr.includes('?id=')) {
+            const scriptId = urlStr.split('?id=')[1].split('&')[0];
+            fetchUrl = `https://script.bloodontheclocktower.com/api/script/${scriptId}`;
+          }
+          const response = await fetch(fetchUrl);
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            return data.map(item => typeof item === 'string' ? item : item.id).filter(Boolean);
+          }
+        } catch (e) {
+          console.warn('Resmi script linki doğrudan okunamadı, URL parametreleri ayrıştırılıyor...', e);
+        }
       }
 
-      return decodeURIComponent(rawChars)
+      // 3. Düz virgüle göre ayrıştırma yedek planı
+      return decodeURIComponent(urlStr)
         .split(',')
         .map(c => c.trim().toLowerCase())
         .filter(c => c.length > 0);
     }
 
-    function processInputLink() {
+    async function processInputLink() {
       const inputVal = document.getElementById('linkInput').value.trim();
       if (!inputVal) return;
 
-      const charIds = extractCharactersFromUrl(inputVal);
+      const charIds = await extractCharactersFromUrl(inputVal);
       if (charIds.length > 0) {
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
         window.history.pushState({path: newUrl}, '', newUrl);
@@ -383,12 +404,12 @@
       return result;
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const initialChars = urlParams.get('characters');
 
       if (initialChars) {
-        const charIds = extractCharactersFromUrl(initialChars);
+        const charIds = await extractCharactersFromUrl(initialChars);
         if (charIds.length > 0) {
           loadAndRender(charIds);
         }
@@ -458,18 +479,19 @@
       generateQRCode();
     }
 
+    // Sadeleştirilmiş ve Kolay Taranabilir QR Kod Oluşturma
     function generateQRCode() {
       const qrDiv = document.getElementById("qrcode");
       qrDiv.innerHTML = '';
 
       new QRCode(qrDiv, {
-  text: window.location.href,
-  width: 180,
-  height: 180,
-  colorDark : "#0f0f11",
-  colorLight : "#ffffff",
-  correctLevel : QRCode.CorrectLevel.L // H yerine L (Low) yaptık, kare sayısı azaldı
-});
+        text: window.location.href,
+        width: 180,
+        height: 180,
+        colorDark : "#0f0f11",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L // Low seviyesi sayesinde QR pikselleri seyrekleşir ve rahat taranır
+      });
     }
   </script>
 </body>
