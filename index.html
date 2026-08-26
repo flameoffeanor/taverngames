@@ -19,7 +19,6 @@
       --text-muted: #9a9a9f;
       --accent-gold: #d4af37;
       
-      /* Takım Renkleri */
       --team-townsfolk: #2980b9;
       --team-outsider: #16a085;
       --team-minion: #8e44ad;
@@ -58,9 +57,61 @@
       letter-spacing: 1px;
     }
 
-    .team-group {
-      margin-bottom: 24px;
+    /* Link Yapıştırma Alanı */
+    .input-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
+
+    .input-section label {
+      font-size: 0.85rem;
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+
+    .input-wrapper {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input-section input {
+      flex: 1;
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .input-section input:focus {
+      border-color: var(--accent-gold);
+    }
+
+    .input-section button {
+      background: var(--accent-gold);
+      color: #0f0f11;
+      border: none;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .input-section button:hover {
+      background: #c5a028;
+    }
+
+    .team-group { margin-bottom: 24px; }
 
     .team-header {
       font-family: 'Cinzel', serif;
@@ -74,7 +125,6 @@
       letter-spacing: 0.5px;
     }
 
-    /* Kategori Renk Eşleşmeleri */
     .team-townsfolk { background: rgba(41, 128, 185, 0.2); color: #54a0ff; border-left: 4px solid var(--team-townsfolk); }
     .team-outsider { background: rgba(22, 160, 133, 0.2); color: #1dd1a1; border-left: 4px solid var(--team-outsider); }
     .team-minion { background: rgba(142, 68, 173, 0.2); color: #be2edd; border-left: 4px solid var(--team-minion); }
@@ -131,7 +181,7 @@
 
     .loading {
       text-align: center;
-      padding: 40px;
+      padding: 30px;
       color: var(--text-muted);
       font-style: italic;
     }
@@ -140,30 +190,65 @@
 <body>
 
   <header>
-    <!-- Logo dosya yolunu kendi logonuzun ismiyle güncelleyin -->
     <img src="logo.png" alt="Tavern Games" onerror="this.style.display='none'">
     <h1>Tavern Games</h1>
   </header>
 
-  <div id="loading" class="loading">Karakter bilgileri yükleniyor...</div>
+  <!-- En başa eklenen Link Giriş Kutusu -->
+  <div class="input-section">
+    <label for="linkInput">Pocket Grimoire Linki Yapıştırın:</label>
+    <div class="input-wrapper">
+      <input type="text" id="linkInput" placeholder="https://www.pocketgrimoire.co.uk/..." />
+      <button onclick="processInputLink()">Getir</button>
+    </div>
+  </div>
+
+  <div id="loading" class="loading" style="display:none;">Karakter bilgileri yükleniyor...</div>
   <div id="content"></div>
 
   <div id="qrcode-container" style="display: none;">
-    <h3>Bu Karakter Kağıdını Paylaş</h3>
+    <h3>Oyuncular İçin QR Kod</h3>
     <div id="qrcode"></div>
   </div>
 
   <script>
-    // 1. Google Sheets CSV İndirme Bağlantısı
     const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-    // 2. URL'den karakter id'lerini al
-    const urlParams = new URLSearchParams(window.location.search);
-    const rawChars = urlParams.get('characters');
-    const selectedIds = rawChars ? rawChars.split(',').map(c => c.trim().toLowerCase()) : [];
+    let allRolesData = [];
 
-    // Simple CSV Parser
+    // Linkten Karakter İsimlerini Ayıklama
+    function extractCharactersFromUrl(urlStr) {
+      if (!urlStr) return [];
+      
+      let rawChars = '';
+      if (urlStr.includes('characters=')) {
+        rawChars = urlStr.split('characters=')[1].split('&')[0];
+      } else {
+        rawChars = urlStr;
+      }
+
+      return decodeURIComponent(rawChars)
+        .split(',')
+        .map(c => c.trim().toLowerCase())
+        .filter(c => c.length > 0);
+    }
+
+    // "Getir" butonuna basılınca çalışacak fonksiyon
+    function processInputLink() {
+      const inputVal = document.getElementById('linkInput').value.trim();
+      if (!inputVal) return;
+
+      const charIds = extractCharactersFromUrl(inputVal);
+      if (charIds.length > 0) {
+        // Adres çubuğundaki URL'yi de günceller (sayfa yenilenmeden)
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
+        window.history.pushState({path: newUrl}, '', newUrl);
+
+        renderRoles(charIds);
+      }
+    }
+
     function parseCSV(text) {
       const lines = text.split('\n');
       const result = [];
@@ -196,33 +281,39 @@
       return result;
     }
 
-    // 3. Veriyi çek ve işle
-    fetch(CSV_URL)
-      .then(res => res.text())
-      .then(csvText => {
-        const allRoles = parseCSV(csvText);
-        
-        // Filtreleme: Eğer URL'de parametre varsa sadece onları al, yoksa hepsini göster
-        const filteredRoles = selectedIds.length > 0
-          ? allRoles.filter(r => selectedIds.includes(r.id.toLowerCase()))
-          : allRoles;
+    // İlk Yüklenme: Eğer URL'de hazır parametre varsa direkt getir
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('loading').style.display = 'block';
 
-        document.getElementById('loading').style.display = 'none';
-        renderContent(filteredRoles);
-        generateQRCode();
-      })
-      .catch(err => {
-        document.getElementById('loading').innerText = 'Veriler yüklenirken bir hata oluştu.';
-        console.error(err);
-      });
+      fetch(CSV_URL)
+        .then(res => res.text())
+        .then(csvText => {
+          allRolesData = parseCSV(csvText);
+          document.getElementById('loading').style.display = 'none';
 
-    // 4. Ekrana Basma Fonksiyonu
-    function renderContent(roles) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const initialChars = urlParams.get('characters');
+
+          if (initialChars) {
+            const charIds = extractCharactersFromUrl(initialChars);
+            renderRoles(charIds);
+          }
+        })
+        .catch(err => {
+          document.getElementById('loading').innerText = 'Veriler yüklenirken hata oluştu.';
+          console.error(err);
+        });
+    });
+
+    function renderRoles(selectedIds) {
+      const filteredRoles = selectedIds.length > 0
+        ? allRolesData.filter(r => selectedIds.includes(r.id.toLowerCase()))
+        : allRolesData;
+
       const container = document.getElementById('content');
-      
-      // Takımlara göre grupla
       const groups = {};
-      roles.forEach(role => {
+      
+      filteredRoles.forEach(role => {
         const teamKey = role.team ? role.team.toLowerCase() : 'other';
         if (!groups[teamKey]) {
           groups[teamKey] = {
@@ -249,13 +340,16 @@
       }
 
       container.innerHTML = html;
+      generateQRCode();
     }
 
-    // 5. Otomatik QR Kod Oluşturma
     function generateQRCode() {
       const qrBox = document.getElementById('qrcode-container');
+      const qrDiv = document.getElementById("qrcode");
+      qrDiv.innerHTML = '';
       qrBox.style.display = 'block';
-      new QRCode(document.getElementById("qrcode"), {
+
+      new QRCode(qrDiv, {
         text: window.location.href,
         width: 140,
         height: 140,
