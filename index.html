@@ -4,11 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tavern Games - Karakter Referansı</title>
-  <!-- Google Fonts & QR Code Library -->
+  <!-- Google Fonts, QR Code & Pako (gzip decompressor) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   
   <style>
     :root {
@@ -264,9 +265,9 @@
   </header>
 
   <div class="input-section">
-    <label for="linkInput">Script Linki Yapıştırın (Pocket Grimoire veya BOTC Tool):</label>
+    <label for="linkInput">Linki Yapıştırın:</label>
     <div class="input-wrapper">
-      <input type="text" id="linkInput" placeholder="Link yapıştırın..." />
+      <input type="text" id="linkInput" placeholder="" />
       <button onclick="processInputLink()">Getir</button>
     </div>
   </div>
@@ -318,43 +319,67 @@
 
     let allRolesData = [];
 
-    // Pocket Grimoire ve Resmi BOTC Tool linklerini ayrıştırma fonksiyonu
-    async function extractCharactersFromUrl(urlStr) {
-      if (!urlStr) return [];
-      
-      // 1. Pocket Grimoire formatı
-      if (urlStr.includes('characters=')) {
-        const rawChars = urlStr.split('characters=')[1].split('&')[0];
+    // Gzip Base64 Çözücü (Official BOTC Tool ?script= parametresi için)
+    function decompressScriptParam(encodedStr) {
+      try {
+        let cleanStr = decodeURIComponent(encodedStr);
+        let binaryStr = atob(cleanStr);
+        let bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+        let decompressed = pako.inflate(bytes, { to: 'string' });
+        let json = JSON.parse(decompressed);
+        
+        return json.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && item.id) return item.id;
+          return null;
+        }).filter(b => b && b !== '_meta');
+      } catch (e) {
+        console.error('Script çözme hatası:', e);
+        return [];
+      }
+    }
+
+    // Her türlü girdiden (Link, JSON, virgüle ayrılmış id) karakter id çıkarma
+    async function extractCharactersFromUrl(inputStr) {
+      if (!inputStr) return [];
+      let str = inputStr.trim();
+
+      // 1. Doğrudan Yapıştırılan JSON Dizisi
+      if (str.startsWith('[') && str.endsWith(']')) {
+        try {
+          let parsed = JSON.parse(str);
+          return parsed.map(item => {
+            if (typeof item === 'string') return item;
+            if (item && item.id) return item.id;
+            return null;
+          }).filter(b => b && b !== '_meta');
+        } catch (e) {}
+      }
+
+      // 2. Official BOTC Script Linki (?script=...)
+      if (str.includes('script=')) {
+        let scriptParam = str.split('script=')[1].split('&')[0];
+        let ids = decompressScriptParam(scriptParam);
+        if (ids.length > 0) return ids;
+      }
+
+      // 3. Pocket Grimoire Linki (?characters=...)
+      if (str.includes('characters=')) {
+        let rawChars = str.split('characters=')[1].split('&')[0];
         return decodeURIComponent(rawChars)
           .split(',')
           .map(c => c.trim().toLowerCase())
           .filter(c => c.length > 0);
       }
-      
-      // 2. Resmi Script Tool formatı (script.bloodontheclocktower.com)
-      if (urlStr.includes('script.bloodontheclocktower.com')) {
-        try {
-          // Resmi tool'un JSON export verisini çek veya id parametresini oku
-          let fetchUrl = urlStr;
-          if (urlStr.includes('?id=')) {
-            const scriptId = urlStr.split('?id=')[1].split('&')[0];
-            fetchUrl = `https://script.bloodontheclocktower.com/api/script/${scriptId}`;
-          }
-          const response = await fetch(fetchUrl);
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            return data.map(item => typeof item === 'string' ? item : item.id).filter(Boolean);
-          }
-        } catch (e) {
-          console.warn('Resmi script linki doğrudan okunamadı, URL parametreleri ayrıştırılıyor...', e);
-        }
-      }
 
-      // 3. Düz virgüle göre ayrıştırma yedek planı
-      return decodeURIComponent(urlStr)
+      // 4. Virgüle Ayrılmış ID Dizisi
+      return decodeURIComponent(str)
         .split(',')
         .map(c => c.trim().toLowerCase())
-        .filter(c => c.length > 0);
+        .filter(c => c.length > 0 && c !== '_meta');
     }
 
     async function processInputLink() {
@@ -367,6 +392,8 @@
         window.history.pushState({path: newUrl}, '', newUrl);
 
         loadAndRender(charIds);
+      } else {
+        alert('Girdiğiniz linkten karakter bilgisi okunamadı.');
       }
     }
 
@@ -479,7 +506,6 @@
       generateQRCode();
     }
 
-    // Sadeleştirilmiş ve Kolay Taranabilir QR Kod Oluşturma
     function generateQRCode() {
       const qrDiv = document.getElementById("qrcode");
       qrDiv.innerHTML = '';
@@ -490,7 +516,7 @@
         height: 180,
         colorDark : "#0f0f11",
         colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.L // Low seviyesi sayesinde QR pikselleri seyrekleşir ve rahat taranır
+        correctLevel : QRCode.CorrectLevel.L
       });
     }
   </script>
