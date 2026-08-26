@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tavern Games - Karakter Referansı</title>
+  <!-- Google Fonts & QR Code Library -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-color: #0f0f11;
+      --card-bg: #18181c;
+      --border-color: #2a2a32;
+      --text-main: #e2e2e8;
+      --text-muted: #9a9a9f;
+      --accent-gold: #d4af37;
+      
+      /* Takım Renkleri */
+      --team-townsfolk: #2980b9;
+      --team-outsider: #16a085;
+      --team-minion: #8e44ad;
+      --team-demon: #c0392b;
+      --team-traveler: #d35400;
+      --team-fables: #f39c12;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      padding: 10px 0 20px 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+    
+    header img {
+      max-width: 130px;
+      height: auto;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: var(--accent-gold);
+      letter-spacing: 1px;
+    }
+
+    .team-group {
+      margin-bottom: 24px;
+    }
+
+    .team-header {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Kategori Renk Eşleşmeleri */
+    .team-townsfolk { background: rgba(41, 128, 185, 0.2); color: #54a0ff; border-left: 4px solid var(--team-townsfolk); }
+    .team-outsider { background: rgba(22, 160, 133, 0.2); color: #1dd1a1; border-left: 4px solid var(--team-outsider); }
+    .team-minion { background: rgba(142, 68, 173, 0.2); color: #be2edd; border-left: 4px solid var(--team-minion); }
+    .team-demon { background: rgba(192, 57, 43, 0.2); color: #ff6b6b; border-left: 4px solid var(--team-demon); }
+    .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
+    .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .card-ability {
+      font-size: 0.88rem;
+      line-height: 1.4;
+      color: var(--text-muted);
+    }
+
+    #qrcode-container {
+      margin-top: 40px;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    #qrcode-container h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+    }
+
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      background: #ffffff;
+      border-radius: 8px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <!-- Logo dosya yolunu kendi logonuzun ismiyle güncelleyin -->
+    <img src="logo.png" alt="Tavern Games" onerror="this.style.display='none'">
+    <h1>Tavern Games</h1>
+  </header>
+
+  <div id="loading" class="loading">Karakter bilgileri yükleniyor...</div>
+  <div id="content"></div>
+
+  <div id="qrcode-container" style="display: none;">
+    <h3>Bu Karakter Kağıdını Paylaş</h3>
+    <div id="qrcode"></div>
+  </div>
+
+  <script>
+    // 1. Google Sheets CSV İndirme Bağlantısı
+    const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+    // 2. URL'den karakter id'lerini al
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawChars = urlParams.get('characters');
+    const selectedIds = rawChars ? rawChars.split(',').map(c => c.trim().toLowerCase()) : [];
+
+    // Simple CSV Parser
+    function parseCSV(text) {
+      const lines = text.split('\n');
+      const result = [];
+      const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
+
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const currentline = [];
+        let insideQuote = false;
+        let entry = '';
+
+        for (let char of lines[i]) {
+          if (char === '"') {
+            insideQuote = !insideQuote;
+          } else if (char === ',' && !insideQuote) {
+            currentline.push(entry.trim().replace(/^"|"$/g, ''));
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        currentline.push(entry.trim().replace(/^"|"$/g, ''));
+
+        const obj = {};
+        headers.forEach((h, index) => {
+          obj[h] = currentline[index] || '';
+        });
+        result.push(obj);
+      }
+      return result;
+    }
+
+    // 3. Veriyi çek ve işle
+    fetch(CSV_URL)
+      .then(res => res.text())
+      .then(csvText => {
+        const allRoles = parseCSV(csvText);
+        
+        // Filtreleme: Eğer URL'de parametre varsa sadece onları al, yoksa hepsini göster
+        const filteredRoles = selectedIds.length > 0
+          ? allRoles.filter(r => selectedIds.includes(r.id.toLowerCase()))
+          : allRoles;
+
+        document.getElementById('loading').style.display = 'none';
+        renderContent(filteredRoles);
+        generateQRCode();
+      })
+      .catch(err => {
+        document.getElementById('loading').innerText = 'Veriler yüklenirken bir hata oluştu.';
+        console.error(err);
+      });
+
+    // 4. Ekrana Basma Fonksiyonu
+    function renderContent(roles) {
+      const container = document.getElementById('content');
+      
+      // Takımlara göre grupla
+      const groups = {};
+      roles.forEach(role => {
+        const teamKey = role.team ? role.team.toLowerCase() : 'other';
+        if (!groups[teamKey]) {
+          groups[teamKey] = {
+            title: role.team_tr || role.team,
+            roles: []
+          };
+        }
+        groups[teamKey].roles.push(role);
+      });
+
+      let html = '';
+      for (const [teamKey, group] of Object.entries(groups)) {
+        html += `
+          <div class="team-group">
+            <div class="team-header team-${teamKey}">${group.title}</div>
+            ${group.roles.map(r => `
+              <div class="card">
+                <div class="card-title">${r.name}</div>
+                <div class="card-ability">${r.ability}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    // 5. Otomatik QR Kod Oluşturma
+    function generateQRCode() {
+      const qrBox = document.getElementById('qrcode-container');
+      qrBox.style.display = 'block';
+      new QRCode(document.getElementById("qrcode"), {
+        text: window.location.href,
+        width: 140,
+        height: 140,
+        colorDark : "#0f0f11",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+    }
+  </script>
+</body>
+</html>
