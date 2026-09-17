@@ -4,12 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tavern Games - Karakter Referansı</title>
-  <!-- Google Fonts, QR Code & Pako (gzip decompressor) -->
+  <!-- Google Fonts & QR Code Library -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   
   <style>
     :root {
@@ -194,6 +193,65 @@
     .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
     .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
 
+    /* Açılır-Kapanır Gezginler Akordiyon Stili */
+    .collapsible-group {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .collapsible-trigger {
+      width: 100%;
+      background: rgba(211, 84, 0, 0.15);
+      border: none;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: #ff9f43;
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: left;
+      outline: none;
+    }
+
+    .collapsible-trigger .badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      background: rgba(211, 84, 0, 0.3);
+      color: #ffc085;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(211, 84, 0, 0.5);
+    }
+
+    .collapsible-trigger .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+    }
+
+    .collapsible-trigger.active .arrow {
+      transform: rotate(180deg);
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      padding: 0 12px;
+    }
+
+    .collapsible-content.open {
+      padding: 12px;
+      max-height: 2000px; /* İçerik rahatça sığsın */
+    }
+
+    /* Kart Yapısı ve İkon Hizalama */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -202,11 +260,24 @@
       margin-bottom: 8px;
     }
 
+    .card-header-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .card-icon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
     .card-title {
       font-weight: 600;
       font-size: 1rem;
       color: #ffffff;
-      margin-bottom: 4px;
     }
 
     .card-ability {
@@ -265,9 +336,9 @@
   </header>
 
   <div class="input-section">
-    <label for="linkInput">Linki Yapıştırın:</label>
+    <label for="linkInput">Script Linki Yapıştırın (Pocket Grimoire veya BOTC Tool):</label>
     <div class="input-wrapper">
-      <input type="text" id="linkInput" placeholder="" />
+      <input type="text" id="linkInput" placeholder="Link yapıştırın..." />
       <button onclick="processInputLink()">Getir</button>
     </div>
   </div>
@@ -319,67 +390,38 @@
 
     let allRolesData = [];
 
-    // Gzip Base64 Çözücü (Official BOTC Tool ?script= parametresi için)
-    function decompressScriptParam(encodedStr) {
-      try {
-        let cleanStr = decodeURIComponent(encodedStr);
-        let binaryStr = atob(cleanStr);
-        let bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-          bytes[i] = binaryStr.charCodeAt(i);
-        }
-        let decompressed = pako.inflate(bytes, { to: 'string' });
-        let json = JSON.parse(decompressed);
-        
-        return json.map(item => {
-          if (typeof item === 'string') return item;
-          if (item && item.id) return item.id;
-          return null;
-        }).filter(b => b && b !== '_meta');
-      } catch (e) {
-        console.error('Script çözme hatası:', e);
-        return [];
-      }
-    }
-
-    // Her türlü girdiden (Link, JSON, virgüle ayrılmış id) karakter id çıkarma
-    async function extractCharactersFromUrl(inputStr) {
-      if (!inputStr) return [];
-      let str = inputStr.trim();
-
-      // 1. Doğrudan Yapıştırılan JSON Dizisi
-      if (str.startsWith('[') && str.endsWith(']')) {
-        try {
-          let parsed = JSON.parse(str);
-          return parsed.map(item => {
-            if (typeof item === 'string') return item;
-            if (item && item.id) return item.id;
-            return null;
-          }).filter(b => b && b !== '_meta');
-        } catch (e) {}
-      }
-
-      // 2. Official BOTC Script Linki (?script=...)
-      if (str.includes('script=')) {
-        let scriptParam = str.split('script=')[1].split('&')[0];
-        let ids = decompressScriptParam(scriptParam);
-        if (ids.length > 0) return ids;
-      }
-
-      // 3. Pocket Grimoire Linki (?characters=...)
-      if (str.includes('characters=')) {
-        let rawChars = str.split('characters=')[1].split('&')[0];
+    async function extractCharactersFromUrl(urlStr) {
+      if (!urlStr) return [];
+      
+      if (urlStr.includes('characters=')) {
+        const rawChars = urlStr.split('characters=')[1].split('&')[0];
         return decodeURIComponent(rawChars)
           .split(',')
           .map(c => c.trim().toLowerCase())
           .filter(c => c.length > 0);
       }
+      
+      if (urlStr.includes('script.bloodontheclocktower.com')) {
+        try {
+          let fetchUrl = urlStr;
+          if (urlStr.includes('?id=')) {
+            const scriptId = urlStr.split('?id=')[1].split('&')[0];
+            fetchUrl = `https://script.bloodontheclocktower.com/api/script/${scriptId}`;
+          }
+          const response = await fetch(fetchUrl);
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            return data.map(item => typeof item === 'string' ? item : item.id).filter(Boolean);
+          }
+        } catch (e) {
+          console.warn('Resmi script linki ayrıştırılıyor...', e);
+        }
+      }
 
-      // 4. Virgüle Ayrılmış ID Dizisi
-      return decodeURIComponent(str)
+      return decodeURIComponent(urlStr)
         .split(',')
         .map(c => c.trim().toLowerCase())
-        .filter(c => c.length > 0 && c !== '_meta');
+        .filter(c => c.length > 0);
     }
 
     async function processInputLink() {
@@ -392,8 +434,6 @@
         window.history.pushState({path: newUrl}, '', newUrl);
 
         loadAndRender(charIds);
-      } else {
-        alert('Girdiğiniz linkten karakter bilgisi okunamadı.');
       }
     }
 
@@ -486,17 +526,46 @@
 
       let html = '';
       for (const [teamKey, group] of Object.entries(groups)) {
-        html += `
-          <div class="team-group">
-            <div class="team-header team-${teamKey}">${group.title}</div>
-            ${group.roles.map(r => `
-              <div class="card">
-                <div class="card-title">${r.name}</div>
-                <div class="card-ability">${r.ability}</div>
+        
+        // Gezginler veya Fables kategorisi ise açılır-kapanır (Collapsible) yap
+        if (teamKey === 'traveler' || teamKey === 'travelers' || teamKey === 'fables') {
+          html += `
+            <div class="collapsible-group">
+              <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
+                <span>${group.title}</span>
+                <span class="badge">İsteğe Bağlı / Opsiyonel Rol</span>
+                <span class="arrow">▼</span>
+              </button>
+              <div class="collapsible-content">
+                ${group.roles.map(r => `
+                  <div class="card">
+                    <div class="card-header-wrapper">
+                      <img src="${r.id.toLowerCase()}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                      <div class="card-title">${r.name}</div>
+                    </div>
+                    <div class="card-ability">${r.ability}</div>
+                  </div>
+                `).join('')}
               </div>
-            `).join('')}
-          </div>
-        `;
+            </div>
+          `;
+        } else {
+          // Normal Gruplar (Kasabalılar, Yabancılar, Minyonlar, İblisler)
+          html += `
+            <div class="team-group">
+              <div class="team-header team-${teamKey}">${group.title}</div>
+              ${group.roles.map(r => `
+                <div class="card">
+                  <div class="card-header-wrapper">
+                    <img src="${r.id.toLowerCase()}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                    <div class="card-title">${r.name}</div>
+                  </div>
+                  <div class="card-ability">${r.ability}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
       }
 
       container.innerHTML = html;
@@ -504,6 +573,13 @@
       document.getElementById('distribution-container').style.display = 'block';
       document.getElementById('qrcode-container').style.display = 'block';
       generateQRCode();
+    }
+
+    // Akordiyonu Açıp Kapatma Fonksiyonu
+    function toggleCollapsible(btn) {
+      btn.classList.toggle('active');
+      const content = btn.nextElementSibling;
+      content.classList.toggle('open');
     }
 
     function generateQRCode() {
