@@ -174,7 +174,7 @@
     .dist-row-minion { color: #ff4757; }
     .dist-row-demon { color: #ff4757; }
 
-    /* Karakter Kartları */
+    /* Takım Başlıkları */
     .team-group { margin-bottom: 24px; }
 
     .team-header {
@@ -196,38 +196,96 @@
     .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
     .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
 
-    /* Yenilenmiş Kart Yapısı (Flexbox) */
+    /* Açılır-Kapanır Gezginler Akordiyon Stili */
+    .collapsible-group {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .collapsible-trigger {
+      width: 100%;
+      background: rgba(211, 84, 0, 0.15);
+      border: none;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: #ff9f43;
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      text-align: left;
+      outline: none;
+    }
+
+    .collapsible-trigger .badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      background: rgba(211, 84, 0, 0.3);
+      color: #ffc085;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(211, 84, 0, 0.5);
+    }
+
+    .collapsible-trigger .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+    }
+
+    .collapsible-trigger.active .arrow {
+      transform: rotate(180deg);
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      padding: 0 12px;
+    }
+
+    .collapsible-content.open {
+      padding: 12px;
+      max-height: 3000px;
+    }
+
+    /* Kart Düzeni (Üstte Büyütülmüş İkon + İsim) */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 14px 16px;
       margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
     }
 
+    .card-header-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    /* 2 Kat Büyütülmüş İkon Stili (64px) */
     .card-icon {
-      width: 52px;
-      height: 52px;
+      width: 64px;
+      height: 64px;
       object-fit: contain;
       flex-shrink: 0;
     }
 
-    .card-content {
-      flex: 1;
-    }
-
     .card-title {
       font-weight: 700;
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       color: #ffffff;
-      margin-bottom: 4px;
     }
 
     .card-ability {
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       line-height: 1.45;
       color: var(--text-muted);
     }
@@ -429,7 +487,7 @@
     }
 
     function renderRoles(selectedIds) {
-      const filteredRoles = allRolesData.filter(r => selectedIds.includes(r.id.toLowerCase()));
+      const filteredRoles = allRolesData.filter(r => r.id && selectedIds.includes(r.id.toLowerCase()));
 
       if (filteredRoles.length === 0) {
         document.getElementById('content').innerHTML = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
@@ -452,23 +510,52 @@
 
       let html = '';
       for (const [teamKey, group] of Object.entries(groups)) {
-        html += `
-          <div class="team-group">
-            <div class="team-header team-${teamKey}">${group.title}</div>
-            ${group.roles.map(r => {
-              const charIdClean = r.id.toLowerCase().trim();
-              return `
-                <div class="card">
-                  <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
-                  <div class="card-content">
-                    <div class="card-title">${r.name}</div>
+        
+        // Gezginler veya Fables için Açılır-Kapanır (Akordiyon) Şablonu
+        if (teamKey === 'traveler' || teamKey === 'travelers' || teamKey === 'fables') {
+          html += `
+            <div class="collapsible-group">
+              <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
+                <span>${group.title}</span>
+                <span class="badge">İsteğe Bağlı / Opsiyonel Rol</span>
+                <span class="arrow">▼</span>
+              </button>
+              <div class="collapsible-content">
+                ${group.roles.map(r => {
+                  const charIdClean = r.id.toLowerCase().trim();
+                  return `
+                    <div class="card">
+                      <div class="card-header-wrapper">
+                        <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                        <div class="card-title">${r.name}</div>
+                      </div>
+                      <div class="card-ability">${r.ability}</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          // Normal Gruplar
+          html += `
+            <div class="team-group">
+              <div class="team-header team-${teamKey}">${group.title}</div>
+              ${group.roles.map(r => {
+                const charIdClean = r.id.toLowerCase().trim();
+                return `
+                  <div class="card">
+                    <div class="card-header-wrapper">
+                      <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                      <div class="card-title">${r.name}</div>
+                    </div>
                     <div class="card-ability">${r.ability}</div>
                   </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
       }
 
       container.innerHTML = html;
@@ -476,6 +563,13 @@
       document.getElementById('distribution-container').style.display = 'block';
       document.getElementById('qrcode-container').style.display = 'block';
       generateQRCode();
+    }
+
+    // Akordiyonu Açıp Kapatma Fonksiyonu
+    function toggleCollapsible(btn) {
+      btn.classList.toggle('active');
+      const content = btn.nextElementSibling;
+      content.classList.toggle('open');
     }
 
     function generateQRCode() {
