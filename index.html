@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tavern Games - Karakter Referansı</title>
+  <!-- Google Fonts & QR Code Library -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -60,7 +61,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-top: 8px;
+      margin-top: 6px;
       color: var(--text-muted);
       text-decoration: none;
       font-size: 0.85rem;
@@ -78,6 +79,7 @@
       fill: currentColor;
     }
 
+    /* Link Yapıştırma Alanı */
     .input-section {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -127,6 +129,11 @@
       transition: background 0.2s;
     }
 
+    .input-section button:hover {
+      background: #c5a028;
+    }
+
+    /* Rol Dağılım Tablosu */
     #distribution-container {
       display: none;
       margin-bottom: 24px;
@@ -142,7 +149,7 @@
       border-collapse: collapse;
       text-align: center;
       font-size: 0.85rem;
-      min-width: 480px;
+      min-width: 500px;
     }
 
     .dist-table th, .dist-table td {
@@ -167,6 +174,7 @@
     .dist-row-minion { color: #ff4757; }
     .dist-row-demon { color: #ff4757; }
 
+    /* Karakter Kartları */
     .team-group { margin-bottom: 24px; }
 
     .team-header {
@@ -185,98 +193,42 @@
     .team-outsider { background: rgba(22, 160, 133, 0.2); color: #1dd1a1; border-left: 4px solid var(--team-outsider); }
     .team-minion { background: rgba(142, 68, 173, 0.2); color: #be2edd; border-left: 4px solid var(--team-minion); }
     .team-demon { background: rgba(192, 57, 43, 0.2); color: #ff6b6b; border-left: 4px solid var(--team-demon); }
-    .team-traveler, .team-travelers, .team-traveller { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
+    .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
     .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
 
-    /* Açılır-Kapanır Akordiyon Stili */
-    .collapsible-group {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      margin-bottom: 24px;
-      overflow: hidden;
-    }
-
-    .collapsible-trigger {
-      width: 100%;
-      background: rgba(211, 84, 0, 0.15);
-      border: none;
-      padding: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      color: #ff9f43;
-      font-family: 'Cinzel', serif;
-      font-size: 1rem;
-      font-weight: 700;
-      text-align: left;
-      outline: none;
-    }
-
-    .collapsible-trigger .badge {
-      font-family: 'Inter', sans-serif;
-      font-size: 0.72rem;
-      font-weight: 500;
-      background: rgba(211, 84, 0, 0.3);
-      color: #ffc085;
-      padding: 3px 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(211, 84, 0, 0.5);
-    }
-
-    .collapsible-trigger .arrow {
-      transition: transform 0.3s ease;
-      font-size: 0.8rem;
-    }
-
-    .collapsible-trigger.active .arrow {
-      transform: rotate(180deg);
-    }
-
-    .collapsible-content {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out;
-      padding: 0 12px;
-    }
-
-    .collapsible-content.open {
-      padding: 12px;
-      max-height: 3000px;
-    }
-
+    /* Yenilenmiş Kart Yapısı (Flexbox) */
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 12px 14px;
-      margin-bottom: 8px;
-    }
-
-    .card-header-wrapper {
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 6px;
+      gap: 16px;
     }
 
     .card-icon {
-      width: 32px;
-      height: 32px;
+      width: 52px;
+      height: 52px;
       object-fit: contain;
       flex-shrink: 0;
     }
 
+    .card-content {
+      flex: 1;
+    }
+
     .card-title {
-      font-weight: 600;
-      font-size: 1rem;
+      font-weight: 700;
+      font-size: 1.05rem;
       color: #ffffff;
+      margin-bottom: 4px;
     }
 
     .card-ability {
       font-size: 0.88rem;
-      line-height: 1.4;
+      line-height: 1.45;
       color: var(--text-muted);
     }
 
@@ -330,13 +282,14 @@
   </header>
 
   <div class="input-section">
-    <label for="linkInput">Script Linki Yapıştırın (Pocket Grimoire veya BOTC Tool):</label>
+    <label for="linkInput">Pocket Grimoire Linki Yapıştırın:</label>
     <div class="input-wrapper">
-      <input type="text" id="linkInput" placeholder="Link yapıştırın..." />
+      <input type="text" id="linkInput" placeholder="https://www.pocketgrimoire.co.uk/..." />
       <button onclick="processInputLink()">Getir</button>
     </div>
   </div>
 
+  <!-- Rol Dağılım Tablosu -->
   <div id="distribution-container">
     <table class="dist-table">
       <thead>
@@ -369,7 +322,7 @@
   <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
   <div id="content">
     <div id="emptyState" class="empty-state">
-      Lütfen yukarıdaki alana Script linkini yapıştırıp "Getir" butonuna basınız.
+      Lütfen yukarıdaki alana Pocket Grimoire linkini yapıştırıp "Getir" butonuna basınız.
     </div>
   </div>
 
@@ -384,45 +337,26 @@
 
     let allRolesData = [];
 
-    async function extractCharactersFromUrl(urlStr) {
+    function extractCharactersFromUrl(urlStr) {
       if (!urlStr) return [];
-      
+      let rawChars = '';
       if (urlStr.includes('characters=')) {
-        const rawChars = urlStr.split('characters=')[1].split('&')[0];
-        return decodeURIComponent(rawChars)
-          .split(',')
-          .map(c => c.trim().toLowerCase())
-          .filter(c => c.length > 0);
-      }
-      
-      if (urlStr.includes('script.bloodontheclocktower.com')) {
-        try {
-          let fetchUrl = urlStr;
-          if (urlStr.includes('?id=')) {
-            const scriptId = urlStr.split('?id=')[1].split('&')[0];
-            fetchUrl = `https://script.bloodontheclocktower.com/api/script/${scriptId}`;
-          }
-          const response = await fetch(fetchUrl);
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            return data.map(item => typeof item === 'string' ? item : item.id).filter(Boolean);
-          }
-        } catch (e) {
-          console.warn('Resmi script linki ayrıştırılıyor...', e);
-        }
+        rawChars = urlStr.split('characters=')[1].split('&')[0];
+      } else {
+        rawChars = urlStr;
       }
 
-      return decodeURIComponent(urlStr)
+      return decodeURIComponent(rawChars)
         .split(',')
         .map(c => c.trim().toLowerCase())
         .filter(c => c.length > 0);
     }
 
-    async function processInputLink() {
+    function processInputLink() {
       const inputVal = document.getElementById('linkInput').value.trim();
       if (!inputVal) return;
 
-      const charIds = await extractCharactersFromUrl(inputVal);
+      const charIds = extractCharactersFromUrl(inputVal);
       if (charIds.length > 0) {
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
         window.history.pushState({path: newUrl}, '', newUrl);
@@ -434,10 +368,7 @@
     function parseCSV(text) {
       const lines = text.split('\n');
       const result = [];
-      if (lines.length === 0) return result;
-
-      // İlk satır başlıklar (id, name, team, team_tr, ability)
-      const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+      const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
 
       for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
@@ -466,12 +397,12 @@
       return result;
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
       const initialChars = urlParams.get('characters');
 
       if (initialChars) {
-        const charIds = await extractCharactersFromUrl(initialChars);
+        const charIds = extractCharactersFromUrl(initialChars);
         if (charIds.length > 0) {
           loadAndRender(charIds);
         }
@@ -498,7 +429,7 @@
     }
 
     function renderRoles(selectedIds) {
-      const filteredRoles = allRolesData.filter(r => r.id && selectedIds.includes(r.id.trim().toLowerCase()));
+      const filteredRoles = allRolesData.filter(r => selectedIds.includes(r.id.toLowerCase()));
 
       if (filteredRoles.length === 0) {
         document.getElementById('content').innerHTML = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
@@ -509,7 +440,7 @@
       const groups = {};
       
       filteredRoles.forEach(role => {
-        const teamKey = role.team ? role.team.trim().toLowerCase() : 'other';
+        const teamKey = role.team ? role.team.toLowerCase() : 'other';
         if (!groups[teamKey]) {
           groups[teamKey] = {
             title: role.team_tr || role.team,
@@ -521,55 +452,23 @@
 
       let html = '';
       for (const [teamKey, group] of Object.entries(groups)) {
-        
-        const titleLower = (group.title || '').toLowerCase();
-        
-        // Esnek eşleştirme: "traveler", "traveller", "fable" veya Türkçe "gezgin", "efsane" terimlerini yakalar
-        const isCollapsible = teamKey.includes('travel') || teamKey.includes('fable') || titleLower.includes('gezgin') || titleLower.includes('efsane');
-
-        if (isCollapsible) {
-          html += `
-            <div class="collapsible-group">
-              <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
-                <span>${group.title}</span>
-                <span class="badge">İsteğe Bağlı / Opsiyonel Rol</span>
-                <span class="arrow">▼</span>
-              </button>
-              <div class="collapsible-content">
-                ${group.roles.map(r => {
-                  const charIdClean = r.id.trim().toLowerCase();
-                  return `
-                    <div class="card">
-                      <div class="card-header-wrapper">
-                        <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
-                        <div class="card-title">${r.name}</div>
-                      </div>
-                      <div class="card-ability">${r.ability}</div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          `;
-        } else {
-          html += `
-            <div class="team-group">
-              <div class="team-header team-${teamKey}">${group.title}</div>
-              ${group.roles.map(r => {
-                const charIdClean = r.id.trim().toLowerCase();
-                return `
-                  <div class="card">
-                    <div class="card-header-wrapper">
-                      <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
-                      <div class="card-title">${r.name}</div>
-                    </div>
+        html += `
+          <div class="team-group">
+            <div class="team-header team-${teamKey}">${group.title}</div>
+            ${group.roles.map(r => {
+              const charIdClean = r.id.toLowerCase().trim();
+              return `
+                <div class="card">
+                  <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                  <div class="card-content">
+                    <div class="card-title">${r.name}</div>
                     <div class="card-ability">${r.ability}</div>
                   </div>
-                `;
-              }).join('')}
-            </div>
-          `;
-        }
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
       }
 
       container.innerHTML = html;
@@ -579,23 +478,17 @@
       generateQRCode();
     }
 
-    function toggleCollapsible(btn) {
-      btn.classList.toggle('active');
-      const content = btn.nextElementSibling;
-      content.classList.toggle('open');
-    }
-
     function generateQRCode() {
       const qrDiv = document.getElementById("qrcode");
       qrDiv.innerHTML = '';
 
       new QRCode(qrDiv, {
         text: window.location.href,
-        width: 180,
-        height: 180,
+        width: 140,
+        height: 140,
         colorDark : "#0f0f11",
         colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.L
+        correctLevel : QRCode.CorrectLevel.H
       });
     }
   </script>
