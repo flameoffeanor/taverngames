@@ -80,7 +80,7 @@
       fill: currentColor;
     }
 
-    /* Link Yapıştırma Alanı */
+    /* Link / Metin Yapıştırma Alanı */
     .input-section {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -340,9 +340,9 @@
   </header>
 
   <div class="input-section">
-    <label for="linkInput">Pocket Grimoire Linki Yapıştırın:</label>
+    <label for="linkInput">Script Linki veya JSON Yapıştırın:</label>
     <div class="input-wrapper">
-      <input type="text" id="linkInput" placeholder="https://www.pocketgrimoire.co.uk/..." />
+      <input type="text" id="linkInput" placeholder="Pocket Grimoire linki veya JSON metni..." />
       <button onclick="processInputLink()">Getir</button>
     </div>
   </div>
@@ -380,7 +380,7 @@
   <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
   <div id="content">
     <div id="emptyState" class="empty-state">
-      Lütfen yukarıdaki alana Pocket Grimoire linkini yapıştırıp "Getir" butonuna basınız.
+      Lütfen yukarıdaki alana Pocket Grimoire linkini veya Script JSON içeriğini yapıştırıp "Getir" butonuna basınız.
     </div>
   </div>
 
@@ -395,26 +395,67 @@
 
     let allRolesData = [];
 
-    function extractCharactersFromUrl(urlStr) {
+    async function extractCharactersFromUrl(urlStr) {
       if (!urlStr) return [];
-      let rawChars = '';
-      if (urlStr.includes('characters=')) {
-        rawChars = urlStr.split('characters=')[1].split('&')[0];
-      } else {
-        rawChars = urlStr;
+      const cleanStr = urlStr.trim();
+
+      // 1. Ham JSON Dizisi Yapıştırıldıysa
+      if (cleanStr.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(cleanStr);
+          if (Array.isArray(parsed)) {
+            return parsed
+              .map(item => typeof item === 'string' ? item : (item && item.id !== '_meta' ? item.id : null))
+              .filter(Boolean)
+              .map(c => c.trim().toLowerCase());
+          }
+        } catch (e) {
+          console.warn('JSON ayrıştırma hatası, metin analizi deneniyor...', e);
+        }
+      }
+      
+      // 2. Pocket Grimoire Linki (characters=...)
+      if (cleanStr.includes('characters=')) {
+        const rawChars = cleanStr.split('characters=')[1].split('&')[0];
+        return decodeURIComponent(rawChars)
+          .split(',')
+          .map(c => c.trim().toLowerCase())
+          .filter(c => c.length > 0);
+      }
+      
+      // 3. Official BOTC Script Tool Linki (script.bloodontheclocktower.com)
+      if (cleanStr.includes('script.bloodontheclocktower.com')) {
+        try {
+          let fetchUrl = cleanStr;
+          if (cleanStr.includes('?id=')) {
+            const scriptId = cleanStr.split('?id=')[1].split('&')[0];
+            fetchUrl = `https://script.bloodontheclocktower.com/api/script/${scriptId}`;
+          }
+          const response = await fetch(fetchUrl);
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            return data
+              .map(item => typeof item === 'string' ? item : (item && item.id !== '_meta' ? item.id : null))
+              .filter(Boolean)
+              .map(c => c.trim().toLowerCase());
+          }
+        } catch (e) {
+          console.warn('Resmi script linki ayrıştırılıyor...', e);
+        }
       }
 
-      return decodeURIComponent(rawChars)
+      // 4. Düz Virgüllü Liste
+      return decodeURIComponent(cleanStr)
         .split(',')
         .map(c => c.trim().toLowerCase())
-        .filter(c => c.length > 0);
+        .filter(c => c.length > 0 && !c.includes('{') && !c.includes('}'));
     }
 
-    function processInputLink() {
+    async function processInputLink() {
       const inputVal = document.getElementById('linkInput').value.trim();
       if (!inputVal) return;
 
-      const charIds = extractCharactersFromUrl(inputVal);
+      const charIds = await extractCharactersFromUrl(inputVal);
       if (charIds.length > 0) {
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
         window.history.pushState({path: newUrl}, '', newUrl);
@@ -455,12 +496,12 @@
       return result;
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const initialChars = urlParams.get('characters');
 
       if (initialChars) {
-        const charIds = extractCharactersFromUrl(initialChars);
+        const charIds = await extractCharactersFromUrl(initialChars);
         if (charIds.length > 0) {
           loadAndRender(charIds);
         }
