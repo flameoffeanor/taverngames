@@ -310,7 +310,7 @@
     #qrcode {
       display: flex;
       justify-content: center;
-      padding: 10px;
+      padding: 12px;
       background: #ffffff;
       border-radius: 8px;
       width: fit-content;
@@ -460,6 +460,7 @@
         const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
         window.history.pushState({path: newUrl}, '', newUrl);
 
+        // Sayfayı yenilemeden verileri doğrudan işle ve ekrana bas
         loadAndRender(charIds);
       }
     }
@@ -619,13 +620,14 @@
       const qrDiv = document.getElementById("qrcode");
       qrDiv.innerHTML = '';
 
+      // Taranabilirliği yüksek, sade QR kod ayarı
       new QRCode(qrDiv, {
         text: window.location.href,
-        width: 140,
-        height: 140,
+        width: 180,
+        height: 180,
         colorDark : "#0f0f11",
         colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
+        correctLevel : QRCode.CorrectLevel.L
       });
     }
   </script>
