@@ -222,7 +222,7 @@
     .dist-row-minion { color: #ff4757; }
     .dist-row-demon { color: #ff4757; }
 
-    /* Oyuncu Not Alma Alanı (Akordiyon) */
+    /* Oyuncu Not Alma Alanı */
     .notes-group {
       background: var(--card-bg);
       border: 1px solid var(--accent-gold);
@@ -424,7 +424,6 @@
       border: 1px solid #c0392b;
       border-radius: 8px;
       padding: 14px;
-      margin-top: 20px;
       margin-bottom: 20px;
     }
 
@@ -741,6 +740,24 @@
       const container = document.getElementById('content');
       let html = '';
 
+      // 1. Eksik Çeviriler Kutusu (En Üstte)
+      if (missingIds.length > 0) {
+        html += `
+          <div class="missing-roles-box">
+            <div class="missing-roles-title">
+              ⚠️ Eksik Çeviriler (${missingIds.length} Rol Tabloda Bulunamadı)
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+              Aşağıdaki karakterler script linkinde mevcut fakat Google Sheets tablonuzda tanımlı değil. Lütfen Excel'e ekleyin:
+            </p>
+            <div class="missing-roles-list">
+              ${missingIds.map(id => `<span class="missing-tag">${id}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. Karakter Grupları ve Kartları
       if (filteredRoles.length > 0) {
         const groups = {};
         filteredRoles.forEach(role => {
@@ -804,22 +821,6 @@
             `;
           }
         }
-      }
-
-      if (missingIds.length > 0) {
-        html += `
-          <div class="missing-roles-box">
-            <div class="missing-roles-title">
-              ⚠️ Eksik Çeviriler (${missingIds.length} Rol Tabloda Bulunamadı)
-            </div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
-              Aşağıdaki karakterler script linkinde mevcut fakat Google Sheets tablonuzda tanımlı değil. Lütfen Excel'e ekleyin:
-            </p>
-            <div class="missing-roles-list">
-              ${missingIds.map(id => `<span class="missing-tag">${id}</span>`).join('')}
-            </div>
-          </div>
-        `;
       }
 
       if (filteredRoles.length === 0 && missingIds.length === 0) {
