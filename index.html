@@ -341,7 +341,7 @@
     .team-traveller, .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
     .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
 
-    /* Gezginler Akordiyon Stili */
+    /* Gezginler Akordiyon Stili (Mobil Uyumlu Alt Alta Düzen) */
     .collapsible-group {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -357,30 +357,37 @@
       padding: 12px 14px;
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       cursor: pointer;
       color: #ff9f43;
       font-family: 'Cinzel', serif;
-      font-size: 1rem;
-      font-weight: 700;
       text-align: left;
       outline: none;
     }
 
-    .collapsible-trigger .badge {
+    .collapsible-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .collapsible-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .collapsible-subtext {
       font-family: 'Inter', sans-serif;
-      font-size: 0.72rem;
-      font-weight: 500;
-      background: rgba(211, 84, 0, 0.3);
+      font-size: 0.78rem;
+      font-weight: 400;
       color: #ffc085;
-      padding: 3px 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(211, 84, 0, 0.5);
+      line-height: 1.3;
     }
 
     .collapsible-trigger .arrow {
       transition: transform 0.3s ease;
       font-size: 0.8rem;
+      margin-top: 4px;
     }
 
     .collapsible-trigger.active .arrow {
@@ -544,7 +551,7 @@
     </div>
   </div>
 
-  <!-- 1. Rol Dağılım Tablosu (En Üstte) -->
+  <!-- Rol Dağılım Tablosu -->
   <div id="distribution-container">
     <table class="dist-table">
       <thead>
@@ -574,7 +581,7 @@
     </table>
   </div>
 
-  <!-- 2. Sabit Kural Kartı (Ortada) -->
+  <!-- Sabit Kural Kartı -->
   <div class="rule-card">
     <div class="rule-title">⚠️ Sarhoşluk & Zehirlenme</div>
     <div class="rule-text">
@@ -582,7 +589,7 @@
     </div>
   </div>
 
-  <!-- 3. Oyuncu Not Alma Alanı (En Altında) -->
+  <!-- Oyuncu Not Alma Alanı -->
   <div class="notes-group" id="notesSection" style="display: none;">
     <button class="notes-trigger" onclick="toggleNotes(this)">
       <span>📝 Oyuncu Notları</span>
@@ -786,8 +793,10 @@
             html += `
               <div class="collapsible-group">
                 <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
-                  <span>${group.title}</span>
-                  <span class="badge">Geç gelen veya erken ayrılması gereken oyuncular içindir.</span>
+                  <div class="collapsible-header-text">
+                    <span class="collapsible-title">${group.title}</span>
+                    <span class="collapsible-subtext">Geç gelen veya erken ayrılması gereken oyuncular içindir.</span>
+                  </div>
                   <span class="arrow">▼</span>
                 </button>
                 <div class="collapsible-content">
