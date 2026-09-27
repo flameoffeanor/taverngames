@@ -40,9 +40,9 @@
 
     header {
       text-align: center;
-      padding: 10px 0 20px 0;
+      padding: 10px 0 16px 0;
       border-bottom: 1px solid var(--border-color);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     
     header img.logo {
@@ -58,38 +58,73 @@
       letter-spacing: 1px;
     }
 
-    .social-links {
+    /* Vurgulu Sosyal Medya Kartı */
+    .social-card {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-gold);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      margin-top: 10px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.08);
     }
 
-    .social-link {
-      display: inline-flex;
+    .social-link-item {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      color: var(--text-muted);
+      gap: 12px;
       text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 500;
-      transition: color 0.2s ease;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
     }
 
-    .social-link:hover {
-      color: var(--accent-gold);
+    .social-link-item.instagram {
+      border-left: 4px solid #e1306c;
     }
 
-    .social-link.whatsapp:hover {
-      color: #25d366;
+    .social-link-item.instagram:hover {
+      background: rgba(225, 48, 108, 0.15);
+      border-color: #e1306c;
     }
 
-    .social-icon {
-      width: 16px;
-      height: 16px;
-      fill: currentColor;
+    .social-link-item.whatsapp {
+      border-left: 4px solid #25d366;
+    }
+
+    .social-link-item.whatsapp:hover {
+      background: rgba(37, 211, 102, 0.15);
+      border-color: #25d366;
+    }
+
+    .social-icon-btn {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .social-link-item.instagram .social-icon-btn { fill: #e1306c; }
+    .social-link-item.whatsapp .social-icon-btn { fill: #25d366; }
+
+    .social-text {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .social-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .social-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
     }
 
     /* Link / Metin Yapıştırma Alanı */
@@ -146,7 +181,7 @@
       background: #c5a028;
     }
 
-    /* Sabit Kompakt Sarhoşluk & Zehirlenme Kural Kartı */
+    /* Sabit Kural Kartı */
     .rule-card {
       background: rgba(212, 175, 55, 0.08);
       border-left: 4px solid var(--accent-gold);
@@ -167,6 +202,80 @@
       font-size: 0.82rem;
       line-height: 1.45;
       color: var(--text-muted);
+    }
+
+    /* Oyuncu Not Alma Alanı (Akordiyon) */
+    .notes-group {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-gold);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .notes-trigger {
+      width: 100%;
+      background: rgba(212, 175, 55, 0.12);
+      border: none;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: var(--accent-gold);
+      font-family: 'Cinzel', serif;
+      font-size: 0.98rem;
+      font-weight: 700;
+      text-align: left;
+      outline: none;
+    }
+
+    .notes-trigger .badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      background: rgba(212, 175, 55, 0.2);
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--accent-gold);
+    }
+
+    .notes-trigger .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+    }
+
+    .notes-trigger.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .notes-content {
+      padding: 12px;
+      display: block;
+    }
+
+    .notes-content.hidden {
+      display: none;
+    }
+
+    .notes-textarea {
+      width: 100%;
+      height: 110px;
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      resize: vertical;
+      outline: none;
+    }
+
+    .notes-textarea:focus {
+      border-color: var(--accent-gold);
     }
 
     /* Rol Dağılım Tablosu */
@@ -232,7 +341,7 @@
     .team-traveller, .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
     .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
 
-    /* Açılır-Kapanır Gezginler Akordiyon Stili */
+    /* Gezginler Akordiyon Stili */
     .collapsible-group {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -327,11 +436,11 @@
 
     /* Eksik Roller Alanı Stili */
     .missing-roles-box {
-      background: rgba(192, 57, 43, 0.12);
+      background: rgba(192, 57, 43, 0.15);
       border: 1px solid #c0392b;
       border-radius: 8px;
       padding: 14px;
-      margin-top: 30px;
+      margin-top: 20px;
       margin-bottom: 20px;
     }
 
@@ -341,9 +450,6 @@
       font-size: 0.95rem;
       font-weight: 700;
       margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
 
     .missing-roles-list {
@@ -404,39 +510,57 @@
   <header>
     <img src="logo.png" alt="Tavern Games" class="logo" onerror="this.style.display='none'">
     <h1>Tavern Games</h1>
-    
-    <div class="social-links">
-      <!-- Instagram Linki -->
-      <a href="https://www.instagram.com/taverngamesclub/" target="_blank" rel="noopener noreferrer" class="social-link">
-        <svg class="social-icon" viewBox="0 0 24 24">
-          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-        </svg>
-        @taverngamesclub
-      </a>
-
-      <!-- WhatsApp Grubu Linki -->
-      <a href="YOUR_WHATSAPP_LINK" target="_blank" rel="noopener noreferrer" class="social-link whatsapp">
-        <svg class="social-icon" viewBox="0 0 24 24">
-          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
-        </svg>
-        WhatsApp Grubu
-      </a>
-    </div>
   </header>
 
-  <div class="input-section">
+  <!-- Vurgulu Sosyal Medya Kartı -->
+  <div class="social-card">
+    <a href="https://www.instagram.com/taverngamesclub/" target="_blank" rel="noopener noreferrer" class="social-link-item instagram">
+      <svg class="social-icon-btn" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+      </svg>
+      <div class="social-text">
+        <span class="social-title">Instagram'da Bizi Takip Edin</span>
+        <span class="social-sub">@taverngamesclub</span>
+      </div>
+    </a>
+
+    <a href="https://chat.whatsapp.com/LxsUKB5amFS5B3QGOR2k5r" target="_blank" rel="noopener noreferrer" class="social-link-item whatsapp">
+      <svg class="social-icon-btn" viewBox="0 0 24 24">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+      </svg>
+      <div class="social-text">
+        <span class="social-title">WhatsApp Grubumuza Katılın</span>
+        <span class="social-sub">Oyun duyuruları ve topluluk grubu</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- Link Yapıştırma Alanı -->
+  <div class="input-section" id="inputSection">
     <label for="linkInput">Script Linki veya JSON Yapıştırın:</label>
     <div class="input-wrapper">
-      <input type="text" id="linkInput" placeholder="Pocket Grimoire linki veya JSON metni..." />
+      <input type="text" id="linkInput" placeholder="Pocket Grimoire linki veya JSON..." />
       <button onclick="processInputLink()">Getir</button>
     </div>
   </div>
 
-  <!-- Sabit Kompakt Kural Kartı -->
+  <!-- Sabit Kural Kartı -->
   <div class="rule-card">
     <div class="rule-title">⚠️ Sarhoşluk & Zehirlenme</div>
     <div class="rule-text">
       Sarhoş veya zehirli bir oyuncu yeteneğini kaybeder ancak bunu bilmez. Gece normal şekilde uyanır ve seçimlerini yapar. Bilgi alan bir rolse, Oyun Yöneticisi ona yanlış bilgi verebilir (veya kafa karıştırmak için doğru bilgi verebilir). Yeteneği oyun üzerinde hiçbir etki yaratmaz.
+    </div>
+  </div>
+
+  <!-- Oyuncu Not Alma Alanı (Akordiyon - Varsayılan Açık) -->
+  <div class="notes-group" id="notesSection" style="display: none;">
+    <button class="notes-trigger" onclick="toggleNotes(this)">
+      <span>📝 Oyuncu Notları</span>
+      <span class="badge">Gizlemek / Açmak İçin Tıklayın</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="notes-content" id="notesContent">
+      <textarea class="notes-textarea" id="playerNotes" placeholder="Oyun sırasındaki tahminlerinizi, iddiaları ve notlarınızı buraya yazabilirsiniz (Sayfayı kapatsanız da silinmez)..." oninput="saveNotes()"></textarea>
     </div>
   </div>
 
@@ -488,11 +612,15 @@
 
     let allRolesData = [];
 
+    function cleanId(idStr) {
+      if (!idStr) return '';
+      return idStr.toString().toLowerCase().replace(/[^a-z0-9_]/g, '').trim();
+    }
+
     async function extractCharactersFromUrl(urlStr) {
       if (!urlStr) return [];
       const cleanStr = urlStr.trim();
 
-      // 1. Ham JSON Dizisi Yapıştırıldıysa
       if (cleanStr.startsWith('[')) {
         try {
           const parsed = JSON.parse(cleanStr);
@@ -500,48 +628,25 @@
             return parsed
               .map(item => typeof item === 'string' ? item : (item && item.id !== '_meta' ? item.id : null))
               .filter(Boolean)
-              .map(c => c.trim().toLowerCase());
+              .map(c => cleanId(c));
           }
         } catch (e) {
-          console.warn('JSON ayrıştırma hatası, metin analizi deneniyor...', e);
+          console.warn('JSON parsing failed', e);
         }
       }
       
-      // 2. Pocket Grimoire Linki (characters=...)
       if (cleanStr.includes('characters=')) {
         const rawChars = cleanStr.split('characters=')[1].split('&')[0];
         return decodeURIComponent(rawChars)
           .split(',')
-          .map(c => c.trim().toLowerCase())
+          .map(c => cleanId(c))
           .filter(c => c.length > 0);
       }
-      
-      // 3. Official BOTC Script Tool Linki (script.bloodontheclocktower.com)
-      if (cleanStr.includes('script.bloodontheclocktower.com')) {
-        try {
-          let fetchUrl = cleanStr;
-          if (cleanStr.includes('?id=')) {
-            const scriptId = cleanStr.split('?id=')[1].split('&')[0];
-            fetchUrl = `https://script.bloodontheclocktower.com/api/script/${scriptId}`;
-          }
-          const response = await fetch(fetchUrl);
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            return data
-              .map(item => typeof item === 'string' ? item : (item && item.id !== '_meta' ? item.id : null))
-              .filter(Boolean)
-              .map(c => c.trim().toLowerCase());
-          }
-        } catch (e) {
-          console.warn('Resmi script linki ayrıştırılıyor...', e);
-        }
-      }
 
-      // 4. Düz Virgüllü Liste
       return decodeURIComponent(cleanStr)
         .split(',')
-        .map(c => c.trim().toLowerCase())
-        .filter(c => c.length > 0 && !c.includes('{') && !c.includes('}'));
+        .map(c => cleanId(c))
+        .filter(c => c.length > 0);
     }
 
     async function processInputLink() {
@@ -560,6 +665,8 @@
     function parseCSV(text) {
       const lines = text.split('\n');
       const result = [];
+      if (lines.length === 0) return result;
+
       const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
 
       for (let i = 1; i < lines.length; i++) {
@@ -589,7 +696,27 @@
       return result;
     }
 
+    function saveNotes() {
+      const notes = document.getElementById('playerNotes').value;
+      localStorage.setItem('botc_player_notes', notes);
+    }
+
+    function loadSavedNotes() {
+      const saved = localStorage.getItem('botc_player_notes');
+      if (saved) {
+        document.getElementById('playerNotes').value = saved;
+      }
+    }
+
+    function toggleNotes(btn) {
+      btn.classList.toggle('collapsed');
+      const content = document.getElementById('notesContent');
+      content.classList.toggle('hidden');
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
+      loadSavedNotes();
+
       const urlParams = new URLSearchParams(window.location.search);
       const initialChars = urlParams.get('characters');
 
@@ -602,9 +729,14 @@
     });
 
     function loadAndRender(charIds) {
+      // Script yüklendiğinde link alanını gizle
+      const inputSec = document.getElementById('inputSection');
+      if (inputSec) inputSec.style.display = 'none';
+
       document.getElementById('loading').style.display = 'block';
       document.getElementById('content').innerHTML = '';
       document.getElementById('distribution-container').style.display = 'none';
+      document.getElementById('notesSection').style.display = 'none';
       document.getElementById('qrcode-container').style.display = 'none';
 
       const fetchPromise = allRolesData.length > 0 
@@ -621,54 +753,66 @@
     }
 
     function renderRoles(selectedIds) {
-      // Excel'den gelen tüm mevcut rol id'lerinin listesi
+      const cleanSelectedIds = selectedIds.map(id => cleanId(id));
+
       const existingIds = allRolesData
-        .map(r => r.id ? r.id.toLowerCase().trim() : '')
+        .map(r => cleanId(r.id))
         .filter(Boolean);
 
-      // Script'te istenen ama Excel'de henüz bulunmayan eksik rol id'lerini bul
-      const missingIds = selectedIds.filter(id => !existingIds.includes(id));
+      const missingIds = cleanSelectedIds.filter(id => !existingIds.includes(id));
 
-      const filteredRoles = allRolesData.filter(r => r.id && selectedIds.includes(r.id.toLowerCase().trim()));
-
-      if (filteredRoles.length === 0 && missingIds.length === 0) {
-        document.getElementById('content').innerHTML = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
-        return;
-      }
+      const filteredRoles = allRolesData.filter(r => r.id && cleanSelectedIds.includes(cleanId(r.id)));
 
       const container = document.getElementById('content');
-      const groups = {};
-      
-      filteredRoles.forEach(role => {
-        const teamKey = role.team ? role.team.toLowerCase().trim() : 'other';
-        if (!groups[teamKey]) {
-          groups[teamKey] = {
-            title: role.team_tr || role.team,
-            roles: []
-          };
-        }
-        groups[teamKey].roles.push(role);
-      });
-
       let html = '';
-      for (const [teamKey, group] of Object.entries(groups)) {
-        
-        const titleLower = (group.title || '').toLowerCase();
-        
-        // Eşleşme kriterleri: "traveller", "traveler", "gezgin", "fable"
-        const isCollapsible = teamKey.includes('travel') || titleLower.includes('gezgin') || teamKey.includes('fable');
 
-        if (isCollapsible) {
-          html += `
-            <div class="collapsible-group">
-              <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
-                <span>${group.title}</span>
-                <span class="badge">İsteğe Bağlı / Opsiyonel Rol</span>
-                <span class="arrow">▼</span>
-              </button>
-              <div class="collapsible-content">
+      if (filteredRoles.length > 0) {
+        const groups = {};
+        filteredRoles.forEach(role => {
+          const teamKey = role.team ? role.team.toLowerCase().trim() : 'other';
+          if (!groups[teamKey]) {
+            groups[teamKey] = {
+              title: role.team_tr || role.team,
+              roles: []
+            };
+          }
+          groups[teamKey].roles.push(role);
+        });
+
+        for (const [teamKey, group] of Object.entries(groups)) {
+          const titleLower = (group.title || '').toLowerCase();
+          const isCollapsible = teamKey.includes('travel') || titleLower.includes('gezgin') || teamKey.includes('fable');
+
+          if (isCollapsible) {
+            html += `
+              <div class="collapsible-group">
+                <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
+                  <span>${group.title}</span>
+                  <span class="badge">İsteğe Bağlı / Opsiyonel Rol</span>
+                  <span class="arrow">▼</span>
+                </button>
+                <div class="collapsible-content">
+                  ${group.roles.map(r => {
+                    const charIdClean = cleanId(r.id);
+                    return `
+                      <div class="card">
+                        <div class="card-header-wrapper">
+                          <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                          <div class="card-title">${r.name}</div>
+                        </div>
+                        <div class="card-ability">${r.ability}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="team-group">
+                <div class="team-header team-${teamKey}">${group.title}</div>
                 ${group.roles.map(r => {
-                  const charIdClean = r.id.toLowerCase().trim();
+                  const charIdClean = cleanId(r.id);
                   return `
                     <div class="card">
                       <div class="card-header-wrapper">
@@ -680,30 +824,11 @@
                   `;
                 }).join('')}
               </div>
-            </div>
-          `;
-        } else {
-          html += `
-            <div class="team-group">
-              <div class="team-header team-${teamKey}">${group.title}</div>
-              ${group.roles.map(r => {
-                const charIdClean = r.id.toLowerCase().trim();
-                return `
-                  <div class="card">
-                    <div class="card-header-wrapper">
-                      <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
-                      <div class="card-title">${r.name}</div>
-                    </div>
-                    <div class="card-ability">${r.ability}</div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          `;
+            `;
+          }
         }
       }
 
-      // Eğer Excel tablonuzda eksik çeviri/karakter varsa en alta ekle
       if (missingIds.length > 0) {
         html += `
           <div class="missing-roles-box">
@@ -720,8 +845,13 @@
         `;
       }
 
+      if (filteredRoles.length === 0 && missingIds.length === 0) {
+        html = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
+      }
+
       container.innerHTML = html;
       
+      document.getElementById('notesSection').style.display = 'block';
       document.getElementById('distribution-container').style.display = 'block';
       document.getElementById('qrcode-container').style.display = 'block';
       generateQRCode();
