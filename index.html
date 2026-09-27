@@ -181,6 +181,47 @@
       background: #c5a028;
     }
 
+    /* Rol Dağılım Tablosu */
+    #distribution-container {
+      display: none;
+      margin-bottom: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .dist-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 0.85rem;
+      min-width: 500px;
+    }
+
+    .dist-table th, .dist-table td {
+      border: 1px solid var(--border-color);
+      padding: 8px 4px;
+    }
+
+    .dist-table th {
+      background: rgba(212, 175, 55, 0.1);
+      color: var(--text-main);
+      font-weight: 700;
+    }
+    
+    .dist-table td:first-child {
+      text-align: left;
+      font-weight: 700;
+      padding-left: 8px;
+    }
+
+    .dist-row-townsfolk { color: #54a0ff; }
+    .dist-row-outsider { color: #54a0ff; }
+    .dist-row-minion { color: #ff4757; }
+    .dist-row-demon { color: #ff4757; }
+
     /* Sabit Kural Kartı */
     .rule-card {
       background: rgba(212, 175, 55, 0.08);
@@ -277,47 +318,6 @@
     .notes-textarea:focus {
       border-color: var(--accent-gold);
     }
-
-    /* Rol Dağılım Tablosu */
-    #distribution-container {
-      display: none;
-      margin-bottom: 24px;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 14px;
-      overflow-x: auto;
-    }
-
-    .dist-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: center;
-      font-size: 0.85rem;
-      min-width: 500px;
-    }
-
-    .dist-table th, .dist-table td {
-      border: 1px solid var(--border-color);
-      padding: 8px 4px;
-    }
-
-    .dist-table th {
-      background: rgba(212, 175, 55, 0.1);
-      color: var(--text-main);
-      font-weight: 700;
-    }
-    
-    .dist-table td:first-child {
-      text-align: left;
-      font-weight: 700;
-      padding-left: 8px;
-    }
-
-    .dist-row-townsfolk { color: #54a0ff; }
-    .dist-row-outsider { color: #54a0ff; }
-    .dist-row-minion { color: #ff4757; }
-    .dist-row-demon { color: #ff4757; }
 
     /* Takım Başlıkları */
     .team-group { margin-bottom: 24px; }
@@ -544,27 +544,7 @@
     </div>
   </div>
 
-  <!-- Sabit Kural Kartı -->
-  <div class="rule-card">
-    <div class="rule-title">⚠️ Sarhoşluk & Zehirlenme</div>
-    <div class="rule-text">
-      Sarhoş veya zehirli bir oyuncu yeteneğini kaybeder ancak bunu bilmez. Gece normal şekilde uyanır ve seçimlerini yapar. Bilgi alan bir rolse, Oyun Yöneticisi ona yanlış bilgi verebilir (veya kafa karıştırmak için doğru bilgi verebilir). Yeteneği oyun üzerinde hiçbir etki yaratmaz.
-    </div>
-  </div>
-
-  <!-- Oyuncu Not Alma Alanı (Akordiyon - Varsayılan Açık) -->
-  <div class="notes-group" id="notesSection" style="display: none;">
-    <button class="notes-trigger" onclick="toggleNotes(this)">
-      <span>📝 Oyuncu Notları</span>
-      <span class="badge">Gizlemek / Açmak İçin Tıklayın</span>
-      <span class="arrow">▼</span>
-    </button>
-    <div class="notes-content" id="notesContent">
-      <textarea class="notes-textarea" id="playerNotes" placeholder="Oyun sırasındaki tahminlerinizi, iddiaları ve notlarınızı buraya yazabilirsiniz (Sayfayı kapatsanız da silinmez)..." oninput="saveNotes()"></textarea>
-    </div>
-  </div>
-
-  <!-- Rol Dağılım Tablosu -->
+  <!-- 1. Rol Dağılım Tablosu (En Üstte) -->
   <div id="distribution-container">
     <table class="dist-table">
       <thead>
@@ -592,6 +572,26 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- 2. Sabit Kural Kartı (Ortada) -->
+  <div class="rule-card">
+    <div class="rule-title">⚠️ Sarhoşluk & Zehirlenme</div>
+    <div class="rule-text">
+      Sarhoş veya zehirli bir oyuncu yeteneğini kaybeder ancak bunu bilmez. Gece normal şekilde uyanır ve seçimlerini yapar. Bilgi alan bir rolse, Oyun Yöneticisi ona yanlış bilgi verebilir (veya kafa karıştırmak için doğru bilgi verebilir). Yeteneği oyun üzerinde hiçbir etki yaratmaz.
+    </div>
+  </div>
+
+  <!-- 3. Oyuncu Not Alma Alanı (En Altında) -->
+  <div class="notes-group" id="notesSection" style="display: none;">
+    <button class="notes-trigger" onclick="toggleNotes(this)">
+      <span>📝 Oyuncu Notları</span>
+      <span class="badge">Gizlemek / Açmak İçin Tıklayın</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="notes-content" id="notesContent">
+      <textarea class="notes-textarea" id="playerNotes" placeholder="Oyun sırasındaki tahminlerinizi, iddiaları ve notlarınızı buraya yazabilirsiniz (Sayfayı kapatsanız da silinmez)..." oninput="saveNotes()"></textarea>
+    </div>
   </div>
 
   <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
@@ -729,7 +729,6 @@
     });
 
     function loadAndRender(charIds) {
-      // Script yüklendiğinde link alanını gizle
       const inputSec = document.getElementById('inputSection');
       if (inputSec) inputSec.style.display = 'none';
 
@@ -788,7 +787,7 @@
               <div class="collapsible-group">
                 <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
                   <span>${group.title}</span>
-                  <span class="badge">İsteğe Bağlı / Opsiyonel Rol</span>
+                  <span class="badge">Geç gelen veya erken ayrılması gereken oyuncular içindir.</span>
                   <span class="arrow">▼</span>
                 </button>
                 <div class="collapsible-content">
@@ -851,8 +850,8 @@
 
       container.innerHTML = html;
       
-      document.getElementById('notesSection').style.display = 'block';
       document.getElementById('distribution-container').style.display = 'block';
+      document.getElementById('notesSection').style.display = 'block';
       document.getElementById('qrcode-container').style.display = 'block';
       generateQRCode();
     }
