@@ -127,7 +127,7 @@
       color: var(--text-muted);
     }
 
-    /* Link / Metin Yapıştırma Alanı */
+    /* Link Yapıştırma Alanı */
     .input-section {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -181,29 +181,30 @@
       background: #c5a028;
     }
 
-    /* Rol Dağılım Tablosu & Sayı Seçici */
+    /* Mobilde Derli Toplu Oyuncu Dağılım Kartı */
     #distribution-container {
       display: none;
       margin-bottom: 20px;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 14px;
     }
 
     .player-selector-title {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--accent-gold);
-      font-weight: 600;
-      margin-bottom: 8px;
+      font-weight: 700;
+      margin-bottom: 10px;
     }
 
     .player-buttons-wrapper {
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      padding-bottom: 10px;
-      margin-bottom: 10px;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
     }
 
     .player-btn {
@@ -212,16 +213,11 @@
       color: var(--text-muted);
       border-radius: 6px;
       padding: 6px 12px;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.2s ease;
-    }
-
-    .player-btn:hover {
-      border-color: var(--accent-gold);
-      color: #fff;
     }
 
     .player-btn.active {
@@ -231,49 +227,37 @@
       font-weight: 700;
     }
 
-    .table-scroll-wrapper {
-      overflow-x: auto;
+    .dist-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
     }
 
-    .dist-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: center;
-      font-size: 0.85rem;
-      min-width: 500px;
-    }
-
-    .dist-table th, .dist-table td {
+    .dist-card-item {
+      background: #0f0f11;
       border: 1px solid var(--border-color);
-      padding: 8px 4px;
-      transition: background 0.2s ease;
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .dist-table th {
-      background: rgba(212, 175, 55, 0.1);
-      color: var(--text-main);
+    .dist-card-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .dist-card-val {
+      font-size: 1.1rem;
       font-weight: 700;
-    }
-    
-    .dist-table td:first-child {
-      text-align: left;
-      font-weight: 700;
-      padding-left: 8px;
+      font-family: 'Cinzel', serif;
     }
 
-    /* Vurgulanan Sütun Stili */
-    .dist-table th.highlight-col,
-    .dist-table td.highlight-col {
-      background: rgba(212, 175, 55, 0.25) !important;
-      border-left: 2px solid var(--accent-gold) !important;
-      border-right: 2px solid var(--accent-gold) !important;
-      font-weight: bold;
-    }
-
-    .dist-row-townsfolk { color: #54a0ff; }
-    .dist-row-outsider { color: #54a0ff; }
-    .dist-row-minion { color: #ff4757; }
-    .dist-row-demon { color: #ff4757; }
+    .dist-townsfolk { color: #54a0ff; border-left: 3px solid #2980b9; }
+    .dist-outsider { color: #1dd1a1; border-left: 3px solid #16a085; }
+    .dist-minion { color: #be2edd; border-left: 3px solid #8e44ad; }
+    .dist-demon { color: #ff6b6b; border-left: 3px solid #c0392b; }
 
     /* Oyuncu Not Alma Alanı */
     .notes-group {
@@ -619,60 +603,40 @@
     </div>
   </div>
 
-  <!-- Rol Dağılım Tablosu & Sayı Seçici -->
+  <!-- Mobilde Derli Toplu Oyuncu Dağılım Kartı -->
   <div id="distribution-container">
-    <div class="player-selector-title">🎮 Oyuncu Sayısı Vurgulayıcı:</div>
+    <div class="player-selector-title">Oyuncu Sayısı:</div>
     <div class="player-buttons-wrapper">
-      <button class="player-btn" onclick="highlightPlayerCount(5, this)">5 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(6, this)">6 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(7, this)">7 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(8, this)">8 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(9, this)">9 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(10, this)">10 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(11, this)">11 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(12, this)">12 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(13, this)">13 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(14, this)">14 Kişi</button>
-      <button class="player-btn" onclick="highlightPlayerCount(15, this)">15+ Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(5, this)">5 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(6, this)">6 Kişi</button>
+      <button class="player-btn active" onclick="updatePlayerDistribution(7, this)">7 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(8, this)">8 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(9, this)">9 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(10, this)">10 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(11, this)">11 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(12, this)">12 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(13, this)">13 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(14, this)">14 Kişi</button>
+      <button class="player-btn" onclick="updatePlayerDistribution(15, this)">15+ Kişi</button>
     </div>
 
-    <div class="table-scroll-wrapper">
-      <table class="dist-table" id="distTable">
-        <thead>
-          <tr>
-            <th>Oyuncular</th>
-            <th data-count="5">5</th>
-            <th data-count="6">6</th>
-            <th data-count="7">7</th>
-            <th data-count="8">8</th>
-            <th data-count="9">9</th>
-            <th data-count="10">10</th>
-            <th data-count="11">11</th>
-            <th data-count="12">12</th>
-            <th data-count="13">13</th>
-            <th data-count="14">14</th>
-            <th data-count="15">15+</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr class="dist-row-townsfolk">
-            <td>Kasabalılar</td>
-            <td data-count="5">3</td><td data-count="6">3</td><td data-count="7">5</td><td data-count="8">5</td><td data-count="9">5</td><td data-count="10">7</td><td data-count="11">7</td><td data-count="12">7</td><td data-count="13">9</td><td data-count="14">9</td><td data-count="15">9</td>
-          </tr>
-          <tr class="dist-row-outsider">
-            <td>Yabancılar</td>
-            <td data-count="5">0</td><td data-count="6">1</td><td data-count="7">0</td><td data-count="8">1</td><td data-count="9">2</td><td data-count="10">0</td><td data-count="11">1</td><td data-count="12">2</td><td data-count="13">0</td><td data-count="14">1</td><td data-count="15">2</td>
-          </tr>
-          <tr class="dist-row-minion">
-            <td>Minyonlar</td>
-            <td data-count="5">1</td><td data-count="6">1</td><td data-count="7">1</td><td data-count="8">1</td><td data-count="9">1</td><td data-count="10">2</td><td data-count="11">2</td><td data-count="12">2</td><td data-count="13">3</td><td data-count="14">3</td><td data-count="15">3</td>
-          </tr>
-          <tr class="dist-row-demon">
-            <td>İblisler</td>
-            <td data-count="5">1</td><td data-count="6">1</td><td data-count="7">1</td><td data-count="8">1</td><td data-count="9">1</td><td data-count="10">1</td><td data-count="11">1</td><td data-count="12">1</td><td data-count="13">1</td><td data-count="14">1</td><td data-count="15">1</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="dist-cards-grid">
+      <div class="dist-card-item dist-townsfolk">
+        <span class="dist-card-label">Kasabalılar</span>
+        <span class="dist-card-val" id="val-townsfolk">5</span>
+      </div>
+      <div class="dist-card-item dist-outsider">
+        <span class="dist-card-label">Yabancılar</span>
+        <span class="dist-card-val" id="val-outsider">0</span>
+      </div>
+      <div class="dist-card-item dist-minion">
+        <span class="dist-card-label">Minyonlar</span>
+        <span class="dist-card-val" id="val-minion">1</span>
+      </div>
+      <div class="dist-card-item dist-demon">
+        <span class="dist-card-label">İblisler</span>
+        <span class="dist-card-val" id="val-demon">1</span>
+      </div>
     </div>
   </div>
 
@@ -714,6 +678,21 @@
   <script>
     const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+    // Sabit Oyuncu Sayısı Dağılım Verileri
+    const DISTRIBUTION_DATA = {
+      5:  { townsfolk: 3, outsider: 0, minion: 1, demon: 1 },
+      6:  { townsfolk: 3, outsider: 1, minion: 1, demon: 1 },
+      7:  { townsfolk: 5, outsider: 0, minion: 1, demon: 1 },
+      8:  { townsfolk: 5, outsider: 1, minion: 1, demon: 1 },
+      9:  { townsfolk: 5, outsider: 2, minion: 1, demon: 1 },
+      10: { townsfolk: 7, outsider: 0, minion: 2, demon: 1 },
+      11: { townsfolk: 7, outsider: 1, minion: 2, demon: 1 },
+      12: { townsfolk: 7, outsider: 2, minion: 2, demon: 1 },
+      13: { townsfolk: 9, outsider: 0, minion: 3, demon: 1 },
+      14: { townsfolk: 9, outsider: 1, minion: 3, demon: 1 },
+      15: { townsfolk: 9, outsider: 2, minion: 3, demon: 1 }
+    };
 
     let allRolesData = [];
 
@@ -843,22 +822,25 @@
       });
     }
 
-    function highlightPlayerCount(count, btnElement) {
-      // 1. Tüm vurguları kaldır
-      document.querySelectorAll('[data-count]').forEach(el => el.classList.remove('highlight-col'));
+    function updatePlayerDistribution(count, btnElement) {
+      // 1. Buton aktiflik sınıflarını güncelle
       document.querySelectorAll('.player-btn').forEach(btn => btn.classList.remove('active'));
-
-      // 2. Seçili sütunu vurgula (15 ve üzeri durumunu kontrol et)
-      const targetCount = count >= 15 ? '15' : count.toString();
-      document.querySelectorAll(`[data-count="${targetCount}"]`).forEach(el => el.classList.add('highlight-col'));
-
-      // 3. Buton aktifliğini ayarla
+      
+      const targetCount = count >= 15 ? 15 : count;
+      
       if (btnElement) {
         btnElement.classList.add('active');
       } else {
         const matchingBtn = Array.from(document.querySelectorAll('.player-btn')).find(b => b.textContent.includes(targetCount));
         if (matchingBtn) matchingBtn.classList.add('active');
       }
+
+      // 2. Kartlardaki sayısal değerleri güncelle
+      const dist = DISTRIBUTION_DATA[targetCount] || DISTRIBUTION_DATA[7];
+      document.getElementById('val-townsfolk').innerText = dist.townsfolk;
+      document.getElementById('val-outsider').innerText = dist.outsider;
+      document.getElementById('val-minion').innerText = dist.minion;
+      document.getElementById('val-demon').innerText = dist.demon;
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
@@ -876,7 +858,7 @@
       }
 
       if (initialPlayers) {
-        highlightPlayerCount(parseInt(initialPlayers));
+        updatePlayerDistribution(parseInt(initialPlayers));
       }
     });
 
@@ -918,7 +900,7 @@
       const container = document.getElementById('content');
       let html = '';
 
-      // 1. Eksik Çeviriler Kutusu (En Üstte)
+      // 1. Eksik Çeviriler Kutusu
       if (missingIds.length > 0) {
         html += `
           <div class="missing-roles-box">
