@@ -181,46 +181,7 @@
       background: #c5a028;
     }
 
-    /* Arama Çubuğu Stili */
-    .search-container {
-      position: relative;
-      margin-bottom: 20px;
-      display: none;
-    }
-
-    .search-container input {
-      width: 100%;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 12px 40px 12px 14px;
-      color: #ffffff;
-      font-size: 0.9rem;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .search-container input:focus {
-      border-color: var(--accent-gold);
-      box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
-    }
-
-    .search-container input::placeholder {
-      color: #71717a;
-    }
-
-    .search-icon {
-      position: absolute;
-      right: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.9rem;
-      opacity: 0.6;
-      pointer-events: none;
-    }
-
-    /* Rol Dağılım Tablosu */
+    /* Rol Dağılım Tablosu & Sayı Seçici */
     #distribution-container {
       display: none;
       margin-bottom: 20px;
@@ -228,6 +189,49 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 14px;
+    }
+
+    .player-selector-title {
+      font-size: 0.8rem;
+      color: var(--accent-gold);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .player-buttons-wrapper {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+
+    .player-btn {
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .player-btn:hover {
+      border-color: var(--accent-gold);
+      color: #fff;
+    }
+
+    .player-btn.active {
+      background: var(--accent-gold);
+      color: #0f0f11;
+      border-color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .table-scroll-wrapper {
       overflow-x: auto;
     }
 
@@ -242,6 +246,7 @@
     .dist-table th, .dist-table td {
       border: 1px solid var(--border-color);
       padding: 8px 4px;
+      transition: background 0.2s ease;
     }
 
     .dist-table th {
@@ -254,6 +259,15 @@
       text-align: left;
       font-weight: 700;
       padding-left: 8px;
+    }
+
+    /* Vurgulanan Sütun Stili */
+    .dist-table th.highlight-col,
+    .dist-table td.highlight-col {
+      background: rgba(212, 175, 55, 0.25) !important;
+      border-left: 2px solid var(--accent-gold) !important;
+      border-right: 2px solid var(--accent-gold) !important;
+      font-weight: bold;
     }
 
     .dist-row-townsfolk { color: #54a0ff; }
@@ -333,6 +347,45 @@
 
     .notes-textarea:focus {
       border-color: var(--accent-gold);
+    }
+
+    /* Arama Çubuğu */
+    .search-container {
+      position: relative;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .search-container input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 40px 12px 14px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-container input:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+    }
+
+    .search-container input::placeholder {
+      color: #71717a;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      opacity: 0.6;
+      pointer-events: none;
     }
 
     /* Takım Başlıkları */
@@ -566,34 +619,61 @@
     </div>
   </div>
 
-  <!-- Rol Dağılım Tablosu -->
+  <!-- Rol Dağılım Tablosu & Sayı Seçici -->
   <div id="distribution-container">
-    <table class="dist-table">
-      <thead>
-        <tr>
-          <th>Oyuncular</th>
-          <th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15+</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="dist-row-townsfolk">
-          <td>Kasabalılar</td>
-          <td>3</td><td>3</td><td>5</td><td>5</td><td>5</td><td>7</td><td>7</td><td>7</td><td>9</td><td>9</td><td>9</td>
-        </tr>
-        <tr class="dist-row-outsider">
-          <td>Yabancılar</td>
-          <td>0</td><td>1</td><td>0</td><td>1</td><td>2</td><td>0</td><td>1</td><td>2</td><td>0</td><td>1</td><td>2</td>
-        </tr>
-        <tr class="dist-row-minion">
-          <td>Minyonlar</td>
-          <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>2</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td>
-        </tr>
-        <tr class="dist-row-demon">
-          <td>İblisler</td>
-          <td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="player-selector-title">🎮 Oyuncu Sayısı Vurgulayıcı:</div>
+    <div class="player-buttons-wrapper">
+      <button class="player-btn" onclick="highlightPlayerCount(5, this)">5 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(6, this)">6 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(7, this)">7 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(8, this)">8 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(9, this)">9 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(10, this)">10 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(11, this)">11 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(12, this)">12 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(13, this)">13 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(14, this)">14 Kişi</button>
+      <button class="player-btn" onclick="highlightPlayerCount(15, this)">15+ Kişi</button>
+    </div>
+
+    <div class="table-scroll-wrapper">
+      <table class="dist-table" id="distTable">
+        <thead>
+          <tr>
+            <th>Oyuncular</th>
+            <th data-count="5">5</th>
+            <th data-count="6">6</th>
+            <th data-count="7">7</th>
+            <th data-count="8">8</th>
+            <th data-count="9">9</th>
+            <th data-count="10">10</th>
+            <th data-count="11">11</th>
+            <th data-count="12">12</th>
+            <th data-count="13">13</th>
+            <th data-count="14">14</th>
+            <th data-count="15">15+</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="dist-row-townsfolk">
+            <td>Kasabalılar</td>
+            <td data-count="5">3</td><td data-count="6">3</td><td data-count="7">5</td><td data-count="8">5</td><td data-count="9">5</td><td data-count="10">7</td><td data-count="11">7</td><td data-count="12">7</td><td data-count="13">9</td><td data-count="14">9</td><td data-count="15">9</td>
+          </tr>
+          <tr class="dist-row-outsider">
+            <td>Yabancılar</td>
+            <td data-count="5">0</td><td data-count="6">1</td><td data-count="7">0</td><td data-count="8">1</td><td data-count="9">2</td><td data-count="10">0</td><td data-count="11">1</td><td data-count="12">2</td><td data-count="13">0</td><td data-count="14">1</td><td data-count="15">2</td>
+          </tr>
+          <tr class="dist-row-minion">
+            <td>Minyonlar</td>
+            <td data-count="5">1</td><td data-count="6">1</td><td data-count="7">1</td><td data-count="8">1</td><td data-count="9">1</td><td data-count="10">2</td><td data-count="11">2</td><td data-count="12">2</td><td data-count="13">3</td><td data-count="14">3</td><td data-count="15">3</td>
+          </tr>
+          <tr class="dist-row-demon">
+            <td>İblisler</td>
+            <td data-count="5">1</td><td data-count="6">1</td><td data-count="7">1</td><td data-count="8">1</td><td data-count="9">1</td><td data-count="10">1</td><td data-count="11">1</td><td data-count="12">1</td><td data-count="13">1</td><td data-count="14">1</td><td data-count="15">1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Oyuncu Not Alma Alanı -->
@@ -763,17 +843,40 @@
       });
     }
 
+    function highlightPlayerCount(count, btnElement) {
+      // 1. Tüm vurguları kaldır
+      document.querySelectorAll('[data-count]').forEach(el => el.classList.remove('highlight-col'));
+      document.querySelectorAll('.player-btn').forEach(btn => btn.classList.remove('active'));
+
+      // 2. Seçili sütunu vurgula (15 ve üzeri durumunu kontrol et)
+      const targetCount = count >= 15 ? '15' : count.toString();
+      document.querySelectorAll(`[data-count="${targetCount}"]`).forEach(el => el.classList.add('highlight-col'));
+
+      // 3. Buton aktifliğini ayarla
+      if (btnElement) {
+        btnElement.classList.add('active');
+      } else {
+        const matchingBtn = Array.from(document.querySelectorAll('.player-btn')).find(b => b.textContent.includes(targetCount));
+        if (matchingBtn) matchingBtn.classList.add('active');
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       loadSavedNotes();
 
       const urlParams = new URLSearchParams(window.location.search);
       const initialChars = urlParams.get('characters');
+      const initialPlayers = urlParams.get('players');
 
       if (initialChars) {
         const charIds = await extractCharactersFromUrl(initialChars);
         if (charIds.length > 0) {
           loadAndRender(charIds);
         }
+      }
+
+      if (initialPlayers) {
+        highlightPlayerCount(parseInt(initialPlayers));
       }
     });
 
