@@ -195,16 +195,24 @@
       font-size: 0.85rem;
       color: var(--accent-gold);
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      text-align: center;
     }
 
-    .player-buttons-wrapper {
+    /* Sabit, 2 Satırlı, Ortalanmış Grid Düzeni */
+    .player-buttons-grid {
       display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .player-btn-row {
+      display: flex;
+      justify-content: center;
       gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-      -webkit-overflow-scrolling: touch;
+      width: 100%;
     }
 
     .player-btn {
@@ -212,11 +220,13 @@
       border: 1px solid var(--border-color);
       color: var(--text-muted);
       border-radius: 6px;
-      padding: 6px 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
+      padding: 8px 0;
+      flex: 1;
+      max-width: 55px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
       cursor: pointer;
-      white-space: nowrap;
       transition: all 0.2s ease;
     }
 
@@ -603,21 +613,25 @@
     </div>
   </div>
 
-  <!-- Mobilde Derli Toplu Oyuncu Dağılım Kartı -->
+  <!-- Mobilde Derli Toplu Oyuncu Dağılım Kartı (Ortalanmış ve Sabit) -->
   <div id="distribution-container">
     <div class="player-selector-title">Oyuncu Sayısı:</div>
-    <div class="player-buttons-wrapper">
-      <button class="player-btn" onclick="updatePlayerDistribution(5, this)">5 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(6, this)">6 Kişi</button>
-      <button class="player-btn active" onclick="updatePlayerDistribution(7, this)">7 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(8, this)">8 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(9, this)">9 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(10, this)">10 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(11, this)">11 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(12, this)">12 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(13, this)">13 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(14, this)">14 Kişi</button>
-      <button class="player-btn" onclick="updatePlayerDistribution(15, this)">15+ Kişi</button>
+    <div class="player-buttons-grid">
+      <div class="player-btn-row">
+        <button class="player-btn" onclick="updatePlayerDistribution(5, this)">5</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(6, this)">6</button>
+        <button class="player-btn active" onclick="updatePlayerDistribution(7, this)">7</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(8, this)">8</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(9, this)">9</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(10, this)">10</button>
+      </div>
+      <div class="player-btn-row">
+        <button class="player-btn" onclick="updatePlayerDistribution(11, this)">11</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(12, this)">12</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(13, this)">13</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(14, this)">14</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(15, this)">15+</button>
+      </div>
     </div>
 
     <div class="dist-cards-grid">
@@ -831,7 +845,7 @@
       if (btnElement) {
         btnElement.classList.add('active');
       } else {
-        const matchingBtn = Array.from(document.querySelectorAll('.player-btn')).find(b => b.textContent.includes(targetCount));
+        const matchingBtn = Array.from(document.querySelectorAll('.player-btn')).find(b => b.textContent.trim() === (targetCount === 15 ? '15+' : targetCount.toString()));
         if (matchingBtn) matchingBtn.classList.add('active');
       }
 
