@@ -181,6 +181,45 @@
       background: #c5a028;
     }
 
+    /* Arama Çubuğu Stili */
+    .search-container {
+      position: relative;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .search-container input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 40px 12px 14px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-container input:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+    }
+
+    .search-container input::placeholder {
+      color: #71717a;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
     /* Rol Dağılım Tablosu */
     #distribution-container {
       display: none;
@@ -569,6 +608,17 @@
     </div>
   </div>
 
+  <!-- Arama Çubuğu -->
+  <div class="search-container" id="searchContainer">
+    <input 
+      type="text" 
+      id="roleSearchInput" 
+      placeholder="Karakter veya yetenek ara..." 
+      oninput="filterRoles()"
+    />
+    <span class="search-icon">🔍</span>
+  </div>
+
   <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
   <div id="content">
     <div id="emptyState" class="empty-state">
@@ -689,6 +739,30 @@
       content.classList.toggle('hidden');
     }
 
+    function filterRoles() {
+      const query = document.getElementById('roleSearchInput').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('#content .card');
+      const groups = document.querySelectorAll('#content .team-group, #content .collapsible-group');
+
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      groups.forEach(group => {
+        const visibleCards = group.querySelectorAll('.card[style="display: block;"], .card:not([style*="display: none"])');
+        if (visibleCards.length === 0 && query !== '') {
+          group.style.display = 'none';
+        } else {
+          group.style.display = 'block';
+        }
+      });
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       loadSavedNotes();
 
@@ -711,6 +785,7 @@
       document.getElementById('content').innerHTML = '';
       document.getElementById('distribution-container').style.display = 'none';
       document.getElementById('notesSection').style.display = 'none';
+      document.getElementById('searchContainer').style.display = 'none';
       document.getElementById('qrcode-container').style.display = 'none';
 
       const fetchPromise = allRolesData.length > 0 
@@ -831,6 +906,7 @@
       
       document.getElementById('distribution-container').style.display = 'block';
       document.getElementById('notesSection').style.display = 'block';
+      document.getElementById('searchContainer').style.display = 'block';
       document.getElementById('qrcode-container').style.display = 'block';
       generateQRCode();
     }
