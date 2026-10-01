@@ -44,6 +44,12 @@
       border-bottom: 1px solid var(--border-color);
       margin-bottom: 16px;
     }
+
+    header a.header-link {
+      text-decoration: none;
+      color: inherit;
+      display: inline-block;
+    }
     
     header img.logo {
       max-width: 130px;
@@ -56,6 +62,21 @@
       font-size: 1.4rem;
       color: var(--accent-gold);
       letter-spacing: 1px;
+    }
+
+    .header-subtext {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .header-subtext strong {
+      color: var(--accent-gold);
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      display: block;
+      margin-bottom: 2px;
     }
 
     /* Vurgulu Sosyal Medya Kartı */
@@ -199,7 +220,6 @@
       text-align: center;
     }
 
-    /* Sabit, 2 Satırlı, Ortalanmış Grid Düzeni */
     .player-buttons-grid {
       display: flex;
       flex-direction: column;
@@ -538,6 +558,7 @@
       font-family: monospace;
     }
 
+    /* QR Kod Alanı ve Linki Kopyala Butonu */
     #qrcode-container {
       margin-top: 25px;
       padding: 20px;
@@ -562,7 +583,27 @@
       background: #ffffff;
       border-radius: 8px;
       width: fit-content;
-      margin: 0 auto;
+      margin: 0 auto 16px auto;
+    }
+
+    .copy-link-btn {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-link-btn:hover {
+      background: var(--accent-gold);
+      color: #0f0f11;
     }
 
     .empty-state {
@@ -577,8 +618,14 @@
 <body>
 
   <header>
-    <img src="logo.png" alt="Tavern Games" class="logo" onerror="this.style.display='none'">
-    <h1>Tavern Games</h1>
+    <a href="https://flameoffeanor.github.io/taverngames/" class="header-link">
+      <img src="logo.png" alt="Tavern Games" class="logo" onerror="this.style.display='none'">
+      <h1>Tavern Games</h1>
+    </a>
+    <div class="header-subtext">
+      <strong>Blood on the Clocktower</strong>
+      Kasabamıza hoş geldiniz! İyi eğlenceler 😈
+    </div>
   </header>
 
   <!-- Vurgulu Sosyal Medya Kartı -->
@@ -613,7 +660,7 @@
     </div>
   </div>
 
-  <!-- Mobilde Derli Toplu Oyuncu Dağılım Kartı (Ortalanmış ve Sabit) -->
+  <!-- Mobilde Derli Toplu Oyuncu Dağılım Kartı -->
   <div id="distribution-container">
     <div class="player-selector-title">Oyuncu Sayısı:</div>
     <div class="player-buttons-grid">
@@ -687,6 +734,7 @@
   <div id="qrcode-container">
     <h3>Oyuncular İçin QR Kod</h3>
     <div id="qrcode"></div>
+    <button class="copy-link-btn" id="copyBtn" onclick="copyCurrentUrl()">📋 Linki Kopyala</button>
   </div>
 
   <script>
@@ -837,7 +885,6 @@
     }
 
     function updatePlayerDistribution(count, btnElement) {
-      // 1. Buton aktiflik sınıflarını güncelle
       document.querySelectorAll('.player-btn').forEach(btn => btn.classList.remove('active'));
       
       const targetCount = count >= 15 ? 15 : count;
@@ -849,12 +896,24 @@
         if (matchingBtn) matchingBtn.classList.add('active');
       }
 
-      // 2. Kartlardaki sayısal değerleri güncelle
       const dist = DISTRIBUTION_DATA[targetCount] || DISTRIBUTION_DATA[7];
       document.getElementById('val-townsfolk').innerText = dist.townsfolk;
       document.getElementById('val-outsider').innerText = dist.outsider;
       document.getElementById('val-minion').innerText = dist.minion;
       document.getElementById('val-demon').innerText = dist.demon;
+    }
+
+    function copyCurrentUrl() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Kopyalandı!';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+        }, 2000);
+      }).catch(err => {
+        console.error('Kopyalama hatası:', err);
+      });
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
