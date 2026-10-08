@@ -444,8 +444,11 @@
       font-size: 0.88rem;
       line-height: 1.45;
       color: var(--text-muted);
-      white-space: pre-line; /* Alt+Enter paragraf desteği */
+      white-space: pre-line;
     }
+
+    .reminder-item-ability b, .card-ability b { color: #ffffff; font-weight: 700; }
+    .reminder-item-ability i, .card-ability i { font-style: italic; color: #d1d1d6; }
 
     /* Takım Başlıkları */
     .team-group { margin-bottom: 24px; }
@@ -567,7 +570,7 @@
       font-size: 0.9rem;
       line-height: 1.45;
       color: var(--text-muted);
-      white-space: pre-line; /* Alt+Enter paragraf desteği */
+      white-space: pre-line;
     }
 
     /* Eksik Roller Alanı Stili */
@@ -853,8 +856,9 @@
       }
     }
 
+    // Tırnak işaretlerini güvenle ayrıştıran gelişmiş CSV Okuyucu
     function parseCSV(text) {
-      const lines = text.split('\n');
+      const lines = text.split(/\r\n|\n/);
       const result = [];
       if (lines.length === 0) return result;
 
@@ -866,9 +870,15 @@
         let insideQuote = false;
         let entry = '';
 
-        for (let char of lines[i]) {
+        for (let j = 0; j < lines[i].length; j++) {
+          const char = lines[i][j];
           if (char === '"') {
-            insideQuote = !insideQuote;
+            if (insideQuote && lines[i][j + 1] === '"') {
+              entry += '"';
+              j++;
+            } else {
+              insideQuote = !insideQuote;
+            }
           } else if (char === ',' && !insideQuote) {
             currentline.push(entry.trim().replace(/^"|"$/g, ''));
             entry = '';
@@ -907,7 +917,7 @@
 
     function filterRoles() {
       const query = document.getElementById('roleSearchInput').value.toLowerCase().trim();
-      const cards = document.querySelectorAll('#content .card');
+      const cards = document.querySelectorAll('#content .card, #content .reminder-single-card');
       const groups = document.querySelectorAll('#content .team-group, #content .collapsible-group');
 
       cards.forEach(card => {
@@ -1015,8 +1025,8 @@
 
       const filteredRoles = allRolesData.filter(r => r.id && cleanSelectedIds.includes(cleanId(r.id)));
 
-      // Excel'deki Hatırlatmalar Grubunu Çekme (team = hatirlatmalar / hatırlatmalar)
-      const reminders = allRolesData.filter(r => r.team && cleanId(r.team) === 'hatirlatmalar');
+      // Esnek Hatırlatma Algılama
+      const reminders = allRolesData.filter(r => r.team && cleanId(r.team).includes('hatirlat'));
 
       const container = document.getElementById('content');
       let html = '';
@@ -1038,7 +1048,7 @@
         `;
       }
 
-      // 2. Dinamik Hatırlatmalar Kartı (Tek Kart Halinde)
+      // 2. Dinamik Hatırlatmalar Kartı
       if (reminders.length > 0) {
         html += `
           <div class="reminder-single-card">
@@ -1068,8 +1078,7 @@
         });
 
         for (const [teamKey, group] of Object.entries(groups)) {
-          // Hatırlatmaları grup kartı olarak ayrıca basmıyoruz
-          if (cleanId(teamKey) === 'hatirlatmalar') continue;
+          if (cleanId(teamKey).includes('hatirlat')) continue;
 
           const titleLower = (group.title || '').toLowerCase();
           const isCollapsible = teamKey.includes('travel') || titleLower.includes('gezgin') || teamKey.includes('fable');
