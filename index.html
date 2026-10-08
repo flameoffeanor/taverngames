@@ -402,6 +402,51 @@
       pointer-events: none;
     }
 
+    /* Dinamik Hatırlatmalar Özel Kartı */
+    .reminder-single-card {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-gold);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.05);
+    }
+
+    .reminder-single-header {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reminder-item {
+      margin-bottom: 12px;
+    }
+
+    .reminder-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .reminder-item-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .reminder-item-ability {
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+      white-space: pre-line; /* Alt+Enter paragraf desteği */
+    }
+
     /* Takım Başlıkları */
     .team-group { margin-bottom: 24px; }
 
@@ -522,6 +567,7 @@
       font-size: 0.9rem;
       line-height: 1.45;
       color: var(--text-muted);
+      white-space: pre-line; /* Alt+Enter paragraf desteği */
     }
 
     /* Eksik Roller Alanı Stili */
@@ -741,7 +787,6 @@
     const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
     const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 
-    // Sabit Oyuncu Sayısı Dağılım Verileri
     const DISTRIBUTION_DATA = {
       5:  { townsfolk: 3, outsider: 0, minion: 1, demon: 1 },
       6:  { townsfolk: 3, outsider: 1, minion: 1, demon: 1 },
@@ -970,6 +1015,9 @@
 
       const filteredRoles = allRolesData.filter(r => r.id && cleanSelectedIds.includes(cleanId(r.id)));
 
+      // Excel'deki Hatırlatmalar Grubunu Çekme (team = hatirlatmalar / hatırlatmalar)
+      const reminders = allRolesData.filter(r => r.team && cleanId(r.team) === 'hatirlatmalar');
+
       const container = document.getElementById('content');
       let html = '';
 
@@ -990,7 +1038,22 @@
         `;
       }
 
-      // 2. Karakter Grupları ve Kartları
+      // 2. Dinamik Hatırlatmalar Kartı (Tek Kart Halinde)
+      if (reminders.length > 0) {
+        html += `
+          <div class="reminder-single-card">
+            <div class="reminder-single-header">📌 Hatırlatmalar</div>
+            ${reminders.map(rem => `
+              <div class="reminder-item">
+                <div class="reminder-item-title">${rem.name}</div>
+                <div class="reminder-item-ability">${rem.ability}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // 3. Karakter Grupları ve Kartları
       if (filteredRoles.length > 0) {
         const groups = {};
         filteredRoles.forEach(role => {
@@ -1005,6 +1068,9 @@
         });
 
         for (const [teamKey, group] of Object.entries(groups)) {
+          // Hatırlatmaları grup kartı olarak ayrıca basmıyoruz
+          if (cleanId(teamKey) === 'hatirlatmalar') continue;
+
           const titleLower = (group.title || '').toLowerCase();
           const isCollapsible = teamKey.includes('travel') || titleLower.includes('gezgin') || teamKey.includes('fable');
 
@@ -1056,7 +1122,7 @@
         }
       }
 
-      if (filteredRoles.length === 0 && missingIds.length === 0) {
+      if (filteredRoles.length === 0 && missingIds.length === 0 && reminders.length === 0) {
         html = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
       }
 
