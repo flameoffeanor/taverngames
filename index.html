@@ -96,7 +96,6 @@
     .input-group {
       display: flex;
       gap: 10px;
-      margin-bottom: 15px;
     }
     .input-group input {
       flex: 1;
@@ -123,22 +122,23 @@
     }
     .btn-submit:hover { background: var(--gold-hover); }
 
-    /* Script Butonları Alanı */
     .scripts-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 15px;
+      margin-top: 20px;
       padding-top: 15px;
       border-top: 1px solid var(--card-border);
     }
     .scripts-title {
       font-size: 0.85rem;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--gold-primary);
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 5px;
+      margin-bottom: 12px;
+    }
+    .scripts-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     .btn-script {
       background: #1c202a;
@@ -167,7 +167,6 @@
       opacity: 0.6;
     }
 
-    /* Gizli Rol Listesi Görünümü */
     #role-list-view { display: none; }
     
     .view-header {
@@ -244,8 +243,9 @@
 
     .loading-spinner {
       text-align: center;
-      padding: 20px;
+      padding: 15px;
       color: var(--gold-primary);
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -258,7 +258,7 @@
 
   <div class="container">
     
-    <!-- ANA SAYFA / SCRIPT SEÇİM EKRANI -->
+    <!-- ANA SAYFA -->
     <div id="home-view">
       
       <div class="social-links">
@@ -285,9 +285,9 @@
         </div>
 
         <div class="scripts-container">
-          <div class="scripts-title">Hazır Scriptler</div>
+          <div class="scripts-title">HAZIR SCRİPTLER</div>
           <div id="scripts-list-loading" class="loading-spinner">Scriptler yükleniyor...</div>
-          <div id="scripts-buttons-group"></div>
+          <div id="scripts-buttons-group" class="scripts-grid"></div>
         </div>
       </div>
 
@@ -308,21 +308,18 @@
   </div>
 
   <script>
-    // Google Sheets Yapılandırması
     const SHEETS_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
-    const ROLES_GID = '0'; // Karakterler sekmesi
-    const SCRIPTS_GID = '1395107313'; // Scripts sekmesi
+    const ROLES_GID = '0';
+    const SCRIPTS_GID = '1395107313';
 
     let allRolesDatabase = {};
     let currentScriptRoles = [];
 
-    // Başlangıçta Verileri Yükle
     window.addEventListener('DOMContentLoaded', async () => {
       await fetchRolesDatabase();
       await fetchScriptsList();
     });
 
-    // 1. Google Sheets'ten Tüm Karakter Veritabanını Çek
     async function fetchRolesDatabase() {
       const url = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&gid=${ROLES_GID}`;
       try {
@@ -343,11 +340,10 @@
           }
         });
       } catch (err) {
-        console.error("Karakter veritabanı yüklenirken hata:", err);
+        console.error("Karakter veritabanı hatası:", err);
       }
     }
 
-    // 2. Google Sheets'ten Script Listesini Çek ve Butonları Oluştur
     async function fetchScriptsList() {
       const url = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&gid=${SCRIPTS_GID}`;
       const loadingEl = document.getElementById('scripts-list-loading');
@@ -362,10 +358,11 @@
         groupEl.innerHTML = '';
 
         rows.forEach(row => {
-          const name = row.c[0]?.v;
-          const jsonContent = row.c[1]?.v;
+          const name = row.c[0]?.v?.toString().trim();
+          const jsonContent = row.c[1]?.v?.toString().trim();
 
-          if (name && jsonContent) {
+          // Sadece başlık olmayan geçerli verileri ekle
+          if (name && jsonContent && name.toLowerCase() !== 'script_name') {
             const btn = document.createElement('button');
             btn.className = 'btn-script';
             btn.innerText = name;
@@ -376,18 +373,17 @@
 
         loadingEl.style.display = 'none';
       } catch (err) {
-        console.error("Scriptler yüklenirken hata:", err);
+        console.error("Script listesi hatası:", err);
         loadingEl.innerText = "Scriptler yüklenemedi.";
       }
     }
 
-    // Script İçeriğini İşle ve Rol Sayfasına Geç
     function loadScriptData(scriptName, rawData) {
       document.getElementById('current-script-name').innerText = scriptName;
       let roleIds = [];
 
       try {
-        if (rawData.trim().startsWith('[')) {
+        if (rawData.startsWith('[')) {
           const parsed = JSON.parse(rawData);
           roleIds = parsed
             .map(item => typeof item === 'string' ? item : item.id)
@@ -409,25 +405,23 @@
       window.scrollTo(0, 0);
     }
 
-    // Elle Link veya JSON Girildiğinde
     function handleCustomInput() {
       const input = document.getElementById('script-input').value.trim();
       if (!input) return;
       loadScriptData("Özel Script", input);
     }
 
-    // Rolleri Takımlara Göre Ekrana Bas
     function renderRoleList(roles) {
       const container = document.getElementById('roles-container');
       container.innerHTML = '';
 
       const teamsOrder = [
-        { id: 'townsfolk', title: 'Köylüler (Townsfolk)', class: 'team-townsfolk' },
-        { id: 'outsider', title: 'Yabancılar (Outsiders)', class: 'team-outsider' },
-        { id: 'minion', title: 'Piyonlar (Minions)', class: 'team-minion' },
-        { id: 'demon', title: 'İblisler (Demons)', class: 'team-demon' },
-        { id: 'traveller', title: 'Gezginler (Travellers)', class: 'team-traveller' },
-        { id: 'fabled', title: 'Efsaneviler (Fabled)', class: 'team-fabled' }
+        { id: 'townsfolk', title: 'KÖYLÜLER (TOWNSFOLK)', class: 'team-townsfolk' },
+        { id: 'outsider', title: 'YABANCILAR (OUTSIDERS)', class: 'team-outsider' },
+        { id: 'minion', title: 'PİYONLAR (MINIONS)', class: 'team-minion' },
+        { id: 'demon', title: 'İBLİSLER (DEMONS)', class: 'team-demon' },
+        { id: 'traveller', title: 'GEZGİNLER (TRAVELLERS)', class: 'team-traveller' },
+        { id: 'fabled', title: 'EFSANEVİLER (FABLED)', class: 'team-fabled' }
       ];
 
       teamsOrder.forEach(team => {
@@ -453,7 +447,6 @@
       });
     }
 
-    // Arama / Filtreleme
     function filterRoles() {
       const query = document.getElementById('search-input').value.toLowerCase();
       const filtered = currentScriptRoles.filter(r => 
@@ -462,7 +455,6 @@
       renderRoleList(filtered);
     }
 
-    // Ana Sayfaya Dönüş
     function showHomeView() {
       document.getElementById('role-list-view').style.display = 'none';
       document.getElementById('home-view').style.display = 'block';
