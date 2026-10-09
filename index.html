@@ -225,32 +225,33 @@
     }
 
     .btn-script {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border-color);
-      border-left: 4px solid #c0392b; /* Kırmızı Şerit */
-      color: #ffffff;
-      padding: 14px 16px;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      text-align: left;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid var(--border-color) !important;
+      border-left: 4px solid #c0392b !important;
+      color: #ffffff !important;
+      padding: 14px 16px !important;
+      border-radius: 6px !important;
+      font-size: 0.95rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      text-align: left !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      transition: all 0.2s ease !important;
+      width: 100% !important;
     }
 
     .btn-script:hover {
-      background: rgba(192, 57, 43, 0.15);
-      border-color: #c0392b;
-      transform: translateX(2px);
+      background: rgba(192, 57, 43, 0.15) !important;
+      border-color: #c0392b !important;
+      transform: translateX(2px) !important;
     }
 
     .btn-script::after {
-      content: "➔";
-      font-size: 0.9rem;
-      color: #c0392b;
+      content: "➔" !important;
+      font-size: 0.9rem !important;
+      color: #c0392b !important;
     }
 
     /* Mobilde Derli Toplu Oyuncu Dağılım Kartı */
@@ -834,7 +835,6 @@
 
   <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
   
-  <!-- İçerik Alanı (Eski alt ibare kaldırıldı) -->
   <div id="content"></div>
 
   <div id="qrcode-container">
@@ -888,6 +888,7 @@
           if (name && jsonContent && name.toLowerCase() !== 'script_name') {
             const btn = document.createElement('button');
             btn.className = 'btn-script';
+            btn.setAttribute('style', 'background: rgba(255, 255, 255, 0.03) !important; border: 1px solid #2a2a32 !important; border-left: 4px solid #c0392b !important; color: #ffffff !important; padding: 14px 16px !important; border-radius: 6px !important; font-size: 0.95rem !important; font-weight: 700 !important; cursor: pointer !important; text-align: left !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: all 0.2s ease !important; width: 100% !important;');
             btn.innerText = name;
             btn.onclick = () => {
               document.getElementById('linkInput').value = jsonContent;
