@@ -3,151 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tavern Games - BotC Script & Rol Rehberi</title>
+  <title>Tavern Games - Karakter Referansı</title>
+  <!-- Google Fonts & QR Code Library -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
   <style>
     :root {
-      --bg-dark: #0d0f12;
-      --card-bg: #161920;
-      --card-border: #2a2e39;
-      --gold-primary: #f3c649;
-      --gold-hover: #ffd972;
-      --text-main: #e2e8f0;
-      --text-muted: #94a3b8;
-      --townsfolk-color: #2563eb;
-      --outsider-color: #0284c7;
-      --minion-color: #dc2626;
-      --demon-color: #991b1b;
-      --traveller-color: #7c3aed;
-      --fabled-color: #d97706;
+      --bg-color: #0f0f11;
+      --card-bg: #18181c;
+      --border-color: #2a2a32;
+      --text-main: #e2e2e8;
+      --text-muted: #9a9a9f;
+      --accent-gold: #d4af37;
+      
+      --team-townsfolk: #2980b9;
+      --team-outsider: #16a085;
+      --team-minion: #8e44ad;
+      --team-demon: #c0392b;
+      --team-traveller: #d35400;
+      --team-traveler: #d35400;
+      --team-fables: #f39c12;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: var(--bg-dark);
+      background-color: var(--bg-color);
       color: var(--text-main);
-      line-height: 1.5;
-      padding-bottom: 60px;
+      padding: 16px;
+      max-width: 650px;
+      margin: 0 auto;
     }
 
     header {
       text-align: center;
-      padding: 30px 15px 20px;
-      border-bottom: 1px solid var(--card-border);
-      background: linear-gradient(180deg, #13161c 0%, var(--bg-dark) 100%);
+      padding: 10px 0 16px 0;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 16px;
     }
+
+    header a.header-link {
+      text-decoration: none;
+      color: inherit;
+      display: inline-block;
+    }
+    
+    header img.logo {
+      max-width: 130px;
+      height: auto;
+      margin-bottom: 8px;
+    }
+
     header h1 {
       font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
-      color: var(--gold-primary);
-      letter-spacing: 2px;
-      margin-bottom: 5px;
-      text-transform: uppercase;
+      font-size: 1.4rem;
+      color: var(--accent-gold);
+      letter-spacing: 1px;
     }
-    header p {
+
+    .header-subtext {
+      margin-top: 8px;
+      font-size: 0.85rem;
       color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .header-subtext strong {
+      color: var(--accent-gold);
+      font-family: 'Cinzel', serif;
       font-size: 0.95rem;
+      display: block;
+      margin-bottom: 2px;
     }
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 15px;
+    /* Vurgulu Sosyal Medya Kartı */
+    .social-card {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-gold);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.08);
     }
 
-    .social-links {
+    .social-link-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+    }
+
+    .social-link-item.instagram {
+      border-left: 4px solid #e1306c;
+    }
+
+    .social-link-item.instagram:hover {
+      background: rgba(225, 48, 108, 0.15);
+      border-color: #e1306c;
+    }
+
+    .social-link-item.whatsapp {
+      border-left: 4px solid #25d366;
+    }
+
+    .social-link-item.whatsapp:hover {
+      background: rgba(37, 211, 102, 0.15);
+      border-color: #25d366;
+    }
+
+    .social-icon-btn {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    .social-link-item.instagram .social-icon-btn { fill: #e1306c; }
+    .social-link-item.whatsapp .social-icon-btn { fill: #25d366; }
+
+    .social-text {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .social-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .social-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    /* Link Yapıştırma Alanı */
+    .input-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 20px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      margin: 20px 0;
     }
-    .social-card {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 14px 20px;
-      text-decoration: none;
-      color: var(--text-main);
-      transition: all 0.2s ease;
-    }
-    .social-card:hover {
-      border-color: var(--gold-primary);
-      transform: translateY(-2px);
-    }
-    .social-card.instagram { border-left: 4px solid #e1306c; }
-    .social-card.whatsapp { border-left: 4px solid #25d366; }
-    .social-icon { font-size: 1.5rem; }
-    .social-text h3 { font-size: 1rem; font-weight: 600; }
-    .social-text p { font-size: 0.8rem; color: var(--text-muted); }
 
-    .input-section {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 25px;
-    }
-    .input-group {
-      display: flex;
-      gap: 10px;
-    }
-    .input-group input {
-      flex: 1;
-      background: #090a0c;
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
-      padding: 12px 15px;
-      color: #fff;
-      font-size: 0.95rem;
-    }
-    .input-group input:focus {
-      outline: none;
-      border-color: var(--gold-primary);
-    }
-    .btn-submit {
-      background: var(--gold-primary);
-      color: #000;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      padding: 0 25px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-submit:hover { background: var(--gold-hover); }
-
-    .scripts-container {
-      margin-top: 20px;
-      padding-top: 15px;
-      border-top: 1px solid var(--card-border);
-    }
-    .scripts-title {
+    .input-section label {
       font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--gold-primary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 12px;
+      color: var(--accent-gold);
+      font-weight: 600;
     }
-    .scripts-grid {
+
+    .input-wrapper {
       display: flex;
-      flex-direction: column;
       gap: 8px;
     }
+
+    .input-section input {
+      flex: 1;
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .input-section input:focus {
+      border-color: var(--accent-gold);
+    }
+
+    .input-section button {
+      background: var(--accent-gold);
+      color: #0f0f11;
+      border: none;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .input-section button:hover {
+      background: #c5a028;
+    }
+
+    /* Dynamic Script Buttons */
+    .scripts-container {
+      margin-top: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .scripts-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .scripts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
     .btn-script {
-      background: #1c202a;
-      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
       color: var(--text-main);
-      padding: 12px 18px;
-      border-radius: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 0.88rem;
       font-weight: 600;
-      font-size: 0.95rem;
       cursor: pointer;
       text-align: left;
       display: flex;
@@ -155,96 +239,477 @@
       align-items: center;
       transition: all 0.2s ease;
     }
+
     .btn-script:hover {
-      background: #252a37;
-      border-color: var(--gold-primary);
-      color: var(--gold-primary);
-      transform: translateX(3px);
-    }
-    .btn-script::after {
-      content: "➔";
-      font-size: 0.85rem;
-      opacity: 0.6;
+      background: rgba(212, 175, 55, 0.1);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
     }
 
-    #role-list-view { display: none; }
-    
-    .view-header {
+    .btn-script::after {
+      content: "➔";
+      font-size: 0.8rem;
+      opacity: 0.5;
+    }
+
+    /* Mobilde Derli Toplu Oyuncu Dağılım Kartı */
+    #distribution-container {
+      display: none;
+      margin-bottom: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    .player-selector-title {
+      font-size: 0.85rem;
+      color: var(--accent-gold);
+      font-weight: 700;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .player-buttons-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    .player-btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .player-btn {
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 8px 0;
+      flex: 1;
+      max-width: 55px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .player-btn.active {
+      background: var(--accent-gold);
+      color: #0f0f11;
+      border-color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .dist-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .dist-card-item {
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 20px 0;
-      padding-bottom: 15px;
-      border-bottom: 1px solid var(--card-border);
     }
-    .btn-back {
-      background: transparent;
-      border: 1px solid var(--card-border);
-      color: var(--text-muted);
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
+
+    .dist-card-label {
+      font-size: 0.82rem;
       font-weight: 600;
     }
-    .btn-back:hover { color: #fff; border-color: #fff; }
 
-    .search-box {
+    .dist-card-val {
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: 'Cinzel', serif;
+    }
+
+    .dist-townsfolk { color: #54a0ff; border-left: 3px solid #2980b9; }
+    .dist-outsider { color: #1dd1a1; border-left: 3px solid #16a085; }
+    .dist-minion { color: #be2edd; border-left: 3px solid #8e44ad; }
+    .dist-demon { color: #ff6b6b; border-left: 3px solid #c0392b; }
+
+    /* Oyuncu Not Alma Alanı */
+    .notes-group {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-gold);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .notes-trigger {
+      width: 100%;
+      background: rgba(212, 175, 55, 0.12);
+      border: none;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: var(--accent-gold);
+      font-family: 'Cinzel', serif;
+      font-size: 0.98rem;
+      font-weight: 700;
+      text-align: left;
+      outline: none;
+    }
+
+    .notes-trigger .badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      background: rgba(212, 175, 55, 0.2);
+      color: #fff;
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--accent-gold);
+    }
+
+    .notes-trigger .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+    }
+
+    .notes-trigger.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .notes-content {
+      padding: 12px;
+      display: block;
+    }
+
+    .notes-content.hidden {
+      display: none;
+    }
+
+    .notes-textarea {
+      width: 100%;
+      height: 110px;
+      background: #0f0f11;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      resize: vertical;
+      outline: none;
+    }
+
+    .notes-textarea:focus {
+      border-color: var(--accent-gold);
+    }
+
+    /* Arama Çubuğu */
+    .search-container {
+      position: relative;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .search-container input {
       width: 100%;
       background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 12px 15px;
-      color: #fff;
+      padding: 12px 40px 12px 14px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-container input:focus {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+    }
+
+    .search-container input::placeholder {
+      color: #71717a;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    /* Dinamik Hatırlatmalar Özel Kartı */
+    .reminder-single-card {
+      background: var(--card-bg);
+      border: 1px solid var(--accent-gold);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.05);
+    }
+
+    .reminder-single-header {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .reminder-item {
+      margin-bottom: 12px;
+    }
+
+    .reminder-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .reminder-item-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .reminder-item-ability {
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+      white-space: pre-line;
+    }
+
+    .reminder-item-ability b, .card-ability b { color: #ffffff; font-weight: 700; }
+    .reminder-item-ability i, .card-ability i { font-style: italic; color: #d1d1d6; }
+
+    /* Takım Başlıkları */
+    .team-group { margin-bottom: 24px; }
+
+    .team-header {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .team-townsfolk { background: rgba(41, 128, 185, 0.2); color: #54a0ff; border-left: 4px solid var(--team-townsfolk); }
+    .team-outsider { background: rgba(22, 160, 133, 0.2); color: #1dd1a1; border-left: 4px solid var(--team-outsider); }
+    .team-minion { background: rgba(142, 68, 173, 0.2); color: #be2edd; border-left: 4px solid var(--team-minion); }
+    .team-demon { background: rgba(192, 57, 43, 0.2); color: #ff6b6b; border-left: 4px solid var(--team-demon); }
+    .team-traveller, .team-traveler { background: rgba(211, 84, 0, 0.2); color: #ff9f43; border-left: 4px solid var(--team-traveler); }
+    .team-fables { background: rgba(243, 156, 18, 0.2); color: #feca57; border-left: 4px solid var(--team-fables); }
+
+    /* Gezginler Akordiyon Stili */
+    .collapsible-group {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .collapsible-trigger {
+      width: 100%;
+      background: rgba(211, 84, 0, 0.15);
+      border: none;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      cursor: pointer;
+      color: #ff9f43;
+      font-family: 'Cinzel', serif;
+      text-align: left;
+      outline: none;
+    }
+
+    .collapsible-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .collapsible-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .collapsible-subtext {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: #ffc085;
+      line-height: 1.3;
+    }
+
+    .collapsible-trigger .arrow {
+      transition: transform 0.3s ease;
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    .collapsible-trigger.active .arrow {
+      transform: rotate(180deg);
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      padding: 0 12px;
+    }
+
+    .collapsible-content.open {
+      padding: 12px;
+      max-height: 3000px;
+    }
+
+    /* Kart Yapısı */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .card-header-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .card-icon {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #ffffff;
+    }
+
+    .card-ability {
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: var(--text-muted);
+      white-space: pre-line;
+    }
+
+    /* Eksik Roller Alanı Stili */
+    .missing-roles-box {
+      background: rgba(192, 57, 43, 0.15);
+      border: 1px solid #c0392b;
+      border-radius: 8px;
+      padding: 14px;
       margin-bottom: 20px;
     }
 
-    .team-title {
+    .missing-roles-title {
+      color: #ff6b6b;
       font-family: 'Cinzel', serif;
-      font-size: 1.3rem;
-      margin: 25px 0 12px;
-      padding-bottom: 5px;
-      border-bottom: 2px solid currentColor;
-    }
-    .team-townsfolk { color: var(--townsfolk-color); }
-    .team-outsider { color: var(--outsider-color); }
-    .team-minion { color: var(--minion-color); }
-    .team-demon { color: var(--demon-color); }
-    .team-traveller { color: var(--traveller-color); }
-    .team-fabled { color: var(--fabled-color); }
-
-    .role-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 12px;
-    }
-    .role-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-size: 0.95rem;
+      font-weight: 700;
       margin-bottom: 8px;
     }
-    .role-name {
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-    .role-team-badge {
-      font-size: 0.75rem;
-      padding: 3px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-    .role-ability {
-      font-size: 0.9rem;
-      color: var(--text-muted);
+
+    .missing-roles-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
     }
 
-    .loading-spinner {
+    .missing-tag {
+      background: #c0392b;
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-family: monospace;
+    }
+
+    /* QR Kod Alanı ve Linki Kopyala Butonu */
+    #qrcode-container {
+      margin-top: 25px;
+      padding: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
       text-align: center;
-      padding: 15px;
-      color: var(--gold-primary);
+      display: none;
+    }
+
+    #qrcode-container h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+    }
+
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      padding: 12px;
+      background: #ffffff;
+      border-radius: 8px;
+      width: fit-content;
+      margin: 0 auto 16px auto;
+    }
+
+    .copy-link-btn {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      border-radius: 6px;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .copy-link-btn:hover {
+      background: var(--accent-gold);
+      color: #0f0f11;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-style: italic;
       font-size: 0.9rem;
     }
   </style>
@@ -252,102 +717,162 @@
 <body>
 
   <header>
-    <h1>Tavern Games</h1>
-    <p>Blood on the Clocktower - Kasaba Rehberi</p>
+    <a href="https://taverngames.com.tr/" class="header-link">
+      <img src="logo.png" alt="Tavern Games" class="logo" onerror="this.style.display='none'">
+      <h1>Tavern Games</h1>
+    </a>
+    <div class="header-subtext">
+      <strong>Blood on the Clocktower</strong>
+      Kasabamıza hoş geldiniz! İyi eğlenceler 😈
+    </div>
   </header>
 
-  <div class="container">
-    
-    <!-- ANA SAYFA -->
-    <div id="home-view">
-      
-      <div class="social-links">
-        <a href="https://instagram.com/taverngamesclub" target="_blank" class="social-card instagram">
-          <div class="social-icon">📸</div>
-          <div class="social-text">
-            <h3>Instagram'da Bizi Takip Edin</h3>
-            <p>@taverngamesclub</p>
-          </div>
-        </a>
-        <a href="https://chat.whatsapp.com/YOUR_GROUP_LINK" target="_blank" class="social-card whatsapp">
-          <div class="social-icon">💬</div>
-          <div class="social-text">
-            <h3>WhatsApp Grubumuza Katılın</h3>
-            <p>Oyun duyuruları ve topluluk grubu</p>
-          </div>
-        </a>
+  <!-- Vurgulu Sosyal Medya Kartı -->
+  <div class="social-card">
+    <a href="https://www.instagram.com/taverngamesclub/" target="_blank" rel="noopener noreferrer" class="social-link-item instagram">
+      <svg class="social-icon-btn" viewBox="0 0 24 24">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+      </svg>
+      <div class="social-text">
+        <span class="social-title">Instagram'da Bizi Takip Edin</span>
+        <span class="social-sub">@taverngamesclub</span>
       </div>
+    </a>
 
-      <div class="input-section">
-        <div class="input-group">
-          <input type="text" id="script-input" placeholder="Pocket Grimoire linki veya JSON yapıştırın...">
-          <button class="btn-submit" onclick="handleCustomInput()">Getir</button>
-        </div>
-
-        <div class="scripts-container">
-          <div class="scripts-title">HAZIR SCRİPTLER</div>
-          <div id="scripts-list-loading" class="loading-spinner">Scriptler yükleniyor...</div>
-          <div id="scripts-buttons-group" class="scripts-grid"></div>
-        </div>
+    <a href="https://chat.whatsapp.com/LxsUKB5amFS5B3QGOR2k5r" target="_blank" rel="noopener noreferrer" class="social-link-item whatsapp">
+      <svg class="social-icon-btn" viewBox="0 0 24 24">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+      </svg>
+      <div class="social-text">
+        <span class="social-title">WhatsApp Grubumuza Katılın</span>
+        <span class="social-sub">Oyun duyuruları ve topluluk grubu</span>
       </div>
+    </a>
+  </div>
 
+  <!-- Link Yapıştırma Alanı & Dinamik Butonlar -->
+  <div class="input-section" id="inputSection">
+    <label for="linkInput">Script Linki veya JSON Yapıştırın:</label>
+    <div class="input-wrapper">
+      <input type="text" id="linkInput" placeholder="Pocket Grimoire linki veya JSON..." />
+      <button onclick="processInputLink()">Getir</button>
     </div>
 
-    <!-- ROL LİSTESİ EKRANI -->
-    <div id="role-list-view">
-      <div class="view-header">
-        <button class="btn-back" onclick="showHomeView()">← Ana Menüye Dön</button>
-        <h2 id="current-script-name" style="font-family:'Cinzel', serif; color:var(--gold-primary);">Script</h2>
+    <!-- Dinamik Scriptler -->
+    <div class="scripts-container">
+      <div class="scripts-title">HAZIR SCRİPTLER</div>
+      <div id="scriptsList" class="scripts-list">
+        <div style="font-size: 0.8rem; color: var(--text-muted);">Yükleniyor...</div>
       </div>
+    </div>
+  </div>
 
-      <input type="text" id="search-input" class="search-box" placeholder="Rol ara..." oninput="filterRoles()">
-
-      <div id="roles-container"></div>
+  <!-- Mobilde Derli Toplu Oyuncu Dağılım Kartı -->
+  <div id="distribution-container">
+    <div class="player-selector-title">Oyuncu Sayısı:</div>
+    <div class="player-buttons-grid">
+      <div class="player-btn-row">
+        <button class="player-btn" onclick="updatePlayerDistribution(5, this)">5</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(6, this)">6</button>
+        <button class="player-btn active" onclick="updatePlayerDistribution(7, this)">7</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(8, this)">8</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(9, this)">9</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(10, this)">10</button>
+      </div>
+      <div class="player-btn-row">
+        <button class="player-btn" onclick="updatePlayerDistribution(11, this)">11</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(12, this)">12</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(13, this)">13</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(14, this)">14</button>
+        <button class="player-btn" onclick="updatePlayerDistribution(15, this)">15+</button>
+      </div>
     </div>
 
+    <div class="dist-cards-grid">
+      <div class="dist-card-item dist-townsfolk">
+        <span class="dist-card-label">Kasabalılar</span>
+        <span class="dist-card-val" id="val-townsfolk">5</span>
+      </div>
+      <div class="dist-card-item dist-outsider">
+        <span class="dist-card-label">Yabancılar</span>
+        <span class="dist-card-val" id="val-outsider">0</span>
+      </div>
+      <div class="dist-card-item dist-minion">
+        <span class="dist-card-label">Minyonlar</span>
+        <span class="dist-card-val" id="val-minion">1</span>
+      </div>
+      <div class="dist-card-item dist-demon">
+        <span class="dist-card-label">İblisler</span>
+        <span class="dist-card-val" id="val-demon">1</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Oyuncu Not Alma Alanı -->
+  <div class="notes-group" id="notesSection" style="display: none;">
+    <button class="notes-trigger" onclick="toggleNotes(this)">
+      <span>📝 Oyuncu Notları</span>
+      <span class="badge">Gizlemek / Açmak İçin Tıklayın</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="notes-content" id="notesContent">
+      <textarea class="notes-textarea" id="playerNotes" placeholder="Oyun sırasındaki tahminlerinizi, iddiaları ve notlarınızı buraya yazabilirsiniz (Sayfayı kapatsanız da silinmez)..." oninput="saveNotes()"></textarea>
+    </div>
+  </div>
+
+  <!-- Arama Çubuğu -->
+  <div class="search-container" id="searchContainer">
+    <input 
+      type="text" 
+      id="roleSearchInput" 
+      placeholder="Karakter veya yetenek ara..." 
+      oninput="filterRoles()"
+    />
+    <span class="search-icon">🔍</span>
+  </div>
+
+  <div id="loading" class="empty-state" style="display:none;">Karakter bilgileri yükleniyor...</div>
+  <div id="content">
+    <div id="emptyState" class="empty-state">
+      Lütfen yukarıdaki alana Pocket Grimoire linkini veya Script JSON içeriğini yapıştırıp "Getir" butonuna basınız.
+    </div>
+  </div>
+
+  <div id="qrcode-container">
+    <h3>Oyuncular İçin QR Kod</h3>
+    <div id="qrcode"></div>
+    <button class="copy-link-btn" id="copyBtn" onclick="copyCurrentUrl()">📋 Linki Kopyala</button>
   </div>
 
   <script>
-    const SHEETS_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
-    const ROLES_GID = '0';
+    const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
+    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
     const SCRIPTS_GID = '1395107313';
 
-    let allRolesDatabase = {};
-    let currentScriptRoles = [];
+    const DISTRIBUTION_DATA = {
+      5:  { townsfolk: 3, outsider: 0, minion: 1, demon: 1 },
+      6:  { townsfolk: 3, outsider: 1, minion: 1, demon: 1 },
+      7:  { townsfolk: 5, outsider: 0, minion: 1, demon: 1 },
+      8:  { townsfolk: 5, outsider: 1, minion: 1, demon: 1 },
+      9:  { townsfolk: 5, outsider: 2, minion: 1, demon: 1 },
+      10: { townsfolk: 7, outsider: 0, minion: 2, demon: 1 },
+      11: { townsfolk: 7, outsider: 1, minion: 2, demon: 1 },
+      12: { townsfolk: 7, outsider: 2, minion: 2, demon: 1 },
+      13: { townsfolk: 9, outsider: 0, minion: 3, demon: 1 },
+      14: { townsfolk: 9, outsider: 1, minion: 3, demon: 1 },
+      15: { townsfolk: 9, outsider: 2, minion: 3, demon: 1 }
+    };
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      await fetchRolesDatabase();
-      await fetchScriptsList();
-    });
+    let allRolesData = [];
 
-    async function fetchRolesDatabase() {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&gid=${ROLES_GID}`;
-      try {
-        const res = await fetch(url);
-        const text = await res.text();
-        const json = JSON.parse(text.substring(47, text.length - 2));
-        
-        const rows = json.table.rows;
-        rows.forEach(row => {
-          const id = row.c[0]?.v?.toString().trim().toLowerCase();
-          if (id) {
-            allRolesDatabase[id] = {
-              id: id,
-              name: row.c[1]?.v || id,
-              team: row.c[2]?.v?.toString().trim().toLowerCase() || 'townsfolk',
-              ability: row.c[3]?.v || ''
-            };
-          }
-        });
-      } catch (err) {
-        console.error("Karakter veritabanı hatası:", err);
-      }
+    function cleanId(idStr) {
+      if (!idStr) return '';
+      return idStr.toString().toLowerCase().replace(/[^a-z0-9_]/g, '').trim();
     }
 
     async function fetchScriptsList() {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/gviz/tq?tqx=out:json&gid=${SCRIPTS_GID}`;
-      const loadingEl = document.getElementById('scripts-list-loading');
-      const groupEl = document.getElementById('scripts-buttons-group');
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${SCRIPTS_GID}`;
+      const container = document.getElementById('scriptsList');
 
       try {
         const res = await fetch(url);
@@ -355,110 +880,376 @@
         const json = JSON.parse(text.substring(47, text.length - 2));
         
         const rows = json.table.rows;
-        groupEl.innerHTML = '';
+        container.innerHTML = '';
 
         rows.forEach(row => {
           const name = row.c[0]?.v?.toString().trim();
           const jsonContent = row.c[1]?.v?.toString().trim();
 
-          // Sadece başlık olmayan geçerli verileri ekle
           if (name && jsonContent && name.toLowerCase() !== 'script_name') {
             const btn = document.createElement('button');
             btn.className = 'btn-script';
             btn.innerText = name;
-            btn.onclick = () => loadScriptData(name, jsonContent);
-            groupEl.appendChild(btn);
+            btn.onclick = () => {
+              document.getElementById('linkInput').value = jsonContent;
+              processInputLink();
+            };
+            container.appendChild(btn);
           }
         });
-
-        loadingEl.style.display = 'none';
       } catch (err) {
-        console.error("Script listesi hatası:", err);
-        loadingEl.innerText = "Scriptler yüklenemedi.";
+        console.error("Script listesi çekilirken hata:", err);
+        container.innerHTML = '<div style="font-size: 0.8rem; color: #ff6b6b;">Scriptler yüklenemedi.</div>';
       }
     }
 
-    function loadScriptData(scriptName, rawData) {
-      document.getElementById('current-script-name').innerText = scriptName;
-      let roleIds = [];
+    async function extractCharactersFromUrl(urlStr) {
+      if (!urlStr) return [];
+      const cleanStr = urlStr.trim();
 
-      try {
-        if (rawData.startsWith('[')) {
-          const parsed = JSON.parse(rawData);
-          roleIds = parsed
-            .map(item => typeof item === 'string' ? item : item.id)
-            .filter(id => id && id !== '_meta');
-        } else {
-          roleIds = rawData.split(',').map(id => id.trim().toLowerCase());
+      if (cleanStr.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(cleanStr);
+          if (Array.isArray(parsed)) {
+            return parsed
+              .map(item => typeof item === 'string' ? item : (item && item.id !== '_meta' ? item.id : null))
+              .filter(Boolean)
+              .map(c => cleanId(c));
+          }
+        } catch (e) {
+          console.warn('JSON parsing failed', e);
         }
-      } catch (e) {
-        alert("Script formatı geçersiz!");
-        return;
+      }
+      
+      if (cleanStr.includes('characters=')) {
+        const rawChars = cleanStr.split('characters=')[1].split('&')[0];
+        return decodeURIComponent(rawChars)
+          .split(',')
+          .map(c => cleanId(c))
+          .filter(c => c.length > 0);
       }
 
-      currentScriptRoles = roleIds
-        .map(id => allRolesDatabase[id.toLowerCase()] || { id: id, name: id, team: 'townsfolk', ability: 'Açıklama bulunamadı.' });
-
-      renderRoleList(currentScriptRoles);
-      document.getElementById('home-view').style.display = 'none';
-      document.getElementById('role-list-view').style.display = 'block';
-      window.scrollTo(0, 0);
+      return decodeURIComponent(cleanStr)
+        .split(',')
+        .map(c => cleanId(c))
+        .filter(c => c.length > 0);
     }
 
-    function handleCustomInput() {
-      const input = document.getElementById('script-input').value.trim();
-      if (!input) return;
-      loadScriptData("Özel Script", input);
+    async function processInputLink() {
+      const inputVal = document.getElementById('linkInput').value.trim();
+      if (!inputVal) return;
+
+      const charIds = await extractCharactersFromUrl(inputVal);
+      if (charIds.length > 0) {
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?characters=' + charIds.join(',');
+        window.history.pushState({path: newUrl}, '', newUrl);
+
+        loadAndRender(charIds);
+      }
     }
 
-    function renderRoleList(roles) {
-      const container = document.getElementById('roles-container');
-      container.innerHTML = '';
+    function parseCSV(text) {
+      const lines = text.split(/\r\n|\n/);
+      const result = [];
+      if (lines.length === 0) return result;
 
-      const teamsOrder = [
-        { id: 'townsfolk', title: 'KÖYLÜLER (TOWNSFOLK)', class: 'team-townsfolk' },
-        { id: 'outsider', title: 'YABANCILAR (OUTSIDERS)', class: 'team-outsider' },
-        { id: 'minion', title: 'PİYONLAR (MINIONS)', class: 'team-minion' },
-        { id: 'demon', title: 'İBLİSLER (DEMONS)', class: 'team-demon' },
-        { id: 'traveller', title: 'GEZGİNLER (TRAVELLERS)', class: 'team-traveller' },
-        { id: 'fabled', title: 'EFSANEVİLER (FABLED)', class: 'team-fabled' }
-      ];
+      const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim());
 
-      teamsOrder.forEach(team => {
-        const teamRoles = roles.filter(r => r.team === team.id);
-        if (teamRoles.length > 0) {
-          const titleEl = document.createElement('h3');
-          titleEl.className = `team-title ${team.class}`;
-          titleEl.innerText = team.title;
-          container.appendChild(titleEl);
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const currentline = [];
+        let insideQuote = false;
+        let entry = '';
 
-          teamRoles.forEach(role => {
-            const card = document.createElement('div');
-            card.className = 'role-card';
-            card.innerHTML = `
-              <div class="role-header">
-                <span class="role-name">${role.name}</span>
-              </div>
-              <div class="role-ability">${role.ability}</div>
-            `;
-            container.appendChild(card);
-          });
+        for (let j = 0; j < lines[i].length; j++) {
+          const char = lines[i][j];
+          if (char === '"') {
+            if (insideQuote && lines[i][j + 1] === '"') {
+              entry += '"';
+              j++;
+            } else {
+              insideQuote = !insideQuote;
+            }
+          } else if (char === ',' && !insideQuote) {
+            currentline.push(entry.trim().replace(/^"|"$/g, ''));
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        currentline.push(entry.trim().replace(/^"|"$/g, ''));
+
+        const obj = {};
+        headers.forEach((h, index) => {
+          obj[h] = currentline[index] || '';
+        });
+        result.push(obj);
+      }
+      return result;
+    }
+
+    function saveNotes() {
+      const notes = document.getElementById('playerNotes').value;
+      localStorage.setItem('botc_player_notes', notes);
+    }
+
+    function loadSavedNotes() {
+      const saved = localStorage.getItem('botc_player_notes');
+      if (saved) {
+        document.getElementById('playerNotes').value = saved;
+      }
+    }
+
+    function toggleNotes(btn) {
+      btn.classList.toggle('collapsed');
+      const content = document.getElementById('notesContent');
+      content.classList.toggle('hidden');
+    }
+
+    function filterRoles() {
+      const query = document.getElementById('roleSearchInput').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('#content .card, #content .reminder-single-card');
+      const groups = document.querySelectorAll('#content .team-group, #content .collapsible-group');
+
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        if (text.includes(query)) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      groups.forEach(group => {
+        const visibleCards = group.querySelectorAll('.card[style="display: block;"], .card:not([style*="display: none"])');
+        if (visibleCards.length === 0 && query !== '') {
+          group.style.display = 'none';
+        } else {
+          group.style.display = 'block';
         }
       });
     }
 
-    function filterRoles() {
-      const query = document.getElementById('search-input').value.toLowerCase();
-      const filtered = currentScriptRoles.filter(r => 
-        r.name.toLowerCase().includes(query) || r.ability.toLowerCase().includes(query)
-      );
-      renderRoleList(filtered);
+    function updatePlayerDistribution(count, btnElement) {
+      document.querySelectorAll('.player-btn').forEach(btn => btn.classList.remove('active'));
+      
+      const targetCount = count >= 15 ? 15 : count;
+      
+      if (btnElement) {
+        btnElement.classList.add('active');
+      } else {
+        const matchingBtn = Array.from(document.querySelectorAll('.player-btn')).find(b => b.textContent.trim() === (targetCount === 15 ? '15+' : targetCount.toString()));
+        if (matchingBtn) matchingBtn.classList.add('active');
+      }
+
+      const dist = DISTRIBUTION_DATA[targetCount] || DISTRIBUTION_DATA[7];
+      document.getElementById('val-townsfolk').innerText = dist.townsfolk;
+      document.getElementById('val-outsider').innerText = dist.outsider;
+      document.getElementById('val-minion').innerText = dist.minion;
+      document.getElementById('val-demon').innerText = dist.demon;
     }
 
-    function showHomeView() {
-      document.getElementById('role-list-view').style.display = 'none';
-      document.getElementById('home-view').style.display = 'block';
-      document.getElementById('search-input').value = '';
+    function copyCurrentUrl() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Kopyalandı!';
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+        }, 2000);
+      }).catch(err => {
+        console.error('Kopyalama hatası:', err);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      loadSavedNotes();
+      fetchScriptsList();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialChars = urlParams.get('characters');
+      const initialPlayers = urlParams.get('players');
+
+      if (initialChars) {
+        const charIds = await extractCharactersFromUrl(initialChars);
+        if (charIds.length > 0) {
+          loadAndRender(charIds);
+        }
+      }
+
+      if (initialPlayers) {
+        updatePlayerDistribution(parseInt(initialPlayers));
+      }
+    });
+
+    function loadAndRender(charIds) {
+      const inputSec = document.getElementById('inputSection');
+      if (inputSec) inputSec.style.display = 'none';
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('content').innerHTML = '';
+      document.getElementById('distribution-container').style.display = 'none';
+      document.getElementById('notesSection').style.display = 'none';
+      document.getElementById('searchContainer').style.display = 'none';
+      document.getElementById('qrcode-container').style.display = 'none';
+
+      const fetchPromise = allRolesData.length > 0 
+        ? Promise.resolve() 
+        : fetch(CSV_URL).then(res => res.text()).then(csvText => { allRolesData = parseCSV(csvText); });
+
+      fetchPromise.then(() => {
+        document.getElementById('loading').style.display = 'none';
+        renderRoles(charIds);
+      }).catch(err => {
+        document.getElementById('loading').innerText = 'Veriler yüklenirken hata oluştu.';
+        console.error(err);
+      });
+    }
+
+    function renderRoles(selectedIds) {
+      const cleanSelectedIds = selectedIds.map(id => cleanId(id));
+
+      const existingIds = allRolesData
+        .map(r => cleanId(r.id))
+        .filter(Boolean);
+
+      const missingIds = cleanSelectedIds.filter(id => !existingIds.includes(id));
+
+      const filteredRoles = allRolesData.filter(r => r.id && cleanSelectedIds.includes(cleanId(r.id)));
+
+      const reminders = allRolesData.filter(r => r.team && cleanId(r.team).includes('hatirlat'));
+
+      const container = document.getElementById('content');
+      let html = '';
+
+      if (missingIds.length > 0) {
+        html += `
+          <div class="missing-roles-box">
+            <div class="missing-roles-title">
+              ⚠️ Eksik Çeviriler (${missingIds.length} Rol Tabloda Bulunamadı)
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">
+              Aşağıdaki karakterler script linkinde mevcut fakat Google Sheets tablonuzda tanımlı değil. Lütfen Excel'e ekleyin:
+            </p>
+            <div class="missing-roles-list">
+              ${missingIds.map(id => `<span class="missing-tag">${id}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      if (reminders.length > 0) {
+        html += `
+          <div class="reminder-single-card">
+            <div class="reminder-single-header">📌 Hatırlatmalar</div>
+            ${reminders.map(rem => `
+              <div class="reminder-item">
+                <div class="reminder-item-title">${rem.name}</div>
+                <div class="reminder-item-ability">${rem.ability}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      if (filteredRoles.length > 0) {
+        const groups = {};
+        filteredRoles.forEach(role => {
+          const teamKey = role.team ? role.team.toLowerCase().trim() : 'other';
+          if (!groups[teamKey]) {
+            groups[teamKey] = {
+              title: role.team_tr || role.team,
+              roles: []
+            };
+          }
+          groups[teamKey].roles.push(role);
+        });
+
+        for (const [teamKey, group] of Object.entries(groups)) {
+          if (cleanId(teamKey).includes('hatirlat')) continue;
+
+          const titleLower = (group.title || '').toLowerCase();
+          const isCollapsible = teamKey.includes('travel') || titleLower.includes('gezgin') || teamKey.includes('fable');
+
+          if (isCollapsible) {
+            html += `
+              <div class="collapsible-group">
+                <button class="collapsible-trigger" onclick="toggleCollapsible(this)">
+                  <div class="collapsible-header-text">
+                    <span class="collapsible-title">${group.title}</span>
+                    <span class="collapsible-subtext">Geç gelen veya erken ayrılması gereken oyuncular içindir.</span>
+                  </div>
+                  <span class="arrow">▼</span>
+                </button>
+                <div class="collapsible-content">
+                  ${group.roles.map(r => {
+                    const charIdClean = cleanId(r.id);
+                    return `
+                      <div class="card">
+                        <div class="card-header-wrapper">
+                          <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                          <div class="card-title">${r.name}</div>
+                        </div>
+                        <div class="card-ability">${r.ability}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="team-group">
+                <div class="team-header team-${teamKey}">${group.title}</div>
+                ${group.roles.map(r => {
+                  const charIdClean = cleanId(r.id);
+                  return `
+                    <div class="card">
+                      <div class="card-header-wrapper">
+                        <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
+                        <div class="card-title">${r.name}</div>
+                      </div>
+                      <div class="card-ability">${r.ability}</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `;
+          }
+        }
+      }
+
+      if (filteredRoles.length === 0 && missingIds.length === 0 && reminders.length === 0) {
+        html = '<div class="empty-state">Eşleşen karakter bulunamadı.</div>';
+      }
+
+      container.innerHTML = html;
+      
+      document.getElementById('distribution-container').style.display = 'block';
+      document.getElementById('notesSection').style.display = 'block';
+      document.getElementById('searchContainer').style.display = 'block';
+      document.getElementById('qrcode-container').style.display = 'block';
+      generateQRCode();
+    }
+
+    function toggleCollapsible(btn) {
+      btn.classList.toggle('active');
+      const content = btn.nextElementSibling;
+      content.classList.toggle('open');
+    }
+
+    function generateQRCode() {
+      const qrDiv = document.getElementById("qrcode");
+      qrDiv.innerHTML = '';
+
+      new QRCode(qrDiv, {
+        text: window.location.href,
+        width: 180,
+        height: 180,
+        colorDark : "#0f0f11",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.L
+      });
     }
   </script>
 </body>
