@@ -21,24 +21,29 @@
   <!-- ADMIN DASHBOARD -->
   <div id="adminDashboard" class="hidden max-w-2xl mx-auto space-y-6">
     <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-      <h1 class="font-bold text-lg text-amber-400">Moderatör Kumanda Paneli</h1>
-      <button onclick="resetGame()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg">Yarışmayı Sıfırla</button>
+      <div>
+        <h1 class="font-bold text-lg text-amber-400">Moderatör Kumanda Paneli</h1>
+        <p id="totalQInfo" class="text-xs text-slate-400">Yüklenen Soru Sayısı: ...</p>
+      </div>
+      <button onclick="resetGame()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-bold">Yarışmayı Sıfırla</button>
     </div>
 
     <!-- KONTROL BUTONLARI -->
     <div class="grid grid-cols-2 gap-3">
       <button onclick="setStatus('lobby')" class="bg-slate-800 border border-slate-700 p-3 rounded-xl font-semibold hover:border-amber-400">🚪 Lobiyi Aç</button>
-      <button onclick="startQuestion()" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold hover:bg-amber-400">📡 Soruyu Gönder</button>
+      <button onclick="sendQuestion()" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold hover:bg-amber-400">📡 Soruyu Gönder</button>
       <button onclick="startTimer(30)" class="bg-blue-600 p-3 rounded-xl font-bold hover:bg-blue-500">⏱️ Süreyi Başlat (30s)</button>
-      <button onclick="revealAnswer()" class="bg-green-600 p-3 rounded-xl font-bold hover:bg-green-500">✅ Cevabı Açıkla</button>
+      <button onclick="revealAnswer()" class="bg-green-600 p-3 rounded-xl font-bold hover:bg-green-500">✅ Cevabı Açıkla (+10 Puan)</button>
     </div>
 
-    <!-- SORU NAVİGASYON -->
+    <!-- SORU NAVİGASYON VE QUİZ BİTİR -->
     <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-      <button onclick="changeQ(-1)" class="bg-slate-700 px-4 py-2 rounded-lg">Önceki Soru</button>
+      <button onclick="changeQ(-1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Önceki Soru</button>
       <span id="currentQDisplay" class="font-bold text-lg text-amber-400">Soru 1</span>
-      <button onclick="changeQ(1)" class="bg-slate-700 px-4 py-2 rounded-lg">Sonraki Soru</button>
+      <button onclick="changeQ(1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Sonraki Soru</button>
     </div>
+
+    <button onclick="finishQuiz()" class="w-full bg-purple-700 hover:bg-purple-600 p-3 rounded-xl font-bold text-sm">🏁 Quiz'i Bitir (Ekranı Kapat)</button>
 
     <!-- CANLI YANIT SAYACI & TAKIMLAR -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -72,17 +77,34 @@
     let adminPassReal = "";
     let currentQ = 1;
     let timerInterval = null;
+    let questionsData = [];
 
-    async function loadAdminPass() {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
-      const res = await fetch(url);
-      const text = await res.text();
-      const json = JSON.parse(text.substring(47, text.length - 2));
-      json.table.rows.forEach(r => {
+    async function loadSheetData() {
+      const urlA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
+      const resA = await fetch(urlA);
+      const textA = await resA.text();
+      const jsonA = JSON.parse(textA.substring(47, textA.length - 2));
+      jsonA.table.rows.forEach(r => {
         if (r.c[0]?.v === "Admin_Sifresi") adminPassReal = r.c[1]?.v;
       });
+
+      const urlS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sorular`;
+      const resS = await fetch(urlS);
+      const textS = await resS.text();
+      const jsonS = JSON.parse(textS.substring(47, textS.length - 2));
+      
+      // Boş satırları hariç tut
+      questionsData = jsonS.table.rows
+        .filter(r => r.c && r.c[1] && r.c[1].v && r.c[1].v.toString().trim() !== "")
+        .map(r => ({
+          no: r.c[0]?.v,
+          text: r.c[1]?.v,
+          correct: r.c[6]?.v
+        }));
+
+      document.getElementById("totalQInfo").innerText = `Dolu Soru Sayısı: ${questionsData.length}`;
     }
-    loadAdminPass();
+    loadSheetData();
 
     function loginAdmin() {
       const input = document.getElementById("adminPass").value;
@@ -114,7 +136,7 @@
 
       db.ref("state/currentQuestion").on("value", snap => {
         currentQ = snap.val() || 1;
-        document.getElementById("currentQDisplay").innerText = `Soru ${currentQ}`;
+        document.getElementById("currentQDisplay").innerText = `Soru ${currentQ} / ${questionsData.length || '?'}`;
         listenAnswers();
       });
     }
@@ -136,18 +158,23 @@
       db.ref("state/status").set(st);
     }
 
-    function startQuestion() {
+    function sendQuestion() {
+      clearInterval(timerInterval);
       db.ref("state").update({
         status: "question",
         currentQuestion: currentQ,
-        timeLeft: 0
+        timeLeft: 0,
+        timerStarted: false
       });
     }
 
     function startTimer(sec) {
       let left = sec;
       clearInterval(timerInterval);
-      db.ref("state/timeLeft").set(left);
+      db.ref("state").update({
+        timeLeft: left,
+        timerStarted: true
+      });
       timerInterval = setInterval(() => {
         left--;
         db.ref("state/timeLeft").set(left);
@@ -159,13 +186,51 @@
       clearInterval(timerInterval);
       db.ref("state").update({
         status: "revealed",
-        timeLeft: 0
+        timeLeft: 0,
+        timerStarted: true
+      });
+
+      // OTOMATİK PUANLAMA (+10 Puan)
+      const currentCorrect = questionsData[currentQ - 1]?.correct;
+      if (!currentCorrect) return;
+
+      db.ref(`answers/q${currentQ}`).once("value", snap => {
+        const answers = snap.val() || {};
+        db.ref("teams").once("value", tSnap => {
+          const teams = tSnap.val() || {};
+          Object.keys(answers).forEach(teamName => {
+            if (answers[teamName] === currentCorrect && teams[teamName]) {
+              const currentScore = teams[teamName].score || 0;
+              db.ref(`teams/${teamName}/score`).set(currentScore + 10);
+            }
+          });
+        });
       });
     }
 
     function changeQ(dir) {
-      currentQ = Math.max(1, currentQ + dir);
-      db.ref("state/currentQuestion").set(currentQ);
+      const targetQ = currentQ + dir;
+      if (targetQ < 1) return;
+      if (targetQ > questionsData.length) {
+        if (confirm("Tüm sorular bitti! Quiz bitiş ekranına geçilsin mi?")) {
+          finishQuiz();
+        }
+        return;
+      }
+      currentQ = targetQ;
+      db.ref("state").update({
+        currentQuestion: currentQ,
+        status: "question",
+        timeLeft: 0,
+        timerStarted: false
+      });
+    }
+
+    function finishQuiz() {
+      clearInterval(timerInterval);
+      db.ref("state").update({
+        status: "finished"
+      });
     }
 
     function updateScore(team, newScore) {
@@ -180,8 +245,9 @@
 
     function resetGame() {
       if (confirm("Tüm yarışma verilerini ve skorları sıfırlamak istediğinize emin misiniz?")) {
+        clearInterval(timerInterval);
         db.ref().set({
-          state: { status: "lobby", currentQuestion: 1, timeLeft: 0 },
+          state: { status: "lobby", currentQuestion: 1, timeLeft: 0, timerStarted: false },
           teams: {},
           answers: {}
         });
