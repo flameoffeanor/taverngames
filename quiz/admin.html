@@ -18,10 +18,10 @@
     <p id="adminErr" class="text-red-400 text-xs text-center hidden">Şifre Yanlış!</p>
   </div>
 
-  <!-- ADMIN DASHBOARD (Çift Kolonlu Yapı) -->
+  <!-- ADMIN DASHBOARD -->
   <div id="adminDashboard" class="hidden max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
     
-    <!-- SOL KOLON: KUMANDA PANELİ (7 Kolon) -->
+    <!-- KUMANDA PANELİ -->
     <div class="lg:col-span-7 space-y-6">
       <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
         <div>
@@ -31,15 +31,21 @@
         <button onclick="resetGame()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-bold">Yarışmayı Sıfırla</button>
       </div>
 
-      <!-- KONTROL BUTONLARI -->
+      <!-- KONTROL BUTONLARI VE SÜRE INPUTU -->
       <div class="grid grid-cols-2 gap-3">
         <button onclick="setStatus('lobby')" class="bg-slate-800 border border-slate-700 p-3 rounded-xl font-semibold hover:border-amber-400">🚪 Lobiyi Aç</button>
         <button onclick="sendQuestion()" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold hover:bg-amber-400">📡 Soruyu Gönder</button>
-        <button onclick="startTimer(30)" class="bg-blue-600 p-3 rounded-xl font-bold hover:bg-blue-500">⏱️ Süreyi Başlat (30s)</button>
+        
+        <!-- SÜRE AYARLI BAŞLATMA -->
+        <div class="flex gap-2">
+          <input type="number" id="customTimerInput" value="20" min="5" max="120" class="w-20 bg-slate-800 border border-slate-700 text-center font-bold text-lg rounded-xl text-amber-400 focus:outline-none focus:border-amber-400">
+          <button onclick="startTimerWithInput()" class="flex-1 bg-blue-600 p-3 rounded-xl font-bold hover:bg-blue-500 text-sm">⏱️ Süreyi Başlat</button>
+        </div>
+
         <button onclick="revealAnswer()" class="bg-green-600 p-3 rounded-xl font-bold hover:bg-green-500">✅ Cevabı Açıkla (+10 Puan)</button>
       </div>
 
-      <!-- SORU NAVİGASYON VE QUİZ BİTİR -->
+      <!-- SORU NAVİGASYON -->
       <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
         <button onclick="changeQ(-1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Önceki Soru</button>
         <span id="currentQDisplay" class="font-bold text-lg text-amber-400">Soru 1</span>
@@ -63,21 +69,19 @@
       </div>
     </div>
 
-    <!-- SAĞ KOLON: OYUNCU CANLI ÖNİZLEME SIMULATOR (5 Kolon) -->
+    <!-- OYUNCU CANLI ÖNİZLEME SIMULATOR -->
     <div class="lg:col-span-5 space-y-3">
       <div class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
         <span>📱 Oyuncu Ekranı Canlı Önizleme</span>
         <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
       </div>
       
-      <!-- TELEFON KAFESİ -->
       <div class="bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 shadow-2xl min-h-[500px] flex flex-col justify-between">
         <div class="border-b border-slate-800 pb-2 mb-3 flex justify-between items-center text-xs text-slate-400">
           <span class="font-bold text-amber-400">Tavern Quiz</span>
           <span class="bg-slate-800 px-2 py-0.5 rounded text-[10px]">Örnek Takım (Önizleme)</span>
         </div>
 
-        <!-- ÖNİZLEME DİNAMİK İÇERİK -->
         <div id="previewContainer" class="my-auto space-y-4">
           <div class="text-center text-slate-500 text-sm">Yükleniyor...</div>
         </div>
@@ -108,6 +112,7 @@
     let currentQ = 1;
     let timerInterval = null;
     let questionsData = [];
+    let pointsAwardedForQ = {}; // Aynı soruya 2 kere puan vermeyi önleme kontrolü
 
     async function loadSheetData() {
       const urlA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
@@ -174,7 +179,6 @@
         listenAnswers();
       });
 
-      // CANLI OYUNCU EKRANI ÖNİZLEME DİNLEYİCİSİ
       db.ref("state").on("value", snap => {
         renderLivePreview(snap.val());
       });
@@ -205,20 +209,24 @@
 
         let timerText = "Bekleniyor...";
         let timerColor = "text-slate-400";
+        const isTimeUp = state.timerStarted && state.timeLeft === 0;
+
         if (state.timeLeft > 0) {
           timerText = `${state.timeLeft}s`;
           timerColor = "text-amber-400 font-bold animate-pulse";
-        } else if (state.timerStarted && state.timeLeft === 0) {
+        } else if (isTimeUp) {
           timerText = "Süre Bitti";
           timerColor = "text-red-400 font-bold";
         }
 
         let optionsHtml = "";
+        const showAnswers = state.status === "revealed" || isTimeUp;
+
         ["A", "B", "C", "D"].forEach(opt => {
           let btnStyle = "bg-slate-900 border-slate-800 text-slate-300";
           let badge = "";
 
-          if (state.status === "revealed") {
+          if (showAnswers) {
             if (opt === q.correct) {
               btnStyle = "bg-green-500/20 border-green-500 text-green-400 font-bold";
               badge = "✅";
@@ -277,27 +285,44 @@
       });
     }
 
-    function startTimer(sec) {
-      let left = sec;
+    function startTimerWithInput() {
+      const customSec = parseInt(document.getElementById("customTimerInput").value) || 20;
+      let left = customSec;
       clearInterval(timerInterval);
+      
       db.ref("state").update({
         timeLeft: left,
         timerStarted: true
       });
+
       timerInterval = setInterval(() => {
         left--;
         db.ref("state/timeLeft").set(left);
-        if (left <= 0) clearInterval(timerInterval);
+        
+        // SÜRE BİTTİĞİNDE OTOMATİK CEVAP AÇIKLA VE PUANLARI DAĞIT
+        if (left <= 0) {
+          clearInterval(timerInterval);
+          awardPointsAuto();
+        }
       }, 1000);
     }
 
     function revealAnswer() {
       clearInterval(timerInterval);
+      db.ref("state/timeLeft").set(0);
+      awardPointsAuto();
+    }
+
+    function awardPointsAuto() {
       db.ref("state").update({
         status: "revealed",
         timeLeft: 0,
         timerStarted: true
       });
+
+      // Zaten bu soru için puan dağıtıldıysa tekrar verme
+      if (pointsAwardedForQ[currentQ]) return;
+      pointsAwardedForQ[currentQ] = true;
 
       const currentCorrect = questionsData[currentQ - 1]?.correct;
       if (!currentCorrect) return;
@@ -354,6 +379,7 @@
     function resetGame() {
       if (confirm("Tüm yarışma verilerini ve skorları sıfırlamak istediğinize emin misiniz?")) {
         clearInterval(timerInterval);
+        pointsAwardedForQ = {};
         db.ref().set({
           state: { status: "lobby", currentQuestion: 1, timeLeft: 0, timerStarted: false },
           teams: {},
