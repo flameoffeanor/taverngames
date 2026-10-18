@@ -192,7 +192,7 @@
       let inputName = document.getElementById("teamName").value.trim();
       const err = document.getElementById("loginError");
 
-      if (pass !== configData.Etkinlik_Sifresi) {
+      if (pass !== String(configData.Etkinlik_Sifresi || "").trim()) {
         err.innerText = "Etkinlik şifresi hatalı!";
         err.classList.remove("hidden");
         return;
