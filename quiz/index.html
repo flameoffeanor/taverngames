@@ -151,7 +151,6 @@
 
     loadSheetData();
 
-    // Sayfa yüklendiğinde eski kayıt varsa header göster
     if (myTeamName) {
       document.getElementById("currentTeamName").innerText = myTeamName;
       document.getElementById("teamNameDisplay").classList.remove("hidden");
@@ -209,9 +208,7 @@
         const teams = snap.val() || {};
         let finalName = inputName;
 
-        // EĞER TAKIM ZATEN VARSA (Aynı isimle geri döndüyse puanını koru)
         if (!teams[inputName]) {
-          // Takım yoksa ve başka biri almasın diye çakışma kontrolü yap
           let counter = 1;
           while (teams[finalName]) {
             finalName = `${inputName} ${counter}`;
@@ -254,10 +251,15 @@
       document.getElementById("questionText").innerText = q.text;
 
       const timerDisplay = document.getElementById("timerDisplay");
+      
+      // SÜRE BİTTİĞİNDE VEYA STATUS REVEALED OLDUĞUNDA OTOMATİK CEVAP MODUNA GEÇ
+      const isTimeUp = state.timerStarted && state.timeLeft === 0;
+      const showAnswers = state.status === "revealed" || isTimeUp;
+
       if (state.timeLeft && state.timeLeft > 0) {
         timerDisplay.innerText = `${state.timeLeft}s`;
         timerDisplay.className = "font-mono font-bold text-lg text-amber-400 animate-pulse";
-      } else if (state.timerStarted && state.timeLeft === 0) {
+      } else if (isTimeUp) {
         timerDisplay.innerText = "Süre Bitti";
         timerDisplay.className = "font-mono font-bold text-sm text-red-400";
       } else {
@@ -271,18 +273,19 @@
       ["A", "B", "C", "D"].forEach(opt => {
         const btn = document.createElement("button");
         btn.type = "button";
-        let baseClass = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 hover:bg-slate-700 flex justify-between items-center";
+        let baseClass = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 flex justify-between items-center";
 
-        if (state.status === "question") {
+        if (!showAnswers) {
           btn.onclick = () => selectOption(opt, state.currentQuestion);
           if (selectedOption === opt) {
             btn.className = baseClass + " selected-option";
             btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span class="text-amber-400 font-bold">✔</span>`;
           } else {
-            btn.className = baseClass;
+            btn.className = baseClass + " hover:bg-slate-700";
             btn.innerText = `${opt}) ${q[opt]}`;
           }
-        } else if (state.status === "revealed") {
+        } else {
+          // DOĞRU CEVAP / YANLIŞ CEVAP RENKLENDİRMESİ
           btn.disabled = true;
           if (opt === q.correct) {
             btn.className = baseClass + " border-green-500 bg-green-500/20 text-green-400 font-bold";
@@ -300,10 +303,10 @@
 
       const footer = document.getElementById("statusFooter");
       const fb = document.getElementById("answerFeedback");
-      if (state.status === "revealed") {
+      if (showAnswers) {
         footer.classList.remove("hidden");
         if (selectedOption === q.correct) {
-          fb.innerText = "Tebrikler! Doğru Cevap (+10 Puan) 🎉";
+          fb.innerText = "Tebrikler! Doğru Cevap 🎉";
           fb.className = "text-center font-bold text-sm py-2 rounded-lg bg-green-500/20 text-green-400 border border-green-500/40";
         } else {
           fb.innerText = "Maalesef Yanlış Cevap ❌";
