@@ -7,10 +7,18 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    .selected-option {
+      border: 3px solid #f59e0b !important;
+      background-color: rgba(245, 158, 11, 0.25) !important;
+      color: #fbbf24 !important;
+      font-weight: bold !important;
+    }
+  </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between p-4 font-sans">
 
-  <!-- HEDER / GRUP İSMİ VE EDİT -->
+  <!-- HEADER / GRUP İSMİ VE EDİT -->
   <header class="flex justify-between items-center border-b border-slate-700 pb-3">
     <div class="font-bold text-lg text-amber-400">Tavern Quiz</div>
     <div id="teamNameDisplay" class="hidden text-sm bg-slate-800 px-3 py-1 rounded-full border border-slate-700 items-center gap-2">
@@ -38,7 +46,7 @@
     </div>
   </main>
 
-  <!-- EKRAN 2: LOBİ (BEKLEME SALONU) -->
+  <!-- EKRAN 2: LOBİ -->
   <main id="lobbyScreen" class="hidden max-w-md mx-auto w-full my-auto text-center bg-slate-800 p-6 rounded-2xl border border-slate-700">
     <div class="animate-pulse mb-4 text-amber-400 text-4xl">⏳</div>
     <h2 class="text-xl font-bold mb-2">Lobiye Katıldınız!</h2>
@@ -53,16 +61,14 @@
   <main id="quizScreen" class="hidden max-w-md mx-auto w-full my-auto space-y-4">
     <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
       <span id="questionNumber" class="font-bold text-amber-400 text-sm">Soru 1</span>
-      <div id="timerDisplay" class="font-mono font-bold text-lg text-red-400">00:00</div>
+      <div id="timerDisplay" class="font-mono font-bold text-sm text-slate-400">Bekleniyor...</div>
     </div>
 
     <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
       <h3 id="questionText" class="text-lg font-semibold leading-relaxed">Soru yükleniyor...</h3>
     </div>
 
-    <div id="optionsContainer" class="grid grid-cols-1 gap-3">
-      <!-- A, B, C, D Şıkları JS ile oluşturulacak -->
-    </div>
+    <div id="optionsContainer" class="grid grid-cols-1 gap-3"></div>
 
     <div id="statusFooter" class="hidden space-y-2 pt-2">
       <div id="answerFeedback" class="text-center font-bold text-sm py-2 rounded-lg"></div>
@@ -71,6 +77,17 @@
         <h4 class="font-bold text-xs text-slate-400 mb-2 uppercase">Canlı Sıralama</h4>
         <div id="leaderboardList" class="space-y-1 text-sm"></div>
       </div>
+    </div>
+  </main>
+
+  <!-- EKRAN 4: QUİZ BİTTİ EKRANI -->
+  <main id="finishedScreen" class="hidden max-w-md mx-auto w-full my-auto text-center bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+    <div class="text-5xl">🏆</div>
+    <h2 class="text-2xl font-black text-amber-400">Quiz Sona Erdi!</h2>
+    <p class="text-sm text-slate-300">Tüm sorular yanıtlandı. Katılımınız için teşekkür ederiz!</p>
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 text-left">
+      <h4 class="font-bold text-xs text-amber-400 mb-3 uppercase tracking-wider text-center">Final Puan Tablosu</h4>
+      <div id="finalLeaderboardList" class="space-y-2 text-sm"></div>
     </div>
   </main>
 
@@ -94,10 +111,10 @@
     const SHEET_ID = "1dkkG5g3A1aoiWf2Y9FdWg6LZ3TeQTTHemC2YNQ0HDGs";
     let myTeamName = localStorage.getItem("quiz_team_name") || "";
     let selectedOption = null;
+    let currentQuestionNum = null;
     let configData = {};
     let questionsData = [];
 
-    // Google Sheets Verisi Çekme
     async function loadSheetData() {
       try {
         const urlAyarlar = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
@@ -115,15 +132,19 @@
         const resS = await fetch(urlSorular);
         const textS = await resS.text();
         const jsonS = JSON.parse(textS.substring(47, textS.length - 2));
-        questionsData = jsonS.table.rows.map(r => ({
-          no: r.c[0]?.v,
-          text: r.c[1]?.v,
-          A: r.c[2]?.v,
-          B: r.c[3]?.v,
-          C: r.c[4]?.v,
-          D: r.c[5]?.v,
-          correct: r.c[6]?.v
-        }));
+        
+        // Sadece Soru_Metni dolu olan satırları al (boş olanları eler)
+        questionsData = jsonS.table.rows
+          .filter(r => r.c && r.c[1] && r.c[1].v && r.c[1].v.toString().trim() !== "")
+          .map(r => ({
+            no: r.c[0]?.v,
+            text: r.c[1]?.v,
+            A: r.c[2]?.v,
+            B: r.c[3]?.v,
+            C: r.c[4]?.v,
+            D: r.c[5]?.v,
+            correct: r.c[6]?.v
+          }));
       } catch (e) {
         console.error("Sheet yükleme hatası:", e);
       }
@@ -136,10 +157,19 @@
       const state = snapshot.val();
       if (!state) return;
 
-      if (state.status === "lobby") {
+      if (state.status === "finished") {
+        showScreen("finishedScreen");
+      } else if (state.status === "lobby") {
         if (myTeamName) showScreen("lobbyScreen");
       } else if (state.status === "question" || state.status === "revealed") {
         showScreen("quizScreen");
+        
+        // Yeni soruya geçildiyse seçimi sıfırla
+        if (currentQuestionNum !== state.currentQuestion) {
+          currentQuestionNum = state.currentQuestion;
+          selectedOption = null;
+        }
+        
         renderQuestion(state);
       }
     });
@@ -170,7 +200,6 @@
         return;
       }
 
-      // Çakışan isim kontrolü
       db.ref("teams").once("value", snap => {
         const teams = snap.val() || {};
         let finalName = inputName;
@@ -213,27 +242,47 @@
 
       document.getElementById("questionNumber").innerText = `Soru ${state.currentQuestion}`;
       document.getElementById("questionText").innerText = q.text;
-      document.getElementById("timerDisplay").innerText = state.timeLeft > 0 ? `${state.timeLeft}s` : "Süre Bitti";
+
+      const timerDisplay = document.getElementById("timerDisplay");
+      if (state.timeLeft && state.timeLeft > 0) {
+        timerDisplay.innerText = `${state.timeLeft}s`;
+        timerDisplay.className = "font-mono font-bold text-lg text-amber-400 animate-pulse";
+      } else if (state.timerStarted && state.timeLeft === 0) {
+        timerDisplay.innerText = "Süre Bitti";
+        timerDisplay.className = "font-mono font-bold text-sm text-red-400";
+      } else {
+        timerDisplay.innerText = "Bekleniyor...";
+        timerDisplay.className = "font-mono font-bold text-sm text-slate-400";
+      }
 
       const container = document.getElementById("optionsContainer");
       container.innerHTML = "";
 
       ["A", "B", "C", "D"].forEach(opt => {
         const btn = document.createElement("button");
-        btn.className = "option-btn w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 hover:bg-slate-700";
-        btn.innerText = `${opt}) ${q[opt]}`;
+        btn.type = "button";
+        let baseClass = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 hover:bg-slate-700 flex justify-between items-center";
 
-        if (state.status === "question" && state.timeLeft > 0) {
+        if (state.status === "question") {
           btn.onclick = () => selectOption(opt, state.currentQuestion);
           if (selectedOption === opt) {
-            btn.className = "w-full text-left p-4 rounded-xl font-bold border border-amber-400 bg-amber-500/20 text-amber-300";
+            btn.className = baseClass + " selected-option";
+            btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span class="text-amber-400 font-bold">✔</span>`;
+          } else {
+            btn.className = baseClass;
+            btn.innerText = `${opt}) ${q[opt]}`;
           }
         } else if (state.status === "revealed") {
           btn.disabled = true;
           if (opt === q.correct) {
-            btn.className = "w-full text-left p-4 rounded-xl font-bold border border-green-500 bg-green-500/20 text-green-400";
+            btn.className = baseClass + " border-green-500 bg-green-500/20 text-green-400 font-bold";
+            btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span>✅ Doğru</span>`;
           } else if (selectedOption === opt && opt !== q.correct) {
-            btn.className = "w-full text-left p-4 rounded-xl font-bold border border-red-500 bg-red-500/20 text-red-400";
+            btn.className = baseClass + " border-red-500 bg-red-500/20 text-red-400 font-bold";
+            btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span>❌ Yanlış</span>`;
+          } else {
+            btn.className = baseClass + " opacity-50";
+            btn.innerText = `${opt}) ${q[opt]}`;
           }
         }
         container.appendChild(btn);
@@ -244,7 +293,7 @@
       if (state.status === "revealed") {
         footer.classList.remove("hidden");
         if (selectedOption === q.correct) {
-          fb.innerText = "Tebrikler! Doğru Cevap 🎉";
+          fb.innerText = "Tebrikler! Doğru Cevap (+10 Puan) 🎉";
           fb.className = "text-center font-bold text-sm py-2 rounded-lg bg-green-500/20 text-green-400 border border-green-500/40";
         } else {
           fb.innerText = "Maalesef Yanlış Cevap ❌";
@@ -258,7 +307,20 @@
     function selectOption(opt, qNum) {
       selectedOption = opt;
       db.ref(`answers/q${qNum}/${myTeamName}`).set(opt);
-      renderQuestion({ status: "question", currentQuestion: qNum, timeLeft: 1 });
+      
+      // Süreyi veya zamanlayıcıyı bozmadan şıkkı ekranda belirginleştir
+      const container = document.getElementById("optionsContainer");
+      const buttons = container.getElementsByTagName("button");
+      Array.from(buttons).forEach((btn, index) => {
+        const optionKey = ["A", "B", "C", "D"][index];
+        if (optionKey === opt) {
+          btn.className = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 flex justify-between items-center selected-option";
+          btn.innerHTML = `<span>${optionKey}) ${questionsData[qNum-1][optionKey]}</span> <span class="text-amber-400 font-bold">✔</span>`;
+        } else {
+          btn.className = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 hover:bg-slate-700 flex justify-between items-center";
+          btn.innerText = `${optionKey}) ${questionsData[qNum-1][optionKey]}`;
+        }
+      });
     }
 
     function toggleLeaderboard() {
@@ -268,6 +330,7 @@
 
     function renderLeaderboard(teams) {
       const sorted = Object.keys(teams).sort((a, b) => (teams[b].score || 0) - (teams[a].score || 0));
+      
       const box = document.getElementById("leaderboardList");
       box.innerHTML = "";
       sorted.forEach((t, idx) => {
@@ -277,10 +340,21 @@
             <span class="font-bold text-xs">${teams[t].score || 0} P</span>
           </div>`;
       });
+
+      const finalBox = document.getElementById("finalLeaderboardList");
+      finalBox.innerHTML = "";
+      sorted.forEach((t, idx) => {
+        let badge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+        finalBox.innerHTML += `
+          <div class="flex justify-between items-center p-2 rounded bg-slate-800/80 border border-slate-700">
+            <span class="${t === myTeamName ? 'font-bold text-amber-400' : 'text-slate-200'}">${badge} ${t}</span>
+            <span class="font-bold text-amber-400">${teams[t].score || 0} P</span>
+          </div>`;
+      });
     }
 
     function showScreen(id) {
-      ["loginScreen", "lobbyScreen", "quizScreen"].forEach(s => document.getElementById(s).classList.add("hidden"));
+      ["loginScreen", "lobbyScreen", "quizScreen", "finishedScreen"].forEach(s => document.getElementById(s).classList.add("hidden"));
       document.getElementById(id).classList.remove("hidden");
     }
   </script>
