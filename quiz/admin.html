@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tavern Quiz - Moderatör Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-4 font-sans">
+
+  <!-- ADMIN LOGIN -->
+  <div id="adminLogin" class="max-w-md mx-auto my-20 bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
+    <h2 class="text-xl font-bold text-amber-400 text-center">Moderatör Girişi</h2>
+    <input type="password" id="adminPass" placeholder="Admin Şifresi" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
+    <button onclick="loginAdmin()" class="w-full bg-amber-500 font-bold py-3 text-slate-950 rounded-lg">Giriş Yap</button>
+    <p id="adminErr" class="text-red-400 text-xs text-center hidden">Şifre Yanlış!</p>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div id="adminDashboard" class="hidden max-w-2xl mx-auto space-y-6">
+    <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
+      <h1 class="font-bold text-lg text-amber-400">Moderatör Kumanda Paneli</h1>
+      <button onclick="resetGame()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg">Yarışmayı Sıfırla</button>
+    </div>
+
+    <!-- KONTROL BUTONLARI -->
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="setStatus('lobby')" class="bg-slate-800 border border-slate-700 p-3 rounded-xl font-semibold hover:border-amber-400">🚪 Lobiyi Aç</button>
+      <button onclick="startQuestion()" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold hover:bg-amber-400">📡 Soruyu Gönder</button>
+      <button onclick="startTimer(30)" class="bg-blue-600 p-3 rounded-xl font-bold hover:bg-blue-500">⏱️ Süreyi Başlat (30s)</button>
+      <button onclick="revealAnswer()" class="bg-green-600 p-3 rounded-xl font-bold hover:bg-green-500">✅ Cevabı Açıkla</button>
+    </div>
+
+    <!-- SORU NAVİGASYON -->
+    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
+      <button onclick="changeQ(-1)" class="bg-slate-700 px-4 py-2 rounded-lg">Önceki Soru</button>
+      <span id="currentQDisplay" class="font-bold text-lg text-amber-400">Soru 1</span>
+      <button onclick="changeQ(1)" class="bg-slate-700 px-4 py-2 rounded-lg">Sonraki Soru</button>
+    </div>
+
+    <!-- CANLI YANIT SAYACI & TAKIMLAR -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+        <h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Katılan Takımlar & Puanlar</h3>
+        <div id="teamsAdminList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      </div>
+
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
+        <h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Gelen Cevaplar</h3>
+        <div id="answersCount" class="text-2xl font-bold text-amber-400 mb-2">0 Takım Cevap Verdi</div>
+        <div id="answersAdminList" class="space-y-1 text-xs text-slate-300"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",
+      authDomain: "tavern-quiz.firebaseapp.com",
+      databaseURL: "https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "tavern-quiz",
+      storageBucket: "tavern-quiz.firebasestorage.app",
+      messagingSenderId: "280835700622",
+      appId: "1:280835700622:web:043d61c02d689de87056df"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    const SHEET_ID = "1dkkG5g3A1aoiWf2Y9FdWg6LZ3TeQTTHemC2YNQ0HDGs";
+    let adminPassReal = "";
+    let currentQ = 1;
+    let timerInterval = null;
+
+    async function loadAdminPass() {
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const json = JSON.parse(text.substring(47, text.length - 2));
+      json.table.rows.forEach(r => {
+        if (r.c[0]?.v === "Admin_Sifresi") adminPassReal = r.c[1]?.v;
+      });
+    }
+    loadAdminPass();
+
+    function loginAdmin() {
+      const input = document.getElementById("adminPass").value;
+      if (input === adminPassReal && adminPassReal !== "") {
+        document.getElementById("adminLogin").classList.add("hidden");
+        document.getElementById("adminDashboard").classList.remove("hidden");
+        initAdminListeners();
+      } else {
+        document.getElementById("adminErr").classList.remove("hidden");
+      }
+    }
+
+    function initAdminListeners() {
+      db.ref("teams").on("value", snap => {
+        const teams = snap.val() || {};
+        const list = document.getElementById("teamsAdminList");
+        list.innerHTML = "";
+        Object.keys(teams).forEach(t => {
+          list.innerHTML += `
+            <div class="flex justify-between items-center text-sm bg-slate-900 p-2 rounded border border-slate-700">
+              <span>${t}</span>
+              <div class="flex items-center gap-2">
+                <input type="number" value="${teams[t].score || 0}" onchange="updateScore('${t}', this.value)" class="w-16 bg-slate-800 border border-slate-600 rounded text-center text-xs p-1">
+                <button onclick="kickTeam('${t}')" class="text-red-400 hover:text-red-600 text-xs">❌</button>
+              </div>
+            </div>`;
+        });
+      });
+
+      db.ref("state/currentQuestion").on("value", snap => {
+        currentQ = snap.val() || 1;
+        document.getElementById("currentQDisplay").innerText = `Soru ${currentQ}`;
+        listenAnswers();
+      });
+    }
+
+    function listenAnswers() {
+      db.ref(`answers/q${currentQ}`).on("value", snap => {
+        const ans = snap.val() || {};
+        const count = Object.keys(ans).length;
+        document.getElementById("answersCount").innerText = `${count} Takım Cevap Verdi`;
+        const list = document.getElementById("answersAdminList");
+        list.innerHTML = "";
+        Object.keys(ans).forEach(t => {
+          list.innerHTML += `<div class="flex justify-between border-b border-slate-700/40 py-1"><span>${t}</span><span class="font-bold text-amber-400">${ans[t]}</span></div>`;
+        });
+      });
+    }
+
+    function setStatus(st) {
+      db.ref("state/status").set(st);
+    }
+
+    function startQuestion() {
+      db.ref("state").update({
+        status: "question",
+        currentQuestion: currentQ,
+        timeLeft: 0
+      });
+    }
+
+    function startTimer(sec) {
+      let left = sec;
+      clearInterval(timerInterval);
+      db.ref("state/timeLeft").set(left);
+      timerInterval = setInterval(() => {
+        left--;
+        db.ref("state/timeLeft").set(left);
+        if (left <= 0) clearInterval(timerInterval);
+      }, 1000);
+    }
+
+    function revealAnswer() {
+      clearInterval(timerInterval);
+      db.ref("state").update({
+        status: "revealed",
+        timeLeft: 0
+      });
+    }
+
+    function changeQ(dir) {
+      currentQ = Math.max(1, currentQ + dir);
+      db.ref("state/currentQuestion").set(currentQ);
+    }
+
+    function updateScore(team, newScore) {
+      db.ref(`teams/${team}/score`).set(parseInt(newScore) || 0);
+    }
+
+    function kickTeam(team) {
+      if (confirm(`${team} grubunu çıkarmak istediğinize emin misiniz?`)) {
+        db.ref(`teams/${team}`).remove();
+      }
+    }
+
+    function resetGame() {
+      if (confirm("Tüm yarışma verilerini ve skorları sıfırlamak istediğinize emin misiniz?")) {
+        db.ref().set({
+          state: { status: "lobby", currentQuestion: 1, timeLeft: 0 },
+          teams: {},
+          answers: {}
+        });
+      }
+    }
+  </script>
+</body>
+</html>
