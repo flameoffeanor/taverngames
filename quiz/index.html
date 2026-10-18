@@ -18,12 +18,12 @@
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between p-4 font-sans">
 
-  <!-- HEADER / GRUP İSMİ VE EDİT -->
+  <!-- HEADER / GRUP İSMİ VE ÇIKIŞ BUTONU -->
   <header class="flex justify-between items-center border-b border-slate-700 pb-3">
     <div class="font-bold text-lg text-amber-400">Tavern Quiz</div>
     <div id="teamNameDisplay" class="hidden text-sm bg-slate-800 px-3 py-1 rounded-full border border-slate-700 items-center gap-2">
-      <span id="currentTeamName" class="font-semibold"></span>
-      <button onclick="changeTeamName()" class="text-xs text-amber-400 hover:underline">(Düzenle)</button>
+      <span id="currentTeamName" class="font-semibold text-amber-300"></span>
+      <button onclick="logoutTeam()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 px-2 py-0.5 rounded border border-red-500/30 transition">Çıkış Yap</button>
     </div>
   </header>
 
@@ -133,7 +133,6 @@
         const textS = await resS.text();
         const jsonS = JSON.parse(textS.substring(47, textS.length - 2));
         
-        // Sadece Soru_Metni dolu olan satırları al (boş olanları eler)
         questionsData = jsonS.table.rows
           .filter(r => r.c && r.c[1] && r.c[1].v && r.c[1].v.toString().trim() !== "")
           .map(r => ({
@@ -152,6 +151,13 @@
 
     loadSheetData();
 
+    // Sayfa yüklendiğinde eski kayıt varsa header göster
+    if (myTeamName) {
+      document.getElementById("currentTeamName").innerText = myTeamName;
+      document.getElementById("teamNameDisplay").classList.remove("hidden");
+      document.getElementById("teamNameDisplay").classList.add("flex");
+    }
+
     // Firebase Canlı Dinleyici
     db.ref("state").on("value", snapshot => {
       const state = snapshot.val();
@@ -162,15 +168,14 @@
       } else if (state.status === "lobby") {
         if (myTeamName) showScreen("lobbyScreen");
       } else if (state.status === "question" || state.status === "revealed") {
-        showScreen("quizScreen");
-        
-        // Yeni soruya geçildiyse seçimi sıfırla
-        if (currentQuestionNum !== state.currentQuestion) {
-          currentQuestionNum = state.currentQuestion;
-          selectedOption = null;
+        if (myTeamName) {
+          showScreen("quizScreen");
+          if (currentQuestionNum !== state.currentQuestion) {
+            currentQuestionNum = state.currentQuestion;
+            selectedOption = null;
+          }
+          renderQuestion(state);
         }
-        
-        renderQuestion(state);
       }
     });
 
@@ -203,35 +208,40 @@
       db.ref("teams").once("value", snap => {
         const teams = snap.val() || {};
         let finalName = inputName;
-        let counter = 1;
-        while (teams[finalName]) {
-          finalName = `${inputName} ${counter}`;
-          counter++;
+
+        // EĞER TAKIM ZATEN VARSA (Aynı isimle geri döndüyse puanını koru)
+        if (!teams[inputName]) {
+          // Takım yoksa ve başka biri almasın diye çakışma kontrolü yap
+          let counter = 1;
+          while (teams[finalName]) {
+            finalName = `${inputName} ${counter}`;
+            counter++;
+          }
+          db.ref("teams/" + finalName).set({ score: 0 });
         }
 
         myTeamName = finalName;
         localStorage.setItem("quiz_team_name", myTeamName);
-        db.ref("teams/" + myTeamName).set({ score: 0 });
 
         document.getElementById("currentTeamName").innerText = myTeamName;
         document.getElementById("teamNameDisplay").classList.remove("hidden");
         document.getElementById("teamNameDisplay").classList.add("flex");
 
-        showScreen("lobbyScreen");
+        db.ref("state/status").once("value", sSnap => {
+          const st = sSnap.val() || "lobby";
+          if (st === "lobby") showScreen("lobbyScreen");
+          else showScreen("quizScreen");
+        });
       });
     }
 
-    function changeTeamName() {
-      const newName = prompt("Yeni grup isminizi giriniz:", myTeamName);
-      if (newName && newName !== myTeamName) {
-        db.ref("teams/" + myTeamName).once("value", snap => {
-          const val = snap.val() || { score: 0 };
-          db.ref("teams/" + myTeamName).remove();
-          myTeamName = newName;
-          localStorage.setItem("quiz_team_name", myTeamName);
-          db.ref("teams/" + myTeamName).set(val);
-          document.getElementById("currentTeamName").innerText = myTeamName;
-        });
+    function logoutTeam() {
+      if (confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+        localStorage.removeItem("quiz_team_name");
+        myTeamName = "";
+        document.getElementById("teamNameDisplay").classList.add("hidden");
+        document.getElementById("teamNameDisplay").classList.remove("flex");
+        showScreen("loginScreen");
       }
     }
 
@@ -308,7 +318,6 @@
       selectedOption = opt;
       db.ref(`answers/q${qNum}/${myTeamName}`).set(opt);
       
-      // Süreyi veya zamanlayıcıyı bozmadan şıkkı ekranda belirginleştir
       const container = document.getElementById("optionsContainer");
       const buttons = container.getElementsByTagName("button");
       Array.from(buttons).forEach((btn, index) => {
