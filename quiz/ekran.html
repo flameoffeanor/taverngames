@@ -8,15 +8,15 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-between p-8 font-sans overflow-hidden">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-between p-6 font-sans overflow-hidden">
 
   <!-- HEADER -->
-  <header class="flex justify-between items-center border-b-2 border-slate-800 pb-4">
+  <header class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-4">
     <div class="flex items-center gap-4">
-      <div class="bg-amber-500 text-slate-950 font-black px-5 py-2 rounded-xl text-2xl tracking-wide">TAVERN QUIZ</div>
-      <h1 id="stageEventTitle" class="text-3xl font-bold text-slate-200">Quiz Night</h1>
+      <div class="bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl tracking-wide">TAVERN QUIZ</div>
+      <h1 id="stageEventTitle" class="text-2xl font-bold text-slate-200">Quiz Night</h1>
     </div>
-    <div id="stageQNum" class="text-2xl font-black text-amber-400 bg-slate-900 px-8 py-3 rounded-2xl border-2 border-slate-800 shadow-lg">
+    <div id="stageQNum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800 shadow-lg">
       Lobi
     </div>
   </header>
@@ -31,56 +31,57 @@
 
     <div class="bg-slate-900/90 p-8 rounded-3xl border border-slate-800 text-left shadow-2xl">
       <h3 class="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 text-center">KATILAN TAKIMLAR</h3>
-      <div id="stageLobbyTeams" class="grid grid-cols-3 gap-4 text-center font-bold text-xl"></div>
+      <div id="stageLobbyTeams" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-center font-bold text-lg"></div>
     </div>
   </main>
 
-  <!-- SORU VE CANLI EKRAN -->
-  <main id="stageQuiz" class="hidden my-auto space-y-6 max-w-7xl mx-auto w-full">
+  <!-- SORU VE CANLI EKRAN (SAĞ SÜTUNLU LAYOUT) -->
+  <main id="stageQuiz" class="hidden my-auto grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
     
-    <!-- ÜST BİLGİ & DEV SÜRE -->
-    <div class="flex justify-between items-center bg-slate-900/90 p-6 rounded-3xl border-2 border-slate-800 shadow-2xl">
-      <div class="text-slate-300 font-bold text-xl">
-        Gelen Yanıt: <span id="answeredCountCount" class="text-amber-400 text-3xl font-black">0</span> / <span id="totalTeamsCount" class="text-2xl font-extrabold">0</span> Takım
-      </div>
-      <div id="stageTimer" class="font-mono font-black text-6xl text-slate-500">
-        --:--
-      </div>
-    </div>
-
-    <!-- BÜYÜK SORU METNİ VE KAÇINCI SORU BAŞLIĞI -->
-    <div class="bg-slate-900/95 p-8 rounded-3xl border-2 border-slate-800 text-center shadow-2xl relative">
-      <div id="questionProgressBadge" class="text-amber-400 font-black text-xl tracking-widest uppercase mb-3">
-        SORU 1 / 10
-      </div>
-      <h2 id="stageQuestionText" class="text-3xl md:text-5xl font-extrabold leading-relaxed text-white">
-        Soru Yükleniyor...
-      </h2>
-    </div>
-
-    <!-- BÜYÜK ŞIKLAR -->
-    <div id="stageOptionsGrid" class="grid grid-cols-2 gap-6 text-2xl font-bold"></div>
-
-    <!-- BÜYÜTÜLMÜŞ DOĞRU BİLENLER & CANLI SKOR TABLOSU -->
-    <div id="stageAnswersAndScores" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+    <!-- SOL ALAN: SORU, SÜRE, ŞIKLAR VE TAKIM CEVAPLARI (8 Kolon) -->
+    <div class="col-span-8 flex flex-col justify-between space-y-4">
       
-      <!-- BÜYÜK DOĞRU BİLENLER KARTI -->
-      <div class="bg-slate-900/90 p-6 rounded-3xl border-2 border-slate-800 shadow-xl flex flex-col justify-between">
-        <div class="text-sm font-black uppercase tracking-widest text-slate-300 mb-4 text-center border-b border-slate-800 pb-2">
+      <!-- SÜRE VE BİLGİ BARI -->
+      <div class="flex justify-between items-center bg-slate-900/90 p-4 rounded-2xl border-2 border-slate-800 shadow-xl">
+        <div class="text-slate-300 font-bold text-lg">
+          Gelen Yanıt: <span id="answeredCountCount" class="text-amber-400 text-2xl font-black">0</span> / <span id="totalTeamsCount" class="text-xl font-extrabold">0</span> Takım
+        </div>
+        <div id="stageTimer" class="font-mono font-black text-5xl text-slate-500">
+          --:--
+        </div>
+      </div>
+
+      <!-- BÜYÜK SORU METNİ VE KAÇINCI SORU BAŞLIĞI -->
+      <div class="bg-slate-900/95 p-6 rounded-3xl border-2 border-slate-800 text-center shadow-2xl relative my-auto">
+        <div id="questionProgressBadge" class="text-amber-400 font-black text-lg tracking-widest uppercase mb-2">
+          SORU 1 / 10
+        </div>
+        <h2 id="stageQuestionText" class="text-2xl md:text-4xl font-extrabold leading-snug text-white">
+          Soru Yükleniyor...
+        </h2>
+      </div>
+
+      <!-- BÜYÜK ŞIKLAR -->
+      <div id="stageOptionsGrid" class="grid grid-cols-2 gap-4 text-xl font-bold"></div>
+
+      <!-- ALT KISIM: TAKIM CEVAP DURUMLARI (YATAY ESNEK GRİD) -->
+      <div class="bg-slate-900/90 p-4 rounded-2xl border-2 border-slate-800 shadow-xl">
+        <div class="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 text-center border-b border-slate-800 pb-1">
           🎯 TAKIM CEVAP DURUMLARI
         </div>
-        <div id="stageLiveTeamStatus" class="flex flex-wrap justify-center gap-3 max-h-52 overflow-y-auto p-1"></div>
-      </div>
-
-      <!-- BÜYÜK CANLI SKOR KARTI -->
-      <div class="bg-slate-900/90 p-6 rounded-3xl border-2 border-slate-800 shadow-xl flex flex-col justify-between">
-        <div class="text-sm font-black uppercase tracking-widest text-amber-400 mb-4 text-center border-b border-slate-800 pb-2">
-          🏆 CANLI SKOR TABLOSU
-        </div>
-        <div id="stageLiveLeaderboard" class="space-y-2 max-h-52 overflow-y-auto text-lg p-1"></div>
+        <div id="stageLiveTeamStatus" class="flex flex-wrap justify-center gap-2 max-h-36 overflow-y-auto p-1"></div>
       </div>
 
     </div>
+
+    <!-- SAĞ ALAN: DİKİNE TAM BOY CANLI SKOR TABLOSU (4 Kolon) -->
+    <div class="col-span-4 bg-slate-900/95 p-5 rounded-3xl border-2 border-slate-800 shadow-2xl flex flex-col justify-start h-full">
+      <div class="text-sm font-black uppercase tracking-widest text-amber-400 mb-4 text-center border-b border-slate-800 pb-3 flex items-center justify-center gap-2">
+        <span>🏆 CANLI SKOR TABLOSU</span>
+      </div>
+      <div id="stageLiveLeaderboard" class="space-y-2 overflow-y-auto max-h-[580px] pr-1"></div>
+    </div>
+
   </main>
 
   <!-- QUIZ FİNAL EKRANI -->
@@ -97,7 +98,7 @@
     </div>
   </main>
 
-  <footer class="flex justify-between items-center border-t border-slate-800/80 pt-4 text-xs text-slate-500">
+  <footer class="flex justify-between items-center border-t border-slate-800/80 pt-3 text-xs text-slate-500 mt-2">
     <span>Tavern Games Pub Quiz System</span>
     <span>taverngames.com.tr/quiz</span>
   </footer>
@@ -208,13 +209,13 @@
 
       if (state.timeLeft > 0) {
         timerBox.innerText = `${state.timeLeft}s`;
-        timerBox.className = "font-mono font-black text-6xl text-amber-400 animate-pulse";
+        timerBox.className = "font-mono font-black text-5xl text-amber-400 animate-pulse";
       } else if (isTimeUp) {
         timerBox.innerText = "Süre Bitti";
-        timerBox.className = "font-mono font-black text-5xl text-red-500";
+        timerBox.className = "font-mono font-black text-4xl text-red-500";
       } else {
         timerBox.innerText = "Bekleniyor...";
-        timerBox.className = "font-mono font-bold text-3xl text-slate-500";
+        timerBox.className = "font-mono font-bold text-2xl text-slate-500";
       }
 
       const grid = document.getElementById("stageOptionsGrid");
@@ -234,9 +235,9 @@
         }
 
         grid.innerHTML += `
-          <div class="p-6 rounded-2xl border ${cardStyle} flex justify-between items-center transition-all duration-300">
+          <div class="p-5 rounded-2xl border ${cardStyle} flex justify-between items-center transition-all duration-300">
             <span>${opt}) ${q[opt]}</span>
-            <span class="text-base font-extrabold">${badge}</span>
+            <span class="text-sm font-extrabold">${badge}</span>
           </div>`;
       });
     }
@@ -262,24 +263,24 @@
 
         if (showAnswers && q) {
           if (teamAns === q.correct) {
-            badgeStyle = "bg-green-500/30 text-green-300 border-green-500 font-extrabold text-base px-4 py-2";
+            badgeStyle = "bg-green-500/30 text-green-300 border-green-500 font-extrabold text-xs px-3 py-1.5";
             icon = `✅ Doğru (${teamAns})`;
           } else if (teamAns) {
-            badgeStyle = "bg-red-500/30 text-red-300 border-red-500 font-bold text-base px-4 py-2";
+            badgeStyle = "bg-red-500/30 text-red-300 border-red-500 font-bold text-xs px-3 py-1.5";
             icon = `❌ Yanlış (${teamAns})`;
           } else {
-            badgeStyle = "bg-slate-900 text-slate-600 border-slate-800 text-sm";
+            badgeStyle = "bg-slate-900 text-slate-600 border-slate-800 text-xs";
             icon = "⚪ Yanıt Vermedi";
           }
         } else if (teamAns) {
-          badgeStyle = "bg-amber-500/30 text-amber-300 border-amber-500/60 font-bold text-base px-4 py-2";
+          badgeStyle = "bg-amber-500/30 text-amber-300 border-amber-500/60 font-bold text-xs px-3 py-1.5";
           icon = "🔒 Cevaplandı";
         }
 
         box.innerHTML += `
-          <div class="px-4 py-2 rounded-2xl border flex items-center gap-2 shadow ${badgeStyle}">
+          <div class="px-3 py-1.5 rounded-xl border flex items-center gap-2 shadow ${badgeStyle}">
             <span>${t}</span>
-            <span class="text-xs opacity-90">(${icon})</span>
+            <span class="text-[10px] opacity-90">(${icon})</span>
           </div>`;
       });
     }
@@ -291,10 +292,11 @@
 
       sorted.forEach((t, idx) => {
         let rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
+        let cardBg = idx === 0 ? 'bg-amber-500/20 border-amber-500/60 text-amber-300' : 'bg-slate-800/90 border-slate-700/80 text-slate-200';
         box.innerHTML += `
-          <div class="flex justify-between items-center px-4 py-2 bg-slate-800/90 rounded-xl border border-slate-700 shadow font-semibold">
-            <span><strong class="text-amber-400 mr-2">${rankBadge}</strong> ${t}</span>
-            <span class="font-black text-amber-300">${allTeams[t].score || 0} P</span>
+          <div class="flex justify-between items-center px-4 py-2.5 rounded-xl border ${cardBg} shadow font-semibold text-base">
+            <span class="truncate max-w-[180px]"><strong class="mr-2">${rankBadge}</strong> ${t}</span>
+            <span class="font-black text-amber-400 ml-2">${allTeams[t].score || 0} P</span>
           </div>`;
       });
     }
@@ -318,7 +320,11 @@
 
     function showStageScreen(id) {
       ["stageLobby", "stageQuiz", "stageFinished"].forEach(s => document.getElementById(s).classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
+      const target = document.getElementById(id);
+      target.classList.remove("hidden");
+      if (id === "stageQuiz") {
+        target.classList.add("grid");
+      }
     }
   </script>
 </body>
