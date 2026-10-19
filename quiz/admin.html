@@ -15,7 +15,7 @@
 <h2 id="qt" class="text-xl font-bold leading-snug"></h2><div id="op" class="space-y-2"></div><p id="pl" class="text-xs text-amber-300"></p></div>
 <div class="flex gap-2 mt-3"><button id="pv" onclick="mv(-1)" data-c="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-30">← Önceki</button><button id="nx" onclick="mv(1)" data-c="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-30">Sonraki →</button></div>
 <div id="wt" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3 text-sm"></div>
-<details class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3"><summary id="ts" class="font-bold text-sm cursor-pointer"></summary><div id="tl" class="space-y-2 mt-2"></div></details>
+<details id="td" class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3"><summary id="ts" class="font-bold text-sm cursor-pointer"></summary><div id="tl" class="space-y-2 mt-2"></div></details>
 <details class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3 text-sm"><summary id="ss" class="font-bold cursor-pointer"></summary>
 <div class="grid grid-cols-3 gap-2 mt-2"><input id="cn" placeholder="Etkinlik adı" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cd" placeholder="Tarih" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cp" placeholder="Oyuncu şifresi" class="bg-slate-900 border border-slate-700 rounded p-2"></div>
 <button onclick="saveCfg()" class="bg-slate-700 px-3 py-2 rounded font-bold mt-2">Kaydet</button><p class="text-xs text-slate-400 mt-2">Sorular: Sheets › Dosya › İndir › CSV. Sütunlar: No, Soru, A, B, C, D, Doğru(A-D)</p><input type="file" accept=".csv,text/csv" onchange="loadCsv(this.files[0])" class="text-xs mt-1"><p id="msg" class="text-xs text-amber-400"></p></details>
@@ -24,7 +24,7 @@
 <div class="flex gap-2"><button id="b1" onclick="pub()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">① 📡 Gönder</button><button id="b2" onclick="startTimer()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">② ⏱️ Süreyi Başlat</button><button id="b3" onclick="reveal()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">③ ✅ Cevabı Aç</button></div>
 <div class="flex items-center gap-2 text-xs text-slate-300"><span>Süre</span><input id="sec" type="number" value="20" min="5" max="120" class="w-16 bg-slate-800 border border-slate-700 text-center font-bold rounded-lg p-1 text-amber-400"><span>sn</span><button id="pl10" onclick="plus()" data-c="px-3 py-1.5 rounded-lg font-bold disabled:opacity-30">+10 sn</button><label class="ml-auto flex items-center gap-1"><input id="auto" type="checkbox" checked>süre bitince otomatik aç</label></div></div></div>
 <script>
-const auth=firebase.auth(),PTS=10;let Q=[],cur=1,st=null,teams={},sc={},ans={},tm,aR,ak,inited=0,seeded=0;
+const auth=firebase.auth(),PTS=10;let Q=[],cur=1,st=null,teams={},sc={},ans={},tm,aR,ak,inited=0,seeded=0,res={},rR,opened="";
 auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous;$('login').classList.toggle('hidden',ok);$('dash').classList.toggle('hidden',!ok);$('bb').classList.toggle('hidden',!ok);if(ok)init()});
 function login(){auth.signInWithEmailAndPassword($('em').value.trim(),$('ps').value).catch(e=>{const m=$('lerr');m.textContent='Giriş başarısız: '+e.code;m.classList.remove('hidden')})}
 function init(){if(inited++)return;
@@ -33,7 +33,7 @@ function init(){if(inited++)return;
  db.ref('config/eventPassword').once('value',s=>$('cp').value=s.val()||'');
  db.ref('teams').on('value',s=>{teams=s.val()||{};drawTeams();draw()});db.ref('scores').on('value',s=>{sc=s.val()||{};drawTeams()});
  db.ref('state').on('value',s=>{st=s.val();if(!seeded&&st&&st.currentQuestion){cur=st.currentQuestion;seeded=1}
-  if(st&&st.qKey!==ak){if(aR)aR.off();ak=st.qKey;ans={};if(ak){aR=db.ref('answers/'+ak);aR.on('value',a=>{ans=a.val()||{};draw()})}}draw()});
+  if(st&&st.qKey!==ak){if(aR)aR.off();if(rR)rR.off();ak=st.qKey;ans={};res={};if(ak){aR=db.ref('answers/'+ak);aR.on('value',a=>{ans=a.val()||{};draw()});rR=db.ref('results/'+ak);rR.on('value',a=>{res=a.val()||{};drawTeams()})}}draw()});
  setInterval(draw,500)}
 function saveCfg(){db.ref().update({'config/public':{name:$('cn').value.trim(),date:$('cd').value.trim()},'config/eventPassword':$('cp').value.trim()}).then(()=>$('msg').textContent='Kaydedildi.')}
 function csv(t){t=t.replace(/^\uFEFF/,'');const f=t.split('\n')[0],d=(f.match(/;/g)||[]).length>(f.match(/,/g)||[]).length?';':',',rows=[];let r=[],c='',q=0;
@@ -59,11 +59,18 @@ async function reveal(){clearTimeout(tm);if(!st||st.status!='question')return;co
 function finish(){if(!confirm('Quiz bitirilsin mi? Oyuncular final ekranını görecek.'))return;clearTimeout(tm);db.ref('state').update({status:'finished'})}
 function reset(){if(!confirm('Tüm takımlar, cevaplar ve skorlar silinsin mi?'))return;clearTimeout(tm);cur=1;
  db.ref().update({teams:null,scores:null,answers:null,answered:null,results:null,scored:null,joins:null,state:{status:'lobby',currentQuestion:1,endsAt:0,total:Q.length}})}
-function drawTeams(){const b=$('tl');b.replaceChildren();Object.keys(teams).forEach(u=>{
+function drawTeams(){const b=$('tl'),rv=!!st&&st.status=='revealed'&&st.qKey==ak&&Object.keys(res).length>0,ids=Object.keys(teams),R=u=>rv?(res[u]?(res[u].ok?1:res[u].choice=='-'?3:2):3):0,cn=c=>ids.filter(u=>R(u)==c).length;
+ if(rv)ids.sort((x,y)=>R(x)-R(y));
+ $('ts').textContent='👥 Takımlar · '+ids.length+(rv?' · ✅'+cn(1)+' ❌'+cn(2)+' ⚪'+cn(3):'');
+ b.replaceChildren();
+ if(rv){if(opened!=ak){$('td').open=true;opened=ak}
+  const bx=h('div','bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm space-y-1 mb-2');bx.append(h('div','text-xs text-slate-400','Soru '+st.currentQuestion+' sonucu (cevap: '+st.correct+')'));
+  [[1,'✅ Doğru','text-green-400'],[2,'❌ Yanlış','text-red-400'],[3,'⚪ Cevapsız','text-slate-400']].forEach(([c,t,k])=>{const n=ids.filter(u=>R(u)==c).map(u=>teams[u].name+(c==2?' ('+res[u].choice+')':'')),d=h('div',k);d.append(h('b','',t+' ('+n.length+'): '),h('span','text-slate-200',n.join(', ')||'-'));bx.append(d)});b.append(bx)}
+ ids.forEach(u=>{
  const r=h('div','flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700 text-sm'),i=h('input','w-16 bg-slate-800 border border-slate-600 rounded text-center p-1');
  i.type='number';i.value=sc[u]||0;i.onchange=()=>db.ref('scores/'+u).set(parseInt(i.value)||0);
  const x=h('button','text-red-400 ml-2','❌');x.onclick=()=>{if(confirm(teams[u].name+' çıkarılsın mı?'))db.ref().update({['teams/'+u]:null,['scores/'+u]:null,['joins/'+u]:null})};
- const d=h('div','flex items-center');d.append(i,x);r.append(h('span','truncate',teams[u].name),d);b.append(r)})}
+ const d=h('div','flex items-center');d.append(i,x);r.append(h('span','truncate',(rv?['','✅ ','❌ ','⚪ '][R(u)]:'')+teams[u].name),d);b.append(r)})}
 function sb(id,on,hl){const b=$(id);b.disabled=!on;b.className=b.dataset.c+(hl?' bg-amber-500 text-slate-950 ring-2 ring-amber-300':' bg-slate-700 text-slate-200')}
 function draw(){const q=Q[cur-1],s=st||{},live=s.status=='question',rev=s.status=='revealed',same=s.currentQuestion==cur,cs=(live||rev)&&same,lv=live&&same,l=left(s),ms=s.endsAt>0?s.endsAt-now():null,n=Object.keys(teams).length,k=Object.keys(ans).length;
  $('chip').textContent=live?'Soru '+s.currentQuestion+' gönderildi'+(l===null?' · süre başlamadı':l>0?' · ⏱ '+l+' sn':' · süre bitti'):rev?'Soru '+s.currentQuestion+' · cevap açıldı':s.status=='finished'?'Quiz bitti':'Lobi';
@@ -74,5 +81,5 @@ function draw(){const q=Q[cur-1],s=st||{},live=s.status=='question',rev=s.status
  $('pl').textContent=(live||rev)&&!same?'Oyuncular şu an Soru '+s.currentQuestion+' ekranında. Gönder\'e basana kadar Soru '+cur+' onlara görünmez.':'';
  const wt=$('wt');wt.classList.toggle('hidden',!lv);if(lv){const w=Object.keys(teams).filter(u=>!ans[u]);wt.replaceChildren(h('div','text-xs text-slate-400 mb-1',w.length?'Cevap bekleyenler ('+w.length+')':'Herkes cevapladı ✓'),...w.map(u=>h('span','inline-block bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 mr-1 mb-1 text-xs',teams[u].name)))}
  sb('b1',!!q,!cs);sb('b2',lv,lv&&l===null);sb('b3',lv,lv&&l!==null);sb('pl10',lv&&l!==null,false);sb('pv',cur>1,false);sb('nx',cur<Q.length,rev&&same&&cur<Q.length);
- $('ts').textContent='👥 Takımlar · '+n;$('ss').textContent='⚙️ Ayarlar · ✓ '+Q.length+' soru yüklü'}
+ $('ss').textContent='⚙️ Ayarlar · ✓ '+Q.length+' soru yüklü'}
 </script></body></html>
