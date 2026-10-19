@@ -50,7 +50,7 @@ function render(){
 function pick(o){$('toast').textContent='';db.ref().update({['answers/'+qKey+'/'+uid]:o,['answered/'+qKey+'/'+uid]:true}).catch(()=>{$('toast').textContent='Süre doldu, cevap kaydedilmedi.'})}
 async function go(){const p=$('pw').value.trim(),n=$('tn').value.trim().slice(0,24),e=$('err');e.textContent='';
  if(!n)return e.textContent='Lütfen grup isminizi giriniz!';
- try{await db.ref('joins/'+uid).set(p)}catch(x){return e.textContent='Etkinlik şifresi hatalı!'}
+ try{await db.ref('joins/'+uid).set(p)}catch(x){return e.textContent='Hata: '+x.code+' (uid: '+uid+')'}
  const low=Object.values(teams).map(t=>t.name.toLowerCase());let f=n,i=1;while(low.includes(f.toLowerCase()))f=n+' '+(++i);
  db.ref('teams/'+uid).set({name:f}).catch(()=>e.textContent='Katılım başarısız, tekrar deneyin.')}
 function out(){if(confirm('Çıkış yapmak istediğinize emin misiniz?'))db.ref('teams/'+uid).remove()}
