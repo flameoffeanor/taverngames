@@ -1,39 +1,39 @@
-<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tavern Quiz - Moderatör</title>
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Tavern Quiz - Moderatör</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="common.js"></script></head>
-<body class="bg-slate-900 text-white min-h-screen p-4 font-sans">
-<div id="login" class="max-w-md mx-auto my-20 bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-3"><h2 class="text-xl font-bold text-amber-400 text-center">Moderatör Girişi</h2>
+<body class="bg-slate-900 text-white min-h-screen font-sans">
+<div id="login" class="max-w-md mx-auto my-20 p-6 bg-slate-800 rounded-2xl border border-slate-700 space-y-3"><h2 class="text-xl font-bold text-amber-400 text-center">Moderatör Girişi</h2>
 <input id="em" type="email" placeholder="E-posta" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3"><input id="ps" type="password" placeholder="Şifre" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3">
-<button onclick="login()" class="w-full bg-amber-500 font-bold py-3 text-slate-950 rounded-lg">Giriş Yap</button><p id="lerr" class="hidden text-red-400 text-xs text-center">Giriş başarısız!</p></div>
-<div id="dash" class="hidden max-w-6xl mx-auto grid-cols-1 lg:grid-cols-12 gap-6">
-<div class="lg:col-span-7 space-y-4">
-<div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700"><div><h1 class="font-bold text-lg text-amber-400">Moderatör Kumanda Paneli</h1><p id="qinfo" class="text-xs text-slate-400"></p></div><button onclick="reset()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-bold">Yarışmayı Sıfırla</button></div>
-<details class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm space-y-2"><summary class="cursor-pointer font-bold">⚙️ Etkinlik Ayarları & Soru Yükleme</summary>
-<div class="grid grid-cols-3 gap-2 pt-2"><input id="cn" placeholder="Etkinlik adı" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cd" placeholder="Tarih" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cp" placeholder="Oyuncu şifresi" class="bg-slate-900 border border-slate-700 rounded p-2"></div>
-<button onclick="saveCfg()" class="bg-slate-700 px-3 py-1 rounded font-bold">Kaydet</button>
-<p class="text-xs text-slate-400">Sorular: Google Sheets'ten Dosya › İndir › CSV. Sütunlar: No, Soru, A, B, C, D, Doğru(A-D)</p><input type="file" accept=".csv,text/csv" onchange="loadCsv(this.files[0])" class="text-xs"><p id="msg" class="text-xs text-amber-400"></p></details>
-<div class="grid grid-cols-2 gap-3"><button onclick="lobby()" class="bg-slate-800 border border-slate-700 p-3 rounded-xl font-semibold">🚪 Lobiyi Aç</button><button onclick="pub(cur)" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold">📡 Soruyu Gönder</button>
-<div class="flex gap-2"><input id="sec" type="number" value="20" min="5" max="120" class="w-20 bg-slate-800 border border-slate-700 text-center font-bold text-lg rounded-xl text-amber-400"><button onclick="startTimer()" class="flex-1 bg-blue-600 p-3 rounded-xl font-bold text-sm">⏱️ Süreyi Başlat</button></div>
-<button onclick="reveal()" class="bg-green-600 p-3 rounded-xl font-bold">✅ Cevabı Açıkla (+10 Puan)</button></div>
-<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center"><button onclick="nav(-1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Önceki</button><div class="text-center"><b id="qd" class="text-lg text-amber-400"></b><div id="hint" class="text-xs text-green-400"></div></div><button onclick="nav(1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Sonraki</button></div>
-<button onclick="finish()" class="w-full bg-purple-700 hover:bg-purple-600 p-3 rounded-xl font-bold text-sm">🏁 Quiz'i Bitir</button>
-<div class="grid md:grid-cols-2 gap-4"><div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Takımlar & Puanlar</h3><div id="tl" class="space-y-2 max-h-60 overflow-y-auto"></div></div>
-<div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Gelen Cevaplar</h3><div id="ac" class="text-2xl font-bold text-amber-400 mb-2"></div><div id="al" class="text-xs space-y-1"></div></div></div></div>
-<div class="lg:col-span-5 space-y-3"><div class="text-xs font-bold uppercase text-amber-400">📱 Oyuncu Ekranı Önizleme</div><div id="pv" class="bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 min-h-[420px] space-y-3"></div></div></div>
+<button onclick="login()" class="w-full bg-amber-500 font-bold py-3 text-slate-950 rounded-lg">Giriş Yap</button><p id="lerr" class="hidden text-red-400 text-xs text-center"></p></div>
+<div id="dash" class="hidden max-w-xl mx-auto px-3 pb-44">
+<div class="sticky top-0 z-10 bg-slate-900 pt-3 pb-2"><div class="flex items-center gap-2"><div id="chip" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-amber-400">Lobi</div><div id="cnt" class="text-sm font-bold text-slate-300"></div><button onclick="lobby()" class="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs">🚪 Lobi</button></div>
+<div class="h-2 bg-slate-800 rounded-full mt-2 overflow-hidden"><div id="bar" class="h-full bg-green-500" style="width:0"></div></div></div>
+<div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-3 mt-2"><div class="flex justify-between text-xs text-slate-400"><b id="qn" class="text-amber-400"></b><span>Moderatör görünümü</span></div>
+<h2 id="qt" class="text-xl font-bold leading-snug"></h2><div id="op" class="space-y-2"></div><p id="pl" class="text-xs text-amber-300"></p></div>
+<div class="flex gap-2 mt-3"><button id="pv" onclick="mv(-1)" data-c="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-30">← Önceki</button><button id="nx" onclick="mv(1)" data-c="flex-1 py-3 rounded-xl font-bold text-sm disabled:opacity-30">Sonraki →</button></div>
+<div id="wt" class="hidden bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3 text-sm"></div>
+<details class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3"><summary id="ts" class="font-bold text-sm cursor-pointer"></summary><div id="tl" class="space-y-2 mt-2"></div></details>
+<details class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3 text-sm"><summary id="ss" class="font-bold cursor-pointer"></summary>
+<div class="grid grid-cols-3 gap-2 mt-2"><input id="cn" placeholder="Etkinlik adı" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cd" placeholder="Tarih" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cp" placeholder="Oyuncu şifresi" class="bg-slate-900 border border-slate-700 rounded p-2"></div>
+<button onclick="saveCfg()" class="bg-slate-700 px-3 py-2 rounded font-bold mt-2">Kaydet</button><p class="text-xs text-slate-400 mt-2">Sorular: Sheets › Dosya › İndir › CSV. Sütunlar: No, Soru, A, B, C, D, Doğru(A-D)</p><input type="file" accept=".csv,text/csv" onchange="loadCsv(this.files[0])" class="text-xs mt-1"><p id="msg" class="text-xs text-amber-400"></p></details>
+<details class="bg-slate-800 border border-red-900 rounded-xl p-3 mt-3"><summary class="font-bold text-sm cursor-pointer text-red-400">⚠️ Tehlikeli işlemler</summary><div class="flex gap-2 mt-2"><button onclick="finish()" class="flex-1 bg-purple-700 py-3 rounded-xl text-sm font-bold">🏁 Quiz'i Bitir</button><button onclick="reset()" class="flex-1 bg-red-600 py-3 rounded-xl text-sm font-bold">Yarışmayı Sıfırla</button></div></details></div>
+<div id="bb" class="hidden fixed bottom-0 inset-x-0 bg-slate-950/95 border-t border-slate-700 px-3 pt-3" style="padding-bottom:max(.75rem,env(safe-area-inset-bottom))"><div class="max-w-xl mx-auto space-y-2">
+<div class="flex gap-2"><button id="b1" onclick="pub()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">① 📡 Gönder</button><button id="b2" onclick="startTimer()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">② ⏱️ Süreyi Başlat</button><button id="b3" onclick="reveal()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">③ ✅ Cevabı Aç</button></div>
+<div class="flex items-center gap-2 text-xs text-slate-300"><span>Süre</span><input id="sec" type="number" value="20" min="5" max="120" class="w-16 bg-slate-800 border border-slate-700 text-center font-bold rounded-lg p-1 text-amber-400"><span>sn</span><button id="pl10" onclick="plus()" data-c="px-3 py-1.5 rounded-lg font-bold disabled:opacity-30">+10 sn</button><label class="ml-auto flex items-center gap-1"><input id="auto" type="checkbox" checked>süre bitince otomatik aç</label></div></div></div>
 <script>
-const auth=firebase.auth(),PTS=10;let Q=[],cur=1,st=null,teams={},sc={},ans={},tm,aR,ak,inited=0;
-auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous;$('login').classList.toggle('hidden',ok);$('dash').classList.toggle('hidden',!ok);$('dash').classList.toggle('grid',ok);if(ok)init()});
-function login(){auth.signInWithEmailAndPassword($('em').value.trim(),$('ps').value).catch(()=>$('lerr').classList.remove('hidden'))}
+const auth=firebase.auth(),PTS=10;let Q=[],cur=1,st=null,teams={},sc={},ans={},tm,aR,ak,inited=0,seeded=0;
+auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous;$('login').classList.toggle('hidden',ok);$('dash').classList.toggle('hidden',!ok);$('bb').classList.toggle('hidden',!ok);if(ok)init()});
+function login(){auth.signInWithEmailAndPassword($('em').value.trim(),$('ps').value).catch(e=>{const m=$('lerr');m.textContent='Giriş başarısız: '+e.code;m.classList.remove('hidden')})}
 function init(){if(inited++)return;
- db.ref('private/questions').on('value',s=>{const v=s.val()||[];Q=Array.isArray(v)?v.filter(Boolean):Object.values(v);$('qinfo').textContent='Yüklü soru sayısı: '+Q.length;draw()});
+ db.ref('private/questions').on('value',s=>{const v=s.val()||[];Q=Array.isArray(v)?v.filter(Boolean):Object.values(v);draw()});
  db.ref('config/public').once('value',s=>{const c=s.val()||{};$('cn').value=c.name||'';$('cd').value=c.date||''});
  db.ref('config/eventPassword').once('value',s=>$('cp').value=s.val()||'');
- db.ref('teams').on('value',s=>{teams=s.val()||{};drawTeams();drawAns()});db.ref('scores').on('value',s=>{sc=s.val()||{};drawTeams()});
- db.ref('state').on('value',s=>{st=s.val();if(st&&st.currentQuestion)cur=st.currentQuestion;
-  if(st&&st.qKey!==ak){if(aR)aR.off();ak=st.qKey;ans={};if(ak){aR=db.ref('answers/'+ak);aR.on('value',a=>{ans=a.val()||{};drawAns()})}}draw()});
+ db.ref('teams').on('value',s=>{teams=s.val()||{};drawTeams();draw()});db.ref('scores').on('value',s=>{sc=s.val()||{};drawTeams()});
+ db.ref('state').on('value',s=>{st=s.val();if(!seeded&&st&&st.currentQuestion){cur=st.currentQuestion;seeded=1}
+  if(st&&st.qKey!==ak){if(aR)aR.off();ak=st.qKey;ans={};if(ak){aR=db.ref('answers/'+ak);aR.on('value',a=>{ans=a.val()||{};draw()})}}draw()});
  setInterval(draw,500)}
 function saveCfg(){db.ref().update({'config/public':{name:$('cn').value.trim(),date:$('cd').value.trim()},'config/eventPassword':$('cp').value.trim()}).then(()=>$('msg').textContent='Kaydedildi.')}
 function csv(t){t=t.replace(/^\uFEFF/,'');const f=t.split('\n')[0],d=(f.match(/;/g)||[]).length>(f.match(/,/g)||[]).length?';':',',rows=[];let r=[],c='',q=0;
@@ -42,30 +42,37 @@ function csv(t){t=t.replace(/^\uFEFF/,'');const f=t.split('\n')[0],d=(f.match(/;
 function loadCsv(file){if(!file)return;const fr=new FileReader();fr.onload=()=>{const q=csv(fr.result).map(r=>({text:(r[1]||'').trim(),A:(r[2]||'').trim(),B:(r[3]||'').trim(),C:(r[4]||'').trim(),D:(r[5]||'').trim(),correct:(r[6]||'').trim().toUpperCase()})).filter(x=>x.text&&/^[A-D]$/.test(x.correct));
  if(!q.length)return $('msg').textContent='Geçerli soru bulunamadı (7. sütun A-D olmalı).';
  db.ref('private/questions').set(q).then(()=>$('msg').textContent=q.length+' soru yüklendi.')};fr.readAsText(file)}
-function pub(n){clearTimeout(tm);const q=Q[n-1];if(!q)return;db.ref('state').set({status:'question',currentQuestion:n,qKey:'q'+n,total:Q.length,qText:q.text,A:q.A,B:q.B,C:q.C,D:q.D,endsAt:0})}
-function lobby(){clearTimeout(tm);db.ref('state').update({status:'lobby',endsAt:0})}
-function startTimer(){if(!st||st.status!='question')return;const s=parseInt($('sec').value)||20;db.ref('state/endsAt').set(now()+s*1000);clearTimeout(tm);tm=setTimeout(reveal,s*1000+700)}
+function mv(d){const n=cur+d;if(n<1||n>Q.length)return;cur=n;draw()}
+function pub(){const q=Q[cur-1];if(!q)return;
+ if(st&&st.status=='question'&&st.currentQuestion!=cur&&!confirm('Soru '+st.currentQuestion+' henüz açıklanmadı. Yine de Soru '+cur+' gönderilsin mi?'))return;
+ clearTimeout(tm);db.ref('state').set({status:'question',currentQuestion:cur,qKey:'q'+cur,total:Q.length,qText:q.text,A:q.A,B:q.B,C:q.C,D:q.D,endsAt:0,dur:0})}
+function lobby(){if(st&&(st.status=='question'||st.status=='revealed')&&!confirm('Oyuncular lobi ekranına dönsün mü?'))return;clearTimeout(tm);db.ref('state').update({status:'lobby',endsAt:0})}
+function arm(ms){clearTimeout(tm);tm=setTimeout(()=>{if($('auto').checked)reveal()},ms+700)}
+function startTimer(){if(!st||st.status!='question'||st.currentQuestion!=cur)return;const s=parseInt($('sec').value)||20;db.ref('state').update({endsAt:now()+s*1000,dur:s});arm(s*1000)}
+function plus(){if(!st||st.status!='question'||!(st.endsAt>0))return;const e=Math.max(st.endsAt,now())+10000;db.ref('state').update({endsAt:e,dur:(st.dur||0)+10});arm(e-now())}
 async function reveal(){clearTimeout(tm);if(!st||st.status!='question')return;const k=st.qKey,q=Q[st.currentQuestion-1];if(!q)return;
  await db.ref('state').update({status:'revealed',correct:q.correct});
  const t=await db.ref('scored/'+k).transaction(c=>c?undefined:true);if(!t.committed)return;
  const [a,tt]=await Promise.all([db.ref('answers/'+k).once('value'),db.ref('teams').once('value')]),A=a.val()||{},u={};
  Object.keys(tt.val()||{}).forEach(id=>{const c=A[id]||'-',ok=c==q.correct;u['results/'+k+'/'+id]={choice:c,ok};if(ok)u['scores/'+id]=firebase.database.ServerValue.increment(PTS)});
  db.ref().update(u)}
-function nav(d){const n=cur+d;if(n<1)return;if(n>Q.length){if(confirm('Tüm sorular bitti! Bitiş ekranına geçilsin mi?'))finish();return}pub(n)}
-function finish(){clearTimeout(tm);db.ref('state').update({status:'finished'})}
-function reset(){if(!confirm('Tüm takımlar, cevaplar ve skorlar silinsin mi?'))return;clearTimeout(tm);
+function finish(){if(!confirm('Quiz bitirilsin mi? Oyuncular final ekranını görecek.'))return;clearTimeout(tm);db.ref('state').update({status:'finished'})}
+function reset(){if(!confirm('Tüm takımlar, cevaplar ve skorlar silinsin mi?'))return;clearTimeout(tm);cur=1;
  db.ref().update({teams:null,scores:null,answers:null,answered:null,results:null,scored:null,joins:null,state:{status:'lobby',currentQuestion:1,endsAt:0,total:Q.length}})}
 function drawTeams(){const b=$('tl');b.replaceChildren();Object.keys(teams).forEach(u=>{
  const r=h('div','flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700 text-sm'),i=h('input','w-16 bg-slate-800 border border-slate-600 rounded text-center p-1');
  i.type='number';i.value=sc[u]||0;i.onchange=()=>db.ref('scores/'+u).set(parseInt(i.value)||0);
  const x=h('button','text-red-400 ml-2','❌');x.onclick=()=>{if(confirm(teams[u].name+' çıkarılsın mı?'))db.ref().update({['teams/'+u]:null,['scores/'+u]:null,['joins/'+u]:null})};
  const d=h('div','flex items-center');d.append(i,x);r.append(h('span','truncate',teams[u].name),d);b.append(r)})}
-function drawAns(){const k=Object.keys(ans);$('ac').textContent=k.length+' / '+Object.keys(teams).length+' Takım Cevap Verdi';$('al').replaceChildren(...k.map(u=>{const r=h('div','flex justify-between border-b border-slate-700/40 py-1');r.append(h('span','',teams[u]?teams[u].name:'?'),h('b','text-amber-400',ans[u]));return r}))}
-function draw(){const q=Q[cur-1];$('qd').textContent='Soru '+cur+' / '+(Q.length||'?');$('hint').textContent=q?'Doğru cevap: '+q.correct:'';
- const p=$('pv');p.replaceChildren();if(!st)return;
- if(st.status=='lobby'||st.status=='finished')return p.append(h('div','text-center text-amber-400 font-bold text-lg mt-20',st.status=='lobby'?'⏳ Lobi':'🏆 Quiz Sona Erdi'));
- const l=left(st),rev=st.status=='revealed';
- p.append(h('div','flex justify-between text-xs border-b border-slate-800 pb-2',''),h('div','bg-slate-900 p-3 rounded-xl text-sm font-semibold',st.qText));
- p.firstChild.append(h('b','text-amber-400','Soru '+st.currentQuestion),h('span','text-amber-400 font-bold',rev?'Süre Bitti':l===null?'Bekleniyor...':l>0?l+'s':'Süre Bitti'));
- L.forEach(o=>p.append(h('div','p-2.5 rounded-lg border text-xs '+(rev&&o==st.correct?'bg-green-500/20 border-green-500 text-green-400 font-bold':'bg-slate-900 border-slate-800'),o+') '+st[o])))}
+function sb(id,on,hl){const b=$(id);b.disabled=!on;b.className=b.dataset.c+(hl?' bg-amber-500 text-slate-950 ring-2 ring-amber-300':' bg-slate-700 text-slate-200')}
+function draw(){const q=Q[cur-1],s=st||{},live=s.status=='question',rev=s.status=='revealed',same=s.currentQuestion==cur,cs=(live||rev)&&same,lv=live&&same,l=left(s),ms=s.endsAt>0?s.endsAt-now():null,n=Object.keys(teams).length,k=Object.keys(ans).length;
+ $('chip').textContent=live?'Soru '+s.currentQuestion+' gönderildi'+(l===null?' · süre başlamadı':l>0?' · ⏱ '+l+' sn':' · süre bitti'):rev?'Soru '+s.currentQuestion+' · cevap açıldı':s.status=='finished'?'Quiz bitti':'Lobi';
+ $('cnt').textContent=cs?k+'/'+n+' cevap':'';
+ const bar=$('bar');bar.style.width=live&&ms!==null&&s.dur?Math.max(0,ms/(s.dur*10))+'%':live?'100%':'0%';bar.className='h-full '+(l!==null&&l<=5?'bg-red-500':'bg-green-500');
+ $('qn').textContent='Soru '+cur+' / '+(Q.length||'?');$('qt').textContent=q?q.text:'Soru yok. Ayarlar bölümünden CSV yükleyin.';
+ const op=$('op');op.replaceChildren();if(q)L.forEach(o=>op.append(h('div','p-3 rounded-xl border '+(o==q.correct?'border-green-500 bg-green-500/20 text-green-300 font-bold':'border-slate-700 bg-slate-900 text-slate-300'),o+') '+q[o]+(o==q.correct?'  ✓ doğru':''))));
+ $('pl').textContent=(live||rev)&&!same?'Oyuncular şu an Soru '+s.currentQuestion+' ekranında. Gönder\'e basana kadar Soru '+cur+' onlara görünmez.':'';
+ const wt=$('wt');wt.classList.toggle('hidden',!lv);if(lv){const w=Object.keys(teams).filter(u=>!ans[u]);wt.replaceChildren(h('div','text-xs text-slate-400 mb-1',w.length?'Cevap bekleyenler ('+w.length+')':'Herkes cevapladı ✓'),...w.map(u=>h('span','inline-block bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 mr-1 mb-1 text-xs',teams[u].name)))}
+ sb('b1',!!q,!cs);sb('b2',lv,lv&&l===null);sb('b3',lv,lv&&l!==null);sb('pl10',lv&&l!==null,false);sb('pv',cur>1,false);sb('nx',cur<Q.length,rev&&same&&cur<Q.length);
+ $('ts').textContent='👥 Takımlar · '+n;$('ss').textContent='⚙️ Ayarlar · ✓ '+Q.length+' soru yüklü'}
 </script></body></html>
