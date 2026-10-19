@@ -1,370 +1,57 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tavern Games - Quiz Night</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
-    .selected-option {
-      border: 3px solid #f59e0b !important;
-      background-color: rgba(245, 158, 11, 0.25) !important;
-      color: #fbbf24 !important;
-      font-weight: bold !important;
-    }
-  </style>
-</head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between p-4 font-sans">
-
-  <!-- HEADER -->
-  <header class="flex justify-between items-center border-b border-slate-700 pb-3">
-    <div class="font-bold text-lg text-amber-400">Tavern Quiz</div>
-    <div id="teamNameDisplay" class="hidden text-sm bg-slate-800 px-3 py-1 rounded-full border border-slate-700 items-center gap-2">
-      <span id="currentTeamName" class="font-semibold text-amber-300"></span>
-      <button onclick="logoutTeam()" class="text-xs bg-red-500/20 text-red-400 hover:bg-red-500/40 px-2 py-0.5 rounded border border-red-500/30 transition">Çıkış Yap</button>
-    </div>
-  </header>
-
-  <!-- GİRİŞ FORMU -->
-  <main id="loginScreen" class="max-w-md mx-auto w-full my-auto bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700">
-    <h1 id="eventTitle" class="text-2xl font-extrabold text-center text-amber-400 mb-1">Quiz Night</h1>
-    <p id="eventDate" class="text-xs text-center text-slate-400 mb-6"></p>
-    
-    <div class="space-y-4">
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Etkinlik Şifresi</label>
-        <input type="password" id="eventPassword" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-400" placeholder="Şifreyi giriniz">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Grup / Takım İsmi</label>
-        <input type="text" id="teamName" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-amber-400" placeholder="Takım adınız">
-      </div>
-      <button onclick="joinQuiz()" class="w-full bg-amber-500 hover:bg-amber-600 font-bold py-3 rounded-lg text-slate-950 transition">Odaya Katıl</button>
-      <p id="loginError" class="text-red-400 text-xs text-center hidden"></p>
-    </div>
-  </main>
-
-  <!-- LOBİ -->
-  <main id="lobbyScreen" class="hidden max-w-md mx-auto w-full my-auto text-center bg-slate-800 p-6 rounded-2xl border border-slate-700">
-    <div class="animate-pulse mb-4 text-amber-400 text-4xl">⏳</div>
-    <h2 class="text-xl font-bold mb-2">Lobiye Katıldınız!</h2>
-    <p class="text-sm text-slate-400 mb-6">Moderatör yarışmayı başlatana kadar bekleyiniz...</p>
-    <div class="text-left bg-slate-900 p-4 rounded-lg border border-slate-700 max-h-48 overflow-y-auto">
-      <div class="text-xs font-bold text-slate-400 mb-2 uppercase">Katılan Takımlar:</div>
-      <ul id="lobbyTeamsList" class="space-y-1 text-sm"></ul>
-    </div>
-  </main>
-
-  <!-- SORU VE ŞIKLAR -->
-  <main id="quizScreen" class="hidden max-w-md mx-auto w-full my-auto space-y-4">
-    <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
-      <span id="questionNumber" class="font-bold text-amber-400 text-sm">Soru 1</span>
-      <div id="timerDisplay" class="font-mono font-bold text-sm text-slate-400">Bekleniyor...</div>
-    </div>
-
-    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
-      <h3 id="questionText" class="text-lg font-semibold leading-relaxed">Soru yükleniyor...</h3>
-    </div>
-
-    <div id="optionsContainer" class="grid grid-cols-1 gap-3"></div>
-
-    <div id="statusFooter" class="hidden space-y-2 pt-2">
-      <div id="answerFeedback" class="text-center font-bold text-sm py-2 rounded-lg"></div>
-      <button onclick="toggleLeaderboard()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs py-2 rounded-lg">📊 Skor Tablosunu Gör / Gizle</button>
-      <div id="inlineLeaderboard" class="hidden bg-slate-800 p-4 rounded-xl border border-slate-700">
-        <h4 class="font-bold text-xs text-slate-400 mb-2 uppercase">Canlı Sıralama</h4>
-        <div id="leaderboardList" class="space-y-1 text-sm"></div>
-      </div>
-    </div>
-  </main>
-
-  <!-- QUİZ BİTTİ EKRANI -->
-  <main id="finishedScreen" class="hidden max-w-md mx-auto w-full my-auto text-center bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-    <div class="text-5xl">🏆</div>
-    <h2 class="text-2xl font-black text-amber-400">Quiz Sona Erdi!</h2>
-    <p class="text-sm text-slate-300">Tüm sorular yanıtlandı. Katılımınız için teşekkür ederiz!</p>
-    <div class="bg-slate-900 p-4 rounded-xl border border-slate-700 text-left">
-      <h4 class="font-bold text-xs text-amber-400 mb-3 uppercase tracking-wider text-center">Final Puan Tablosu</h4>
-      <div id="finalLeaderboardList" class="space-y-2 text-sm"></div>
-    </div>
-  </main>
-
-  <footer class="text-center text-xs text-slate-600 py-2">
-    Tavern Games Quiz Night &copy; 2026
-  </footer>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",
-      authDomain: "tavern-quiz.firebaseapp.com",
-      databaseURL: "https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "tavern-quiz",
-      storageBucket: "tavern-quiz.firebasestorage.app",
-      messagingSenderId: "280835700622",
-      appId: "1:280835700622:web:043d61c02d689de87056df"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const SHEET_ID = "1dkkG5g3A1aoiWf2Y9FdWg6LZ3TeQTTHemC2YNQ0HDGs";
-    let myTeamName = localStorage.getItem("quiz_team_name") || "";
-    let selectedOption = null;
-    let currentQuestionNum = null;
-    let configData = {};
-    let questionsData = [];
-
-    async function loadSheetData() {
-      try {
-        const urlAyarlar = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
-        const resA = await fetch(urlAyarlar);
-        const textA = await resA.text();
-        const jsonA = JSON.parse(textA.substring(47, textA.length - 2));
-        jsonA.table.rows.forEach(r => {
-          if (r.c[0] && r.c[1]) configData[r.c[0].v] = r.c[1].v;
-        });
-
-        document.getElementById("eventTitle").innerText = configData.Etkinlik_Adi || "Quiz Night";
-        document.getElementById("eventDate").innerText = configData.Etkinlik_Tarihi || "";
-
-        const urlSorular = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sorular`;
-        const resS = await fetch(urlSorular);
-        const textS = await resS.text();
-        const jsonS = JSON.parse(textS.substring(47, textS.length - 2));
-        
-        questionsData = jsonS.table.rows
-          .filter(r => r.c && r.c[1] && r.c[1].v && r.c[1].v.toString().trim() !== "")
-          .map(r => ({
-            no: r.c[0]?.v,
-            text: r.c[1]?.v,
-            A: r.c[2]?.v,
-            B: r.c[3]?.v,
-            C: r.c[4]?.v,
-            D: r.c[5]?.v,
-            correct: r.c[6]?.v
-          }));
-      } catch (e) {
-        console.error("Sheet yükleme hatası:", e);
-      }
-    }
-
-    loadSheetData();
-
-    if (myTeamName) {
-      document.getElementById("currentTeamName").innerText = myTeamName;
-      document.getElementById("teamNameDisplay").classList.remove("hidden");
-      document.getElementById("teamNameDisplay").classList.add("flex");
-    }
-
-    db.ref("state").on("value", snapshot => {
-      const state = snapshot.val();
-      if (!state) return;
-
-      if (state.status === "finished") {
-        showScreen("finishedScreen");
-      } else if (state.status === "lobby") {
-        if (myTeamName) showScreen("lobbyScreen");
-      } else if (state.status === "question" || state.status === "revealed") {
-        if (myTeamName) {
-          showScreen("quizScreen");
-          if (currentQuestionNum !== state.currentQuestion) {
-            currentQuestionNum = state.currentQuestion;
-            selectedOption = null;
-          }
-          renderQuestion(state);
-        }
-      }
-    });
-
-    db.ref("teams").on("value", snapshot => {
-      const teams = snapshot.val() || {};
-      const list = document.getElementById("lobbyTeamsList");
-      list.innerHTML = "";
-      Object.keys(teams).forEach(t => {
-        list.innerHTML += `<li class="flex justify-between text-slate-300"><span>${t}</span> <span class="text-xs text-amber-400 font-bold">${teams[t].score || 0} p</span></li>`;
-      });
-      renderLeaderboard(teams);
-    });
-
-    function joinQuiz() {
-      const pass = document.getElementById("eventPassword").value.trim();
-      let inputName = document.getElementById("teamName").value.trim();
-      const err = document.getElementById("loginError");
-
-      if (pass !== String(configData.Etkinlik_Sifresi || "").trim()) {
-        err.innerText = "Etkinlik şifresi hatalı!";
-        err.classList.remove("hidden");
-        return;
-      }
-      if (!inputName) {
-        err.innerText = "Lütfen grup isminizi giriniz!";
-        err.classList.remove("hidden");
-        return;
-      }
-
-      db.ref("teams").once("value", snap => {
-        const teams = snap.val() || {};
-        let finalName = inputName;
-
-        if (!teams[inputName]) {
-          let counter = 1;
-          while (teams[finalName]) {
-            finalName = `${inputName} ${counter}`;
-            counter++;
-          }
-          db.ref("teams/" + finalName).set({ score: 0 });
-        }
-
-        myTeamName = finalName;
-        localStorage.setItem("quiz_team_name", myTeamName);
-
-        document.getElementById("currentTeamName").innerText = myTeamName;
-        document.getElementById("teamNameDisplay").classList.remove("hidden");
-        document.getElementById("teamNameDisplay").classList.add("flex");
-
-        db.ref("state/status").once("value", sSnap => {
-          const st = sSnap.val() || "lobby";
-          if (st === "lobby") showScreen("lobbyScreen");
-          else showScreen("quizScreen");
-        });
-      });
-    }
-
-    function logoutTeam() {
-      if (confirm("Çıkış yapmak istediğinize emin misiniz?")) {
-        localStorage.removeItem("quiz_team_name");
-        myTeamName = "";
-        document.getElementById("teamNameDisplay").classList.add("hidden");
-        document.getElementById("teamNameDisplay").classList.remove("flex");
-        showScreen("loginScreen");
-      }
-    }
-
-    function renderQuestion(state) {
-      const qIndex = state.currentQuestion - 1;
-      const q = questionsData[qIndex];
-      if (!q) return;
-
-      document.getElementById("questionNumber").innerText = `Soru ${state.currentQuestion}`;
-      document.getElementById("questionText").innerText = q.text;
-
-      const timerDisplay = document.getElementById("timerDisplay");
-      const isTimeUp = state.timerStarted && state.timeLeft === 0;
-      const showAnswers = state.status === "revealed" || isTimeUp;
-
-      if (state.timeLeft && state.timeLeft > 0) {
-        timerDisplay.innerText = `${state.timeLeft}s`;
-        timerDisplay.className = "font-mono font-bold text-lg text-amber-400 animate-pulse";
-      } else if (isTimeUp) {
-        timerDisplay.innerText = "Süre Bitti";
-        timerDisplay.className = "font-mono font-bold text-sm text-red-400";
-      } else {
-        timerDisplay.innerText = "Bekleniyor...";
-        timerDisplay.className = "font-mono font-bold text-sm text-slate-400";
-      }
-
-      const container = document.getElementById("optionsContainer");
-      container.innerHTML = "";
-
-      ["A", "B", "C", "D"].forEach(opt => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        let baseClass = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 flex justify-between items-center";
-
-        if (!showAnswers) {
-          btn.onclick = () => selectOption(opt, state.currentQuestion);
-          if (selectedOption === opt) {
-            btn.className = baseClass + " selected-option";
-            btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span class="text-amber-400 font-bold">✔</span>`;
-          } else {
-            btn.className = baseClass + " hover:bg-slate-700";
-            btn.innerText = `${opt}) ${q[opt]}`;
-          }
-        } else {
-          btn.disabled = true;
-          if (opt === q.correct) {
-            btn.className = baseClass + " border-green-500 bg-green-500/20 text-green-400 font-bold";
-            btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span>✅ Doğru</span>`;
-          } else if (selectedOption === opt && opt !== q.correct) {
-            btn.className = baseClass + " border-red-500 bg-red-500/20 text-red-400 font-bold";
-            btn.innerHTML = `<span>${opt}) ${q[opt]}</span> <span>❌ Yanlış</span>`;
-          } else {
-            btn.className = baseClass + " opacity-50";
-            btn.innerText = `${opt}) ${q[opt]}`;
-          }
-        }
-        container.appendChild(btn);
-      });
-
-      const footer = document.getElementById("statusFooter");
-      const fb = document.getElementById("answerFeedback");
-      if (showAnswers) {
-        footer.classList.remove("hidden");
-        if (selectedOption === q.correct) {
-          fb.innerText = "Tebrikler! Doğru Cevap 🎉";
-          fb.className = "text-center font-bold text-sm py-2 rounded-lg bg-green-500/20 text-green-400 border border-green-500/40";
-        } else {
-          fb.innerText = "Maalesef Yanlış Cevap ❌";
-          fb.className = "text-center font-bold text-sm py-2 rounded-lg bg-red-500/20 text-red-400 border border-red-500/40";
-        }
-      } else {
-        footer.classList.add("hidden");
-      }
-    }
-
-    function selectOption(opt, qNum) {
-      selectedOption = opt;
-      db.ref(`answers/q${qNum}/${myTeamName}`).set(opt);
-      
-      const container = document.getElementById("optionsContainer");
-      const buttons = container.getElementsByTagName("button");
-      Array.from(buttons).forEach((btn, index) => {
-        const optionKey = ["A", "B", "C", "D"][index];
-        if (optionKey === opt) {
-          btn.className = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 flex justify-between items-center selected-option";
-          btn.innerHTML = `<span>${optionKey}) ${questionsData[qNum-1][optionKey]}</span> <span class="text-amber-400 font-bold">✔</span>`;
-        } else {
-          btn.className = "w-full text-left p-4 rounded-xl font-medium border transition border-slate-700 bg-slate-800 hover:bg-slate-700 flex justify-between items-center";
-          btn.innerText = `${optionKey}) ${questionsData[qNum-1][optionKey]}`;
-        }
-      });
-    }
-
-    function toggleLeaderboard() {
-      const box = document.getElementById("inlineLeaderboard");
-      box.classList.toggle("hidden");
-    }
-
-    function renderLeaderboard(teams) {
-      const sorted = Object.keys(teams).sort((a, b) => (teams[b].score || 0) - (teams[a].score || 0));
-      
-      const box = document.getElementById("leaderboardList");
-      box.innerHTML = "";
-      sorted.forEach((t, idx) => {
-        box.innerHTML += `
-          <div class="flex justify-between items-center py-1 border-b border-slate-700/50">
-            <span class="${t === myTeamName ? 'font-bold text-amber-400' : 'text-slate-300'}">${idx + 1}. ${t}</span>
-            <span class="font-bold text-xs">${teams[t].score || 0} P</span>
-          </div>`;
-      });
-
-      const finalBox = document.getElementById("finalLeaderboardList");
-      finalBox.innerHTML = "";
-      sorted.forEach((t, idx) => {
-        let badge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-        finalBox.innerHTML += `
-          <div class="flex justify-between items-center p-2 rounded bg-slate-800/80 border border-slate-700">
-            <span class="${t === myTeamName ? 'font-bold text-amber-400' : 'text-slate-200'}">${badge} ${t}</span>
-            <span class="font-bold text-amber-400">${teams[t].score || 0} P</span>
-          </div>`;
-      });
-    }
-
-    function showScreen(id) {
-      ["loginScreen", "lobbyScreen", "quizScreen", "finishedScreen"].forEach(s => document.getElementById(s).classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
-    }
-  </script>
-</body>
-</html>
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tavern Games - Quiz Night</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="common.js"></script></head>
+<body class="bg-slate-900 text-white min-h-screen p-4 font-sans max-w-md mx-auto">
+<header class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"><b class="text-amber-400 text-lg">Tavern Quiz</b>
+<span id="me" class="hidden text-sm bg-slate-800 px-3 py-1 rounded-full border border-slate-700"><span id="mn" class="text-amber-300 font-semibold"></span> <button onclick="out()" class="text-xs text-red-400 ml-1">Çıkış</button></span></header>
+<main id="login" class="space-y-3 bg-slate-800 p-6 rounded-2xl border border-slate-700">
+<h1 id="title" class="text-2xl font-extrabold text-center text-amber-400">Quiz Night</h1><p id="date" class="text-xs text-center text-slate-400"></p>
+<input id="pw" type="password" placeholder="Etkinlik şifresi" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-amber-400">
+<input id="tn" maxlength="24" placeholder="Grup / Takım ismi" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-amber-400">
+<button id="bj" onclick="go()" class="w-full bg-amber-500 hover:bg-amber-600 font-bold py-3 rounded-lg text-slate-950">Odaya Katıl</button><p id="err" class="text-red-400 text-xs text-center"></p></main>
+<main id="lobby" class="hidden text-center bg-slate-800 p-6 rounded-2xl border border-slate-700"><div class="text-4xl animate-pulse">⏳</div><h2 class="font-bold text-xl my-2">Lobiye Katıldınız!</h2><p class="text-sm text-slate-400 mb-4">Moderatör yarışmayı başlatana kadar bekleyiniz...</p>
+<ul id="tl" class="text-left text-sm bg-slate-900 p-4 rounded-lg max-h-48 overflow-y-auto space-y-1"></ul></main>
+<main id="quiz" class="hidden space-y-3"><div class="flex justify-between bg-slate-800 p-3 rounded-xl border border-slate-700"><b id="qn" class="text-amber-400 text-sm"></b><b id="timer" class="font-mono text-amber-400"></b></div>
+<h3 id="qt" class="bg-slate-800 p-5 rounded-2xl border border-slate-700 text-lg font-semibold"></h3><div id="opts" class="grid gap-3"></div>
+<p id="toast" class="text-center text-xs text-red-400"></p>
+<div id="foot" class="hidden space-y-2"><div id="fbk" class="text-center font-bold py-2 rounded-lg bg-slate-800"></div>
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm"><b class="text-xs uppercase text-slate-400">Canlı Sıralama</b><div id="lb"></div></div></div></main>
+<main id="fin" class="hidden text-center bg-slate-800 p-6 rounded-2xl border border-slate-700"><div class="text-5xl">🏆</div><h2 class="text-2xl font-black text-amber-400">Quiz Sona Erdi!</h2><p class="text-sm text-slate-300 mb-3">Katılımınız için teşekkür ederiz!</p><div id="fb" class="text-left text-sm"></div></main>
+<script>
+const auth=firebase.auth();let uid,teams={},sc={},st=null,mine=null,qKey=null,aRef=null,joined=false,started=0,lastUp=null;
+auth.onAuthStateChanged(u=>{
+ if(!u)return auth.signInAnonymously().catch(()=>$('err').textContent='Bağlantı kurulamadı, sayfayı yenileyin.');
+ if(!u.isAnonymous){$('err').textContent='Bu tarayıcıda moderatör girişi açık. Oyuncu ekranını gizli pencerede açın.';$('bj').disabled=true;return}
+ uid=u.uid;if(started++)return;
+ db.ref('config/public').on('value',s=>{const c=s.val()||{};$('title').textContent=c.name||'Quiz Night';$('date').textContent=c.date||''});
+ db.ref('teams').on('value',s=>{teams=s.val()||{};joined=!!teams[uid];render()});
+ db.ref('scores').on('value',s=>{sc=s.val()||{};render()});
+ db.ref('state').on('value',s=>{st=s.val();watch();render()});
+ setInterval(tick,250)});
+function watch(){const k=st&&st.qKey;if(k===qKey)return;if(aRef)aRef.off();qKey=k;mine=null;if(!k)return;aRef=db.ref('answers/'+k+'/'+uid);aRef.on('value',s=>{mine=s.val();render()})}
+function show(id){document.querySelectorAll('main').forEach(m=>m.classList.toggle('hidden',m.id!=id))}
+function tick(){if(!st)return;const l=left(st),up=st.status=='question'&&l!==null&&l<=0;
+ $('timer').textContent=st.status=='revealed'||up?'Süre Bitti':l===null?'Bekleniyor...':l+'s';if(up!==lastUp){lastUp=up;render()}}
+function render(){
+ $('me').classList.toggle('hidden',!joined);if(joined)$('mn').textContent=teams[uid].name;
+ board($('lb'),teams,sc,uid);board($('fb'),teams,sc,uid);$('tl').replaceChildren(...Object.values(teams).map(t=>h('li','text-slate-300',t.name)));
+ if(!st)return show('login');if(st.status=='finished')return show('fin');if(!joined)return show('login');if(st.status=='lobby')return show('lobby');
+ show('quiz');const rev=st.status=='revealed',l=left(st),up=l!==null&&l<=0;
+ $('qn').textContent='Soru '+st.currentQuestion+' / '+st.total;$('qt').textContent=st.qText;
+ const box=$('opts');box.replaceChildren();
+ L.forEach(o=>{const ok=rev&&o==st.correct,bad=rev&&o==mine&&o!=st.correct;
+  const b=h('button','w-full text-left p-4 rounded-xl border bg-slate-800 disabled:opacity-80 '+(ok?'border-green-500 !bg-green-500/20 text-green-400 font-bold':bad?'border-red-500 !bg-red-500/20 text-red-400':o==mine?'border-amber-400 !bg-amber-500/25 text-amber-300 font-bold':'border-slate-700'),o+') '+st[o]+(ok?'  ✅':bad?'  ❌':o==mine?'  ✔':''));
+  b.disabled=rev||up;b.onclick=()=>pick(o);box.append(b)});
+ $('foot').classList.toggle('hidden',!rev);
+ $('fbk').textContent=mine==st.correct?'Tebrikler! Doğru Cevap 🎉':mine?'Maalesef Yanlış Cevap ❌':'Cevap vermediniz'}
+function pick(o){$('toast').textContent='';db.ref().update({['answers/'+qKey+'/'+uid]:o,['answered/'+qKey+'/'+uid]:true}).catch(()=>{$('toast').textContent='Süre doldu, cevap kaydedilmedi.'})}
+async function go(){const p=$('pw').value.trim(),n=$('tn').value.trim().slice(0,24),e=$('err');e.textContent='';
+ if(!n)return e.textContent='Lütfen grup isminizi giriniz!';
+ try{await db.ref('joins/'+uid).set(p)}catch(x){return e.textContent='Etkinlik şifresi hatalı!'}
+ const low=Object.values(teams).map(t=>t.name.toLowerCase());let f=n,i=1;while(low.includes(f.toLowerCase()))f=n+' '+(++i);
+ db.ref('teams/'+uid).set({name:f}).catch(()=>e.textContent='Katılım başarısız, tekrar deneyin.')}
+function out(){if(confirm('Çıkış yapmak istediğinize emin misiniz?'))db.ref('teams/'+uid).remove()}
+</script></body></html>
