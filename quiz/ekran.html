@@ -1,331 +1,37 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tavern Quiz - Projeksiyon Ekranı</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-</head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-between p-6 font-sans overflow-hidden">
-
-  <!-- HEADER -->
-  <header class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-4">
-    <div class="flex items-center gap-4">
-      <div class="bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl tracking-wide">TAVERN QUIZ</div>
-      <h1 id="stageEventTitle" class="text-2xl font-bold text-slate-200">Quiz Night</h1>
-    </div>
-    <div id="stageQNum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800 shadow-lg">
-      Lobi
-    </div>
-  </header>
-
-  <!-- LOBİ EKRANI -->
-  <main id="stageLobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full">
-    <div class="space-y-3">
-      <div class="text-7xl animate-bounce">⏳</div>
-      <h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2>
-      <p class="text-2xl text-slate-300">Telefonlarınızdan giriş yapıp takım isminizi yazınız.</p>
-    </div>
-
-    <div class="bg-slate-900/90 p-8 rounded-3xl border border-slate-800 text-left shadow-2xl">
-      <h3 class="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 text-center">KATILAN TAKIMLAR</h3>
-      <div id="stageLobbyTeams" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-center font-bold text-lg"></div>
-    </div>
-  </main>
-
-  <!-- SORU VE CANLI EKRAN (SAĞ SÜTUNLU LAYOUT) -->
-  <main id="stageQuiz" class="hidden my-auto grid grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
-    
-    <!-- SOL ALAN: SORU, SÜRE, ŞIKLAR VE TAKIM CEVAPLARI (8 Kolon) -->
-    <div class="col-span-8 flex flex-col justify-between space-y-4">
-      
-      <!-- SÜRE VE BİLGİ BARI -->
-      <div class="flex justify-between items-center bg-slate-900/90 p-4 rounded-2xl border-2 border-slate-800 shadow-xl">
-        <div class="text-slate-300 font-bold text-lg">
-          Gelen Yanıt: <span id="answeredCountCount" class="text-amber-400 text-2xl font-black">0</span> / <span id="totalTeamsCount" class="text-xl font-extrabold">0</span> Takım
-        </div>
-        <div id="stageTimer" class="font-mono font-black text-5xl text-slate-500">
-          --:--
-        </div>
-      </div>
-
-      <!-- BÜYÜK SORU METNİ VE KAÇINCI SORU BAŞLIĞI -->
-      <div class="bg-slate-900/95 p-6 rounded-3xl border-2 border-slate-800 text-center shadow-2xl relative my-auto">
-        <div id="questionProgressBadge" class="text-amber-400 font-black text-lg tracking-widest uppercase mb-2">
-          SORU 1 / 10
-        </div>
-        <h2 id="stageQuestionText" class="text-2xl md:text-4xl font-extrabold leading-snug text-white">
-          Soru Yükleniyor...
-        </h2>
-      </div>
-
-      <!-- BÜYÜK ŞIKLAR -->
-      <div id="stageOptionsGrid" class="grid grid-cols-2 gap-4 text-xl font-bold"></div>
-
-      <!-- ALT KISIM: TAKIM CEVAP DURUMLARI (YATAY ESNEK GRİD) -->
-      <div class="bg-slate-900/90 p-4 rounded-2xl border-2 border-slate-800 shadow-xl">
-        <div class="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 text-center border-b border-slate-800 pb-1">
-          🎯 TAKIM CEVAP DURUMLARI
-        </div>
-        <div id="stageLiveTeamStatus" class="flex flex-wrap justify-center gap-2 max-h-36 overflow-y-auto p-1"></div>
-      </div>
-
-    </div>
-
-    <!-- SAĞ ALAN: DİKİNE TAM BOY CANLI SKOR TABLOSU (4 Kolon) -->
-    <div class="col-span-4 bg-slate-900/95 p-5 rounded-3xl border-2 border-slate-800 shadow-2xl flex flex-col justify-start h-full">
-      <div class="text-sm font-black uppercase tracking-widest text-amber-400 mb-4 text-center border-b border-slate-800 pb-3 flex items-center justify-center gap-2">
-        <span>🏆 CANLI SKOR TABLOSU</span>
-      </div>
-      <div id="stageLiveLeaderboard" class="space-y-2 overflow-y-auto max-h-[580px] pr-1"></div>
-    </div>
-
-  </main>
-
-  <!-- QUIZ FİNAL EKRANI -->
-  <main id="stageFinished" class="hidden my-auto text-center space-y-8 max-w-5xl mx-auto w-full">
-    <div class="space-y-3">
-      <div class="text-9xl">🏆</div>
-      <h2 class="text-6xl font-black text-amber-400">QUIZ SONA ERDİ!</h2>
-      <p class="text-3xl text-slate-200 font-semibold">Tüm Katılımcılara Teşekkür Ederiz</p>
-    </div>
-
-    <div class="bg-slate-900/95 p-8 rounded-3xl border-2 border-slate-800 shadow-2xl">
-      <h3 class="text-lg font-black uppercase tracking-widest text-amber-400 mb-6">ŞAMPİYONLAR TABLOSU</h3>
-      <div id="stageFinalScores" class="space-y-4 text-left"></div>
-    </div>
-  </main>
-
-  <footer class="flex justify-between items-center border-t border-slate-800/80 pt-3 text-xs text-slate-500 mt-2">
-    <span>Tavern Games Pub Quiz System</span>
-    <span>taverngames.com.tr/quiz</span>
-  </footer>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",
-      authDomain: "tavern-quiz.firebaseapp.com",
-      databaseURL: "https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "tavern-quiz",
-      storageBucket: "tavern-quiz.firebasestorage.app",
-      messagingSenderId: "280835700622",
-      appId: "1:280835700622:web:043d61c02d689de87056df"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const SHEET_ID = "1dkkG5g3A1aoiWf2Y9FdWg6LZ3TeQTTHemC2YNQ0HDGs";
-    let questionsData = [];
-    let allTeams = {};
-    let currentAnswers = {};
-    let currentState = {};
-
-    async function loadSheetData() {
-      try {
-        const urlA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
-        const resA = await fetch(urlA);
-        const textA = await resA.text();
-        const jsonA = JSON.parse(textA.substring(47, textA.length - 2));
-        jsonA.table.rows.forEach(r => {
-          if (r.c[0]?.v === "Etkinlik_Adi") document.getElementById("stageEventTitle").innerText = r.c[1]?.v;
-        });
-
-        const urlS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sorular`;
-        const resS = await fetch(urlS);
-        const textS = await resS.text();
-        const jsonS = JSON.parse(textS.substring(47, textS.length - 2));
-        
-        questionsData = jsonS.table.rows
-          .filter(r => r.c && r.c[1] && r.c[1].v && r.c[1].v.toString().trim() !== "")
-          .map(r => ({
-            no: r.c[0]?.v,
-            text: r.c[1]?.v,
-            A: r.c[2]?.v,
-            B: r.c[3]?.v,
-            C: r.c[4]?.v,
-            D: r.c[5]?.v,
-            correct: r.c[6]?.v
-          }));
-      } catch (e) {
-        console.error("Sheet okuma hatası:", e);
-      }
-    }
-    loadSheetData();
-
-    db.ref("teams").on("value", snap => {
-      allTeams = snap.val() || {};
-      renderTeamsLobby();
-      renderFinalScores();
-      renderLiveTeamBadges();
-      renderLiveLeaderboard();
-    });
-
-    db.ref("state").on("value", snap => {
-      currentState = snap.val() || {};
-      if (!currentState) return;
-
-      if (currentState.status === "lobby") {
-        showStageScreen("stageLobby");
-        document.getElementById("stageQNum").innerText = "Lobi";
-      } else if (currentState.status === "finished") {
-        showStageScreen("stageFinished");
-        document.getElementById("stageQNum").innerText = "Sonuçlar";
-      } else if (currentState.status === "question" || currentState.status === "revealed") {
-        showStageScreen("stageQuiz");
-        document.getElementById("stageQNum").innerText = `Soru ${currentState.currentQuestion} / ${questionsData.length || '?'}`;
-        
-        db.ref(`answers/q${currentState.currentQuestion}`).on("value", aSnap => {
-          currentAnswers = aSnap.val() || {};
-          renderLiveTeamBadges();
-        });
-
-        renderStageQuestion(currentState);
-      }
-    });
-
-    function renderTeamsLobby() {
-      const box = document.getElementById("stageLobbyTeams");
-      box.innerHTML = "";
-      Object.keys(allTeams).forEach(t => {
-        box.innerHTML += `
-          <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 text-amber-300 shadow-md">
-            🛡️ ${t}
-          </div>`;
-      });
-    }
-
-    function renderStageQuestion(state) {
-      const q = questionsData[state.currentQuestion - 1];
-      if (!q) return;
-
-      document.getElementById("questionProgressBadge").innerText = `SORU ${state.currentQuestion} / ${questionsData.length}`;
-      document.getElementById("stageQuestionText").innerText = q.text;
-
-      const timerBox = document.getElementById("stageTimer");
-      const isTimeUp = state.timerStarted && state.timeLeft === 0;
-      const showAnswers = state.status === "revealed" || isTimeUp;
-
-      if (state.timeLeft > 0) {
-        timerBox.innerText = `${state.timeLeft}s`;
-        timerBox.className = "font-mono font-black text-5xl text-amber-400 animate-pulse";
-      } else if (isTimeUp) {
-        timerBox.innerText = "Süre Bitti";
-        timerBox.className = "font-mono font-black text-4xl text-red-500";
-      } else {
-        timerBox.innerText = "Bekleniyor...";
-        timerBox.className = "font-mono font-bold text-2xl text-slate-500";
-      }
-
-      const grid = document.getElementById("stageOptionsGrid");
-      grid.innerHTML = "";
-
-      ["A", "B", "C", "D"].forEach(opt => {
-        let cardStyle = "bg-slate-900 border-slate-800 text-slate-200";
-        let badge = "";
-
-        if (showAnswers) {
-          if (opt === q.correct) {
-            cardStyle = "bg-green-500/25 border-4 border-green-500 text-green-300 shadow-green-500/20 shadow-2xl font-black scale-105";
-            badge = "✅ DOĞRU CEVAP";
-          } else {
-            cardStyle = "bg-slate-900/40 border-slate-800/50 text-slate-600 opacity-30";
-          }
-        }
-
-        grid.innerHTML += `
-          <div class="p-5 rounded-2xl border ${cardStyle} flex justify-between items-center transition-all duration-300">
-            <span>${opt}) ${q[opt]}</span>
-            <span class="text-sm font-extrabold">${badge}</span>
-          </div>`;
-      });
-    }
-
-    function renderLiveTeamBadges() {
-      const teamKeys = Object.keys(allTeams);
-      const ansKeys = Object.keys(currentAnswers);
-      const q = questionsData[(currentState.currentQuestion || 1) - 1];
-      
-      document.getElementById("totalTeamsCount").innerText = teamKeys.length;
-      document.getElementById("answeredCountCount").innerText = ansKeys.length;
-
-      const isTimeUp = currentState.timerStarted && currentState.timeLeft === 0;
-      const showAnswers = currentState.status === "revealed" || isTimeUp;
-
-      const box = document.getElementById("stageLiveTeamStatus");
-      box.innerHTML = "";
-
-      teamKeys.forEach(t => {
-        const teamAns = currentAnswers[t];
-        let badgeStyle = "bg-slate-800/60 text-slate-400 border-slate-700/60";
-        let icon = "⏳ Bekleniyor";
-
-        if (showAnswers && q) {
-          if (teamAns === q.correct) {
-            badgeStyle = "bg-green-500/30 text-green-300 border-green-500 font-extrabold text-xs px-3 py-1.5";
-            icon = `✅ Doğru (${teamAns})`;
-          } else if (teamAns) {
-            badgeStyle = "bg-red-500/30 text-red-300 border-red-500 font-bold text-xs px-3 py-1.5";
-            icon = `❌ Yanlış (${teamAns})`;
-          } else {
-            badgeStyle = "bg-slate-900 text-slate-600 border-slate-800 text-xs";
-            icon = "⚪ Yanıt Vermedi";
-          }
-        } else if (teamAns) {
-          badgeStyle = "bg-amber-500/30 text-amber-300 border-amber-500/60 font-bold text-xs px-3 py-1.5";
-          icon = "🔒 Cevaplandı";
-        }
-
-        box.innerHTML += `
-          <div class="px-3 py-1.5 rounded-xl border flex items-center gap-2 shadow ${badgeStyle}">
-            <span>${t}</span>
-            <span class="text-[10px] opacity-90">(${icon})</span>
-          </div>`;
-      });
-    }
-
-    function renderLiveLeaderboard() {
-      const sorted = Object.keys(allTeams).sort((a, b) => (allTeams[b].score || 0) - (allTeams[a].score || 0));
-      const box = document.getElementById("stageLiveLeaderboard");
-      box.innerHTML = "";
-
-      sorted.forEach((t, idx) => {
-        let rankBadge = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-        let cardBg = idx === 0 ? 'bg-amber-500/20 border-amber-500/60 text-amber-300' : 'bg-slate-800/90 border-slate-700/80 text-slate-200';
-        box.innerHTML += `
-          <div class="flex justify-between items-center px-4 py-2.5 rounded-xl border ${cardBg} shadow font-semibold text-base">
-            <span class="truncate max-w-[180px]"><strong class="mr-2">${rankBadge}</strong> ${t}</span>
-            <span class="font-black text-amber-400 ml-2">${allTeams[t].score || 0} P</span>
-          </div>`;
-      });
-    }
-
-    function renderFinalScores() {
-      const sorted = Object.keys(allTeams).sort((a, b) => (allTeams[b].score || 0) - (allTeams[a].score || 0));
-      const box = document.getElementById("stageFinalScores");
-      box.innerHTML = "";
-
-      sorted.forEach((t, idx) => {
-        let badge = idx === 0 ? '🥇 1. LİK' : idx === 1 ? '🥈 2. LİK' : idx === 2 ? '🥉 3. LÜK' : `${idx + 1}.`;
-        let bgStyle = idx === 0 ? 'bg-amber-500/30 border-amber-500 text-amber-300 text-2xl font-black p-5' : 'bg-slate-800/90 border-slate-700 text-slate-200 text-xl font-bold p-4';
-
-        box.innerHTML += `
-          <div class="flex justify-between items-center rounded-2xl border ${bgStyle} shadow-lg">
-            <span>${badge} ${t}</span>
-            <span class="font-black text-amber-400">${allTeams[t].score || 0} PUAN</span>
-          </div>`;
-      });
-    }
-
-    function showStageScreen(id) {
-      ["stageLobby", "stageQuiz", "stageFinished"].forEach(s => document.getElementById(s).classList.add("hidden"));
-      const target = document.getElementById(id);
-      target.classList.remove("hidden");
-      if (id === "stageQuiz") {
-        target.classList.add("grid");
-      }
-    }
-  </script>
-</body>
-</html>
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tavern Quiz - Projeksiyon</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="common.js"></script></head>
+<body class="bg-slate-950 text-white min-h-screen p-6 font-sans overflow-hidden flex flex-col">
+<header class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><div class="bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div><h1 id="ev" class="text-2xl font-bold text-slate-200"></h1></div>
+<div id="qnum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800">Lobi</div></header>
+<main id="lobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full"><div class="text-7xl animate-bounce">⏳</div><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
+<div id="tt" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-lg"></div></main>
+<main id="quiz" class="hidden my-auto grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
+<div class="col-span-8 space-y-4"><div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-800"><div class="text-slate-300 font-bold text-lg">Gelen Yanıt: <b id="got" class="text-amber-400 text-2xl">0</b> / <b id="all">0</b> Takım</div><div id="timer" class="font-mono font-black text-5xl text-amber-400"></div></div>
+<h2 id="qt" class="bg-slate-900 p-6 rounded-3xl border-2 border-slate-800 text-center text-4xl font-extrabold leading-snug"></h2>
+<div id="op" class="grid grid-cols-2 gap-4 text-xl font-bold"></div><div id="bd" class="flex flex-wrap justify-center gap-2 max-h-36 overflow-y-auto"></div></div>
+<div class="col-span-4 bg-slate-900 p-5 rounded-3xl border-2 border-slate-800"><div class="text-sm font-black uppercase tracking-widest text-amber-400 mb-4 text-center">🏆 Canlı Skor Tablosu (İlk 10)</div><div id="lb" class="text-base"></div></div></main>
+<main id="fin" class="hidden my-auto text-center space-y-6 max-w-3xl mx-auto w-full"><div class="text-9xl">🏆</div><h2 class="text-6xl font-black text-amber-400">QUIZ SONA ERDİ!</h2><div id="ff" class="bg-slate-900 p-8 rounded-3xl border-2 border-slate-800 text-left text-2xl"></div></main>
+<script>
+let teams={},sc={},st=null,ans={},res={},k=null,r1,r2;
+db.ref('config/public').on('value',s=>$('ev').textContent=(s.val()||{}).name||'Quiz Night');
+db.ref('teams').on('value',s=>{teams=s.val()||{};draw()});db.ref('scores').on('value',s=>{sc=s.val()||{};draw()});
+db.ref('state').on('value',s=>{st=s.val();const nk=st&&st.qKey;if(nk!==k){if(r1)r1.off();if(r2)r2.off();k=nk;ans={};res={};
+ if(k){r1=db.ref('answered/'+k);r1.on('value',a=>{ans=a.val()||{};draw()});r2=db.ref('results/'+k);r2.on('value',a=>{res=a.val()||{};draw()})}}draw()});
+setInterval(()=>{const l=left(st);$('timer').textContent=st&&st.status=='question'?(l===null?'--':l>0?l+'s':'Süre Bitti'):st&&st.status=='revealed'?'Süre Bitti':''},250);
+function show(id){['lobby','quiz','fin'].forEach(x=>$(x).classList.toggle('hidden',x!=id));$('quiz').classList.toggle('grid',id=='quiz')}
+function draw(){const s=st||{},rev=s.status=='revealed';
+ $('qnum').textContent=s.status=='question'||rev?'Soru '+s.currentQuestion+' / '+s.total:s.status=='finished'?'Sonuçlar':'Lobi';
+ if(s.status=='finished'){show('fin');board($('ff'),teams,sc,null)}
+ else if(s.status=='question'||rev){show('quiz');$('qt').textContent=s.qText;
+  const o=$('op');o.replaceChildren();L.forEach(x=>o.append(h('div','p-5 rounded-2xl border '+(rev?(x==s.correct?'bg-green-500/25 border-4 border-green-500 text-green-300 font-black':'bg-slate-900 border-slate-800 opacity-30'):'bg-slate-900 border-slate-800'),x+') '+s[x]+(rev&&x==s.correct?'  ✅':''))));
+  $('got').textContent=Object.keys(ans).length;$('all').textContent=Object.keys(teams).length;
+  const b=$('bd');b.replaceChildren();Object.keys(teams).forEach(u=>{let c='bg-slate-800 text-slate-400',t='⏳';
+   if(rev){const r=res[u];if(r&&r.ok){c='bg-green-500/30 text-green-300';t='✅ '+r.choice}else if(r&&r.choice!='-'){c='bg-red-500/30 text-red-300';t='❌ '+r.choice}else{c='bg-slate-900 text-slate-600';t='⚪'}}
+   else if(ans[u]){c='bg-amber-500/30 text-amber-300';t='🔒'}
+   b.append(h('span','px-3 py-1.5 rounded-xl text-xs font-bold '+c,teams[u].name+' '+t))});
+  board($('lb'),teams,sc,null,10)}
+ else{show('lobby');$('tt').replaceChildren(...Object.values(teams).map(t=>h('div','bg-slate-800 p-4 rounded-2xl text-amber-300 font-bold','🛡️ '+t.name)))}}
+</script></body></html>
