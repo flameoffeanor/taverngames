@@ -1,392 +1,71 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tavern Quiz - Moderatör Paneli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-</head>
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tavern Quiz - Moderatör</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="common.js"></script></head>
 <body class="bg-slate-900 text-white min-h-screen p-4 font-sans">
-
-  <!-- ADMIN LOGIN -->
-  <div id="adminLogin" class="max-w-md mx-auto my-20 bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-    <h2 class="text-xl font-bold text-amber-400 text-center">Moderatör Girişi</h2>
-    <input type="password" id="adminPass" placeholder="Admin Şifresi" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white">
-    <button onclick="loginAdmin()" class="w-full bg-amber-500 font-bold py-3 text-slate-950 rounded-lg">Giriş Yap</button>
-    <p id="adminErr" class="text-red-400 text-xs text-center hidden">Şifre Yanlış!</p>
-  </div>
-
-  <!-- ADMIN DASHBOARD -->
-  <div id="adminDashboard" class="hidden max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-    
-    <!-- KUMANDA PANELİ -->
-    <div class="lg:col-span-7 space-y-6">
-      <div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-        <div>
-          <h1 class="font-bold text-lg text-amber-400">Moderatör Kumanda Paneli</h1>
-          <p id="totalQInfo" class="text-xs text-slate-400">Yüklenen Soru Sayısı: ...</p>
-        </div>
-        <button onclick="resetGame()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-bold">Yarışmayı Sıfırla</button>
-      </div>
-
-      <!-- KONTROL BUTONLARI VE SÜRE INPUTU -->
-      <div class="grid grid-cols-2 gap-3">
-        <button onclick="setStatus('lobby')" class="bg-slate-800 border border-slate-700 p-3 rounded-xl font-semibold hover:border-amber-400">🚪 Lobiyi Aç</button>
-        <button onclick="sendQuestion()" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold hover:bg-amber-400">📡 Soruyu Gönder</button>
-        
-        <!-- SÜRE AYARLI BAŞLATMA -->
-        <div class="flex gap-2">
-          <input type="number" id="customTimerInput" value="20" min="5" max="120" class="w-20 bg-slate-800 border border-slate-700 text-center font-bold text-lg rounded-xl text-amber-400 focus:outline-none focus:border-amber-400">
-          <button onclick="startTimerWithInput()" class="flex-1 bg-blue-600 p-3 rounded-xl font-bold hover:bg-blue-500 text-sm">⏱️ Süreyi Başlat</button>
-        </div>
-
-        <button onclick="revealAnswer()" class="bg-green-600 p-3 rounded-xl font-bold hover:bg-green-500">✅ Cevabı Açıkla (+10 Puan)</button>
-      </div>
-
-      <!-- SORU NAVİGASYON -->
-      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center">
-        <button onclick="changeQ(-1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Önceki Soru</button>
-        <span id="currentQDisplay" class="font-bold text-lg text-amber-400">Soru 1</span>
-        <button onclick="changeQ(1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Sonraki Soru</button>
-      </div>
-
-      <button onclick="finishQuiz()" class="w-full bg-purple-700 hover:bg-purple-600 p-3 rounded-xl font-bold text-sm">🏁 Quiz'i Bitir (Ekranı Kapat)</button>
-
-      <!-- CANLI YANIT SAYACI & TAKIMLAR -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-          <h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Katılan Takımlar & Puanlar</h3>
-          <div id="teamsAdminList" class="space-y-2 max-h-60 overflow-y-auto"></div>
-        </div>
-
-        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700">
-          <h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Gelen Cevaplar</h3>
-          <div id="answersCount" class="text-2xl font-bold text-amber-400 mb-2">0 Takım Cevap Verdi</div>
-          <div id="answersAdminList" class="space-y-1 text-xs text-slate-300"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- OYUNCU CANLI ÖNİZLEME SIMULATOR -->
-    <div class="lg:col-span-5 space-y-3">
-      <div class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
-        <span>📱 Oyuncu Ekranı Canlı Önizleme</span>
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
-      </div>
-      
-      <div class="bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 shadow-2xl min-h-[500px] flex flex-col justify-between">
-        <div class="border-b border-slate-800 pb-2 mb-3 flex justify-between items-center text-xs text-slate-400">
-          <span class="font-bold text-amber-400">Tavern Quiz</span>
-          <span class="bg-slate-800 px-2 py-0.5 rounded text-[10px]">Örnek Takım (Önizleme)</span>
-        </div>
-
-        <div id="previewContainer" class="my-auto space-y-4">
-          <div class="text-center text-slate-500 text-sm">Yükleniyor...</div>
-        </div>
-
-        <div class="text-center text-[10px] text-slate-600 pt-3 border-t border-slate-800">
-          Oyuncuların telefonunda şu an anlık görünen ekran
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",
-      authDomain: "tavern-quiz.firebaseapp.com",
-      databaseURL: "https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "tavern-quiz",
-      storageBucket: "tavern-quiz.firebasestorage.app",
-      messagingSenderId: "280835700622",
-      appId: "1:280835700622:web:043d61c02d689de87056df"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    const SHEET_ID = "1dkkG5g3A1aoiWf2Y9FdWg6LZ3TeQTTHemC2YNQ0HDGs";
-    let adminPassReal = "";
-    let currentQ = 1;
-    let timerInterval = null;
-    let questionsData = [];
-    let pointsAwardedForQ = {}; // Aynı soruya 2 kere puan vermeyi önleme kontrolü
-
-    async function loadSheetData() {
-      const urlA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Ayarlar`;
-      const resA = await fetch(urlA);
-      const textA = await resA.text();
-      const jsonA = JSON.parse(textA.substring(47, textA.length - 2));
-      jsonA.table.rows.forEach(r => {
-        if (r.c[0]?.v === "Admin_Sifresi") adminPassReal = r.c[1]?.v;
-      });
-
-      const urlS = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Sorular`;
-      const resS = await fetch(urlS);
-      const textS = await resS.text();
-      const jsonS = JSON.parse(textS.substring(47, textS.length - 2));
-      
-      questionsData = jsonS.table.rows
-        .filter(r => r.c && r.c[1] && r.c[1].v && r.c[1].v.toString().trim() !== "")
-        .map(r => ({
-          no: r.c[0]?.v,
-          text: r.c[1]?.v,
-          A: r.c[2]?.v,
-          B: r.c[3]?.v,
-          C: r.c[4]?.v,
-          D: r.c[5]?.v,
-          correct: r.c[6]?.v
-        }));
-
-      document.getElementById("totalQInfo").innerText = `Dolu Soru Sayısı: ${questionsData.length}`;
-    }
-    loadSheetData();
-
-    function loginAdmin() {
-      const input = document.getElementById("adminPass").value;
-      if (input === adminPassReal && adminPassReal !== "") {
-        document.getElementById("adminLogin").classList.add("hidden");
-        document.getElementById("adminDashboard").classList.remove("hidden");
-        document.getElementById("adminDashboard").classList.add("grid");
-        initAdminListeners();
-      } else {
-        document.getElementById("adminErr").classList.remove("hidden");
-      }
-    }
-
-    function initAdminListeners() {
-      db.ref("teams").on("value", snap => {
-        const teams = snap.val() || {};
-        const list = document.getElementById("teamsAdminList");
-        list.innerHTML = "";
-        Object.keys(teams).forEach(t => {
-          list.innerHTML += `
-            <div class="flex justify-between items-center text-sm bg-slate-900 p-2 rounded border border-slate-700">
-              <span>${t}</span>
-              <div class="flex items-center gap-2">
-                <input type="number" value="${teams[t].score || 0}" onchange="updateScore('${t}', this.value)" class="w-16 bg-slate-800 border border-slate-600 rounded text-center text-xs p-1">
-                <button onclick="kickTeam('${t}')" class="text-red-400 hover:text-red-600 text-xs">❌</button>
-              </div>
-            </div>`;
-        });
-      });
-
-      db.ref("state/currentQuestion").on("value", snap => {
-        currentQ = snap.val() || 1;
-        document.getElementById("currentQDisplay").innerText = `Soru ${currentQ} / ${questionsData.length || '?'}`;
-        listenAnswers();
-      });
-
-      db.ref("state").on("value", snap => {
-        renderLivePreview(snap.val());
-      });
-    }
-
-    function renderLivePreview(state) {
-      const pBox = document.getElementById("previewContainer");
-      if (!state) return;
-
-      if (state.status === "lobby") {
-        pBox.innerHTML = `
-          <div class="text-center space-y-3">
-            <div class="text-3xl animate-bounce">⏳</div>
-            <div class="font-bold text-amber-400 text-lg">Lobi Ekranı</div>
-            <p class="text-xs text-slate-400">Oyuncular moderatörün yarışmayı başlatmasını bekliyor...</p>
-          </div>`;
-      } else if (state.status === "finished") {
-        pBox.innerHTML = `
-          <div class="text-center space-y-3">
-            <div class="text-4xl">🏆</div>
-            <div class="font-bold text-amber-400 text-lg">Quiz Sona Erdi</div>
-            <p class="text-xs text-slate-300">Final Puan Tablosu Gösteriliyor.</p>
-          </div>`;
-      } else if (state.status === "question" || state.status === "revealed") {
-        const qIndex = state.currentQuestion - 1;
-        const q = questionsData[qIndex];
-        if (!q) return;
-
-        let timerText = "Bekleniyor...";
-        let timerColor = "text-slate-400";
-        const isTimeUp = state.timerStarted && state.timeLeft === 0;
-
-        if (state.timeLeft > 0) {
-          timerText = `${state.timeLeft}s`;
-          timerColor = "text-amber-400 font-bold animate-pulse";
-        } else if (isTimeUp) {
-          timerText = "Süre Bitti";
-          timerColor = "text-red-400 font-bold";
-        }
-
-        let optionsHtml = "";
-        const showAnswers = state.status === "revealed" || isTimeUp;
-
-        ["A", "B", "C", "D"].forEach(opt => {
-          let btnStyle = "bg-slate-900 border-slate-800 text-slate-300";
-          let badge = "";
-
-          if (showAnswers) {
-            if (opt === q.correct) {
-              btnStyle = "bg-green-500/20 border-green-500 text-green-400 font-bold";
-              badge = "✅";
-            } else {
-              btnStyle = "bg-slate-900/50 border-slate-800 opacity-40";
-            }
-          }
-
-          optionsHtml += `
-            <div class="p-2.5 rounded-lg border text-xs flex justify-between items-center ${btnStyle}">
-              <span>${opt}) ${q[opt]}</span>
-              <span>${badge}</span>
-            </div>`;
-        });
-
-        pBox.innerHTML = `
-          <div class="space-y-3">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-2 text-xs">
-              <span class="font-bold text-amber-400">Soru ${state.currentQuestion}</span>
-              <span class="${timerColor}">${timerText}</span>
-            </div>
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 text-sm font-semibold leading-snug">
-              ${q.text}
-            </div>
-            <div class="space-y-2">
-              ${optionsHtml}
-            </div>
-          </div>`;
-      }
-    }
-
-    function listenAnswers() {
-      db.ref(`answers/q${currentQ}`).on("value", snap => {
-        const ans = snap.val() || {};
-        const count = Object.keys(ans).length;
-        document.getElementById("answersCount").innerText = `${count} Takım Cevap Verdi`;
-        const list = document.getElementById("answersAdminList");
-        list.innerHTML = "";
-        Object.keys(ans).forEach(t => {
-          list.innerHTML += `<div class="flex justify-between border-b border-slate-700/40 py-1"><span>${t}</span><span class="font-bold text-amber-400">${ans[t]}</span></div>`;
-        });
-      });
-    }
-
-    function setStatus(st) {
-      db.ref("state/status").set(st);
-    }
-
-    function sendQuestion() {
-      clearInterval(timerInterval);
-      db.ref("state").update({
-        status: "question",
-        currentQuestion: currentQ,
-        timeLeft: 0,
-        timerStarted: false
-      });
-    }
-
-    function startTimerWithInput() {
-      const customSec = parseInt(document.getElementById("customTimerInput").value) || 20;
-      let left = customSec;
-      clearInterval(timerInterval);
-      
-      db.ref("state").update({
-        timeLeft: left,
-        timerStarted: true
-      });
-
-      timerInterval = setInterval(() => {
-        left--;
-        db.ref("state/timeLeft").set(left);
-        
-        // SÜRE BİTTİĞİNDE OTOMATİK CEVAP AÇIKLA VE PUANLARI DAĞIT
-        if (left <= 0) {
-          clearInterval(timerInterval);
-          awardPointsAuto();
-        }
-      }, 1000);
-    }
-
-    function revealAnswer() {
-      clearInterval(timerInterval);
-      db.ref("state/timeLeft").set(0);
-      awardPointsAuto();
-    }
-
-    function awardPointsAuto() {
-      db.ref("state").update({
-        status: "revealed",
-        timeLeft: 0,
-        timerStarted: true
-      });
-
-      // Zaten bu soru için puan dağıtıldıysa tekrar verme
-      if (pointsAwardedForQ[currentQ]) return;
-      pointsAwardedForQ[currentQ] = true;
-
-      const currentCorrect = questionsData[currentQ - 1]?.correct;
-      if (!currentCorrect) return;
-
-      db.ref(`answers/q${currentQ}`).once("value", snap => {
-        const answers = snap.val() || {};
-        db.ref("teams").once("value", tSnap => {
-          const teams = tSnap.val() || {};
-          Object.keys(answers).forEach(teamName => {
-            if (answers[teamName] === currentCorrect && teams[teamName]) {
-              const currentScore = teams[teamName].score || 0;
-              db.ref(`teams/${teamName}/score`).set(currentScore + 10);
-            }
-          });
-        });
-      });
-    }
-
-    function changeQ(dir) {
-      const targetQ = currentQ + dir;
-      if (targetQ < 1) return;
-      if (targetQ > questionsData.length) {
-        if (confirm("Tüm sorular bitti! Quiz bitiş ekranına geçilsin mi?")) {
-          finishQuiz();
-        }
-        return;
-      }
-      currentQ = targetQ;
-      db.ref("state").update({
-        currentQuestion: currentQ,
-        status: "question",
-        timeLeft: 0,
-        timerStarted: false
-      });
-    }
-
-    function finishQuiz() {
-      clearInterval(timerInterval);
-      db.ref("state").update({
-        status: "finished"
-      });
-    }
-
-    function updateScore(team, newScore) {
-      db.ref(`teams/${team}/score`).set(parseInt(newScore) || 0);
-    }
-
-    function kickTeam(team) {
-      if (confirm(`${team} grubunu çıkarmak istediğinize emin misiniz?`)) {
-        db.ref(`teams/${team}`).remove();
-      }
-    }
-
-    function resetGame() {
-      if (confirm("Tüm yarışma verilerini ve skorları sıfırlamak istediğinize emin misiniz?")) {
-        clearInterval(timerInterval);
-        pointsAwardedForQ = {};
-        db.ref().set({
-          state: { status: "lobby", currentQuestion: 1, timeLeft: 0, timerStarted: false },
-          teams: {},
-          answers: {}
-        });
-      }
-    }
-  </script>
-</body>
-</html>
+<div id="login" class="max-w-md mx-auto my-20 bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-3"><h2 class="text-xl font-bold text-amber-400 text-center">Moderatör Girişi</h2>
+<input id="em" type="email" placeholder="E-posta" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3"><input id="ps" type="password" placeholder="Şifre" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3">
+<button onclick="login()" class="w-full bg-amber-500 font-bold py-3 text-slate-950 rounded-lg">Giriş Yap</button><p id="lerr" class="hidden text-red-400 text-xs text-center">Giriş başarısız!</p></div>
+<div id="dash" class="hidden max-w-6xl mx-auto grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="lg:col-span-7 space-y-4">
+<div class="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700"><div><h1 class="font-bold text-lg text-amber-400">Moderatör Kumanda Paneli</h1><p id="qinfo" class="text-xs text-slate-400"></p></div><button onclick="reset()" class="bg-red-600 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-bold">Yarışmayı Sıfırla</button></div>
+<details class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-sm space-y-2"><summary class="cursor-pointer font-bold">⚙️ Etkinlik Ayarları & Soru Yükleme</summary>
+<div class="grid grid-cols-3 gap-2 pt-2"><input id="cn" placeholder="Etkinlik adı" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cd" placeholder="Tarih" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cp" placeholder="Oyuncu şifresi" class="bg-slate-900 border border-slate-700 rounded p-2"></div>
+<button onclick="saveCfg()" class="bg-slate-700 px-3 py-1 rounded font-bold">Kaydet</button>
+<p class="text-xs text-slate-400">Sorular: Google Sheets'ten Dosya › İndir › CSV. Sütunlar: No, Soru, A, B, C, D, Doğru(A-D)</p><input type="file" accept=".csv,text/csv" onchange="loadCsv(this.files[0])" class="text-xs"><p id="msg" class="text-xs text-amber-400"></p></details>
+<div class="grid grid-cols-2 gap-3"><button onclick="lobby()" class="bg-slate-800 border border-slate-700 p-3 rounded-xl font-semibold">🚪 Lobiyi Aç</button><button onclick="pub(cur)" class="bg-amber-500 text-slate-950 p-3 rounded-xl font-bold">📡 Soruyu Gönder</button>
+<div class="flex gap-2"><input id="sec" type="number" value="20" min="5" max="120" class="w-20 bg-slate-800 border border-slate-700 text-center font-bold text-lg rounded-xl text-amber-400"><button onclick="startTimer()" class="flex-1 bg-blue-600 p-3 rounded-xl font-bold text-sm">⏱️ Süreyi Başlat</button></div>
+<button onclick="reveal()" class="bg-green-600 p-3 rounded-xl font-bold">✅ Cevabı Açıkla (+10 Puan)</button></div>
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex justify-between items-center"><button onclick="nav(-1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Önceki</button><div class="text-center"><b id="qd" class="text-lg text-amber-400"></b><div id="hint" class="text-xs text-green-400"></div></div><button onclick="nav(1)" class="bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold">Sonraki</button></div>
+<button onclick="finish()" class="w-full bg-purple-700 hover:bg-purple-600 p-3 rounded-xl font-bold text-sm">🏁 Quiz'i Bitir</button>
+<div class="grid md:grid-cols-2 gap-4"><div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Takımlar & Puanlar</h3><div id="tl" class="space-y-2 max-h-60 overflow-y-auto"></div></div>
+<div class="bg-slate-800 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-xs uppercase text-slate-400 mb-2">Gelen Cevaplar</h3><div id="ac" class="text-2xl font-bold text-amber-400 mb-2"></div><div id="al" class="text-xs space-y-1"></div></div></div></div>
+<div class="lg:col-span-5 space-y-3"><div class="text-xs font-bold uppercase text-amber-400">📱 Oyuncu Ekranı Önizleme</div><div id="pv" class="bg-slate-950 p-4 rounded-3xl border-4 border-slate-800 min-h-[420px] space-y-3"></div></div></div>
+<script>
+const auth=firebase.auth(),PTS=10;let Q=[],cur=1,st=null,teams={},sc={},ans={},tm,aR,ak,inited=0;
+auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous;$('login').classList.toggle('hidden',ok);$('dash').classList.toggle('hidden',!ok);$('dash').classList.toggle('grid',ok);if(ok)init()});
+function login(){auth.signInWithEmailAndPassword($('em').value.trim(),$('ps').value).catch(()=>$('lerr').classList.remove('hidden'))}
+function init(){if(inited++)return;
+ db.ref('private/questions').on('value',s=>{const v=s.val()||[];Q=Array.isArray(v)?v.filter(Boolean):Object.values(v);$('qinfo').textContent='Yüklü soru sayısı: '+Q.length;draw()});
+ db.ref('config/public').once('value',s=>{const c=s.val()||{};$('cn').value=c.name||'';$('cd').value=c.date||''});
+ db.ref('config/eventPassword').once('value',s=>$('cp').value=s.val()||'');
+ db.ref('teams').on('value',s=>{teams=s.val()||{};drawTeams();drawAns()});db.ref('scores').on('value',s=>{sc=s.val()||{};drawTeams()});
+ db.ref('state').on('value',s=>{st=s.val();if(st&&st.currentQuestion)cur=st.currentQuestion;
+  if(st&&st.qKey!==ak){if(aR)aR.off();ak=st.qKey;ans={};if(ak){aR=db.ref('answers/'+ak);aR.on('value',a=>{ans=a.val()||{};drawAns()})}}draw()});
+ setInterval(draw,500)}
+function saveCfg(){db.ref().update({'config/public':{name:$('cn').value.trim(),date:$('cd').value.trim()},'config/eventPassword':$('cp').value.trim()}).then(()=>$('msg').textContent='Kaydedildi.')}
+function csv(t){t=t.replace(/^\uFEFF/,'');const f=t.split('\n')[0],d=(f.match(/;/g)||[]).length>(f.match(/,/g)||[]).length?';':',',rows=[];let r=[],c='',q=0;
+ for(let i=0;i<t.length;i++){const x=t[i];if(q){if(x=='"'){if(t[i+1]=='"'){c+='"';i++}else q=0}else c+=x}else if(x=='"')q=1;else if(x==d){r.push(c);c=''}else if(x=='\n'||x=='\r'){if(x=='\r'&&t[i+1]=='\n')i++;r.push(c);c='';rows.push(r);r=[]}else c+=x}
+ if(c||r.length){r.push(c);rows.push(r)}return rows}
+function loadCsv(file){if(!file)return;const fr=new FileReader();fr.onload=()=>{const q=csv(fr.result).map(r=>({text:(r[1]||'').trim(),A:(r[2]||'').trim(),B:(r[3]||'').trim(),C:(r[4]||'').trim(),D:(r[5]||'').trim(),correct:(r[6]||'').trim().toUpperCase()})).filter(x=>x.text&&/^[A-D]$/.test(x.correct));
+ if(!q.length)return $('msg').textContent='Geçerli soru bulunamadı (7. sütun A-D olmalı).';
+ db.ref('private/questions').set(q).then(()=>$('msg').textContent=q.length+' soru yüklendi.')};fr.readAsText(file)}
+function pub(n){clearTimeout(tm);const q=Q[n-1];if(!q)return;db.ref('state').set({status:'question',currentQuestion:n,qKey:'q'+n,total:Q.length,qText:q.text,A:q.A,B:q.B,C:q.C,D:q.D,endsAt:0})}
+function lobby(){clearTimeout(tm);db.ref('state').update({status:'lobby',endsAt:0})}
+function startTimer(){if(!st||st.status!='question')return;const s=parseInt($('sec').value)||20;db.ref('state/endsAt').set(now()+s*1000);clearTimeout(tm);tm=setTimeout(reveal,s*1000+700)}
+async function reveal(){clearTimeout(tm);if(!st||st.status!='question')return;const k=st.qKey,q=Q[st.currentQuestion-1];if(!q)return;
+ await db.ref('state').update({status:'revealed',correct:q.correct});
+ const t=await db.ref('scored/'+k).transaction(c=>c?undefined:true);if(!t.committed)return;
+ const [a,tt]=await Promise.all([db.ref('answers/'+k).once('value'),db.ref('teams').once('value')]),A=a.val()||{},u={};
+ Object.keys(tt.val()||{}).forEach(id=>{const c=A[id]||'-',ok=c==q.correct;u['results/'+k+'/'+id]={choice:c,ok};if(ok)u['scores/'+id]=firebase.database.ServerValue.increment(PTS)});
+ db.ref().update(u)}
+function nav(d){const n=cur+d;if(n<1)return;if(n>Q.length){if(confirm('Tüm sorular bitti! Bitiş ekranına geçilsin mi?'))finish();return}pub(n)}
+function finish(){clearTimeout(tm);db.ref('state').update({status:'finished'})}
+function reset(){if(!confirm('Tüm takımlar, cevaplar ve skorlar silinsin mi?'))return;clearTimeout(tm);
+ db.ref().update({teams:null,scores:null,answers:null,answered:null,results:null,scored:null,joins:null,state:{status:'lobby',currentQuestion:1,endsAt:0,total:Q.length}})}
+function drawTeams(){const b=$('tl');b.replaceChildren();Object.keys(teams).forEach(u=>{
+ const r=h('div','flex justify-between items-center bg-slate-900 p-2 rounded border border-slate-700 text-sm'),i=h('input','w-16 bg-slate-800 border border-slate-600 rounded text-center p-1');
+ i.type='number';i.value=sc[u]||0;i.onchange=()=>db.ref('scores/'+u).set(parseInt(i.value)||0);
+ const x=h('button','text-red-400 ml-2','❌');x.onclick=()=>{if(confirm(teams[u].name+' çıkarılsın mı?'))db.ref().update({['teams/'+u]:null,['scores/'+u]:null,['joins/'+u]:null})};
+ const d=h('div','flex items-center');d.append(i,x);r.append(h('span','truncate',teams[u].name),d);b.append(r)})}
+function drawAns(){const k=Object.keys(ans);$('ac').textContent=k.length+' / '+Object.keys(teams).length+' Takım Cevap Verdi';$('al').replaceChildren(...k.map(u=>{const r=h('div','flex justify-between border-b border-slate-700/40 py-1');r.append(h('span','',teams[u]?teams[u].name:'?'),h('b','text-amber-400',ans[u]));return r}))}
+function draw(){const q=Q[cur-1];$('qd').textContent='Soru '+cur+' / '+(Q.length||'?');$('hint').textContent=q?'Doğru cevap: '+q.correct:'';
+ const p=$('pv');p.replaceChildren();if(!st)return;
+ if(st.status=='lobby'||st.status=='finished')return p.append(h('div','text-center text-amber-400 font-bold text-lg mt-20',st.status=='lobby'?'⏳ Lobi':'🏆 Quiz Sona Erdi'));
+ const l=left(st),rev=st.status=='revealed';
+ p.append(h('div','flex justify-between text-xs border-b border-slate-800 pb-2',''),h('div','bg-slate-900 p-3 rounded-xl text-sm font-semibold',st.qText));
+ p.firstChild.append(h('b','text-amber-400','Soru '+st.currentQuestion),h('span','text-amber-400 font-bold',rev?'Süre Bitti':l===null?'Bekleniyor...':l>0?l+'s':'Süre Bitti'));
+ L.forEach(o=>p.append(h('div','p-2.5 rounded-lg border text-xs '+(rev&&o==st.correct?'bg-green-500/20 border-green-500 text-green-400 font-bold':'bg-slate-900 border-slate-800'),o+') '+st[o])))}
+</script></body></html>
