@@ -1,0 +1,20 @@
+name: bubilet-test
+on: [workflow_dispatch, push]
+permissions:
+  contents: write
+jobs:
+  t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: fetch
+        run: |
+          mkdir -p diag
+          for u in kadikoy-kutu-oyunlari-gecesi kadikoy-blood-on-the-ordek-pub; do
+            code=$(curl -s -L -o diag/$u.html -w '%{http_code}' -A 'Mozilla/5.0' -H 'Accept-Language: tr-TR' https://www.bubilet.com.tr/istanbul/etkinlik/$u)
+            echo "$u $code $(wc -c < diag/$u.html)" >> diag/result.txt
+          done
+      - name: commit
+        run: |
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          git add diag; git commit -m "diag" && git push || true
