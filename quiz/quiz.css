@@ -1,0 +1,6 @@
+body{font-family:'Inter',system-ui,sans-serif;background-image:radial-gradient(ellipse 90% 45% at 50% -8%,#3f2070 0%,transparent 70%);background-repeat:no-repeat;background-attachment:fixed}
+h1,h2,.cz{font-family:'Cinzel',Georgia,serif;letter-spacing:.04em}
+.fx{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.fx span{position:absolute;bottom:-14vh;font-family:'Cinzel',serif;font-weight:700;color:#b794f4;animation:rise linear infinite;will-change:transform}
+@keyframes rise{0%{transform:translate3d(0,0,0) rotate(var(--a))}50%{transform:translate3d(var(--s),-65vh,0) rotate(calc(var(--a) * -1))}100%{transform:translate3d(0,-130vh,0) rotate(var(--a))}}
+@media(prefers-reduced-motion:reduce){.fx{display:none}}

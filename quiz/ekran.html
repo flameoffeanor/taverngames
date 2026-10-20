@@ -2,11 +2,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js"></script></head>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="quiz.css"><script src="common.js"></script></head>
 <body class="bg-slate-950 text-white min-h-screen p-6 font-sans overflow-hidden flex flex-col">
-<header class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><div class="bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div><h1 id="ev" class="text-2xl font-bold text-slate-200"></h1></div>
+<header class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" class="h-14" alt=""><div class="cz bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div><h1 id="ev" class="text-2xl font-bold text-slate-200"></h1></div>
 <div id="qnum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800">Lobi</div></header>
-<main id="lobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full"><div class="text-7xl animate-bounce">⏳</div><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
+<main id="lobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full"><img src="/assets/logo_beyaz_kenar.webp" class="h-56 mx-auto" alt=""><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
 <div id="tt" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-lg"></div></main>
 <main id="quiz" class="hidden my-auto grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
 <div class="col-span-8 space-y-4"><div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-800"><div class="text-slate-300 font-bold text-lg">Gelen Yanıt: <b id="got" class="text-amber-400 text-2xl">0</b> / <b id="all">0</b> Takım</div><div id="timer" class="font-mono font-black text-5xl text-amber-400"></div></div>
@@ -34,4 +34,4 @@ function draw(){const s=st||{},rev=s.status=='revealed';
    b.append(h('span','px-3 py-1.5 rounded-xl text-xs font-bold '+c,teams[u].name+' '+t))});
   board($('lb'),teams,sc,null,10)}
  else{show('lobby');$('tt').replaceChildren(...Object.values(teams).map(t=>h('div','bg-slate-800 p-4 rounded-2xl text-amber-300 font-bold','🛡️ '+t.name)))}}
-</script></body></html>
+</script><script>floaters(22,1.8)</script></body></html>

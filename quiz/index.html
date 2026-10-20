@@ -3,9 +3,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js"></script></head>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="quiz.css"><script src="common.js"></script></head>
 <body class="bg-slate-900 text-white min-h-screen p-4 font-sans max-w-md mx-auto">
-<header class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"><b class="text-amber-400 text-lg">Tavern Quiz</b>
+<header class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4"><a href="/" class="flex items-center gap-2"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" class="h-9" alt=""><b class="cz text-amber-400 text-lg">Tavern Quiz</b></a>
 <span id="me" class="hidden text-sm bg-slate-800 px-3 py-1 rounded-full border border-slate-700"><span id="mn" class="text-amber-300 font-semibold"></span> <button onclick="out()" class="text-xs text-red-400 ml-1">Çıkış</button></span></header>
 <main id="login" class="space-y-3 bg-slate-800 p-6 rounded-2xl border border-slate-700">
 <h1 id="title" class="text-2xl font-extrabold text-center text-amber-400">Quiz Night</h1><p id="date" class="text-xs text-center text-slate-400"></p>
@@ -39,35 +39,19 @@ function render(){
  $('me').classList.toggle('hidden',!joined);if(joined)$('mn').textContent=teams[uid].name;
  board($('lb'),teams,sc,uid);board($('fb'),teams,sc,uid);$('tl').replaceChildren(...Object.values(teams).map(t=>h('li','text-slate-300',t.name)));
  if(!st)return show('login');if(st.status=='finished')return show('fin');if(!joined)return show('login');if(st.status=='lobby')return show('lobby');
- show('quiz');
- const rev=st.status=='revealed',l=left(st),up=l!==null&&l<=0;
- const timerStarted = st.endsAt > 0; // Sürenin başlayıp başlamadığı kontrolü
-
+ show('quiz');const rev=st.status=='revealed',l=left(st),up=l!==null&&l<=0;
  $('qn').textContent='Soru '+st.currentQuestion+' / '+st.total;$('qt').textContent=st.qText;
  const box=$('opts');box.replaceChildren();
  L.forEach(o=>{const ok=rev&&o==st.correct,bad=rev&&o==mine&&o!=st.correct;
-  const b=h('button','w-full text-left p-4 rounded-xl border bg-slate-800 disabled:opacity-60 '+(ok?'border-green-500 !bg-green-500/20 text-green-400 font-bold':bad?'border-red-500 !bg-red-500/20 text-red-400':o==mine?'border-amber-400 !bg-amber-500/25 text-amber-300 font-bold':'border-slate-700'),o+') '+st[o]+(ok?'  ✅':bad?'  ❌':o==mine?'  ✔':''));
-  
-  // Cevap açıklandıysa, süre bittiysa veya SÜRE HENÜZ BAŞLAMADIYSA butonları kilitle
-  b.disabled=rev||up||!timerStarted;
-  b.onclick=()=>pick(o);box.append(b)});
-
- const toast=$('toast');
- if(!timerStarted && !rev) {
-   toast.textContent='⏱️ Moderatörün süreyi başlatması bekleniyor...';
-   toast.className='text-center text-xs text-amber-400 font-bold animate-pulse';
- } else if (toast.textContent.includes('Moderatörün')) {
-   toast.textContent='';
-   toast.className='text-center text-xs text-red-400';
- }
-
+  const b=h('button','w-full text-left p-4 rounded-xl border bg-slate-800 disabled:opacity-80 '+(ok?'border-green-500 !bg-green-500/20 text-green-400 font-bold':bad?'border-red-500 !bg-red-500/20 text-red-400':o==mine?'border-amber-400 !bg-amber-500/25 text-amber-300 font-bold':'border-slate-700'),o+') '+st[o]+(ok?'  ✅':bad?'  ❌':o==mine?'  ✔':''));
+  b.disabled=rev||up;b.onclick=()=>pick(o);box.append(b)});
  $('foot').classList.toggle('hidden',!rev);
  $('fbk').textContent=mine==st.correct?'Tebrikler! Doğru Cevap 🎉':mine?'Maalesef Yanlış Cevap ❌':'Cevap vermediniz'}
 function pick(o){$('toast').textContent='';db.ref().update({['answers/'+qKey+'/'+uid]:o,['answered/'+qKey+'/'+uid]:true}).catch(()=>{$('toast').textContent='Süre doldu, cevap kaydedilmedi.'})}
 async function go(){const p=$('pw').value.trim(),n=$('tn').value.trim().slice(0,24),e=$('err');e.textContent='';
  if(!n)return e.textContent='Lütfen grup isminizi giriniz!';
- try{await db.ref('joins/'+uid).set(p)}catch(x){return e.textContent='Hata: '+x.code+' (uid: '+uid+')'}
+ try{await db.ref('joins/'+uid).set(p)}catch(x){return e.textContent=x.code=='PERMISSION_DENIED'?'Etkinlik şifresi hatalı!':'Bağlantı hatası: '+x.code}
  const low=Object.values(teams).map(t=>(t.name||'').toLowerCase());let f=n,i=1;while(low.includes(f.toLowerCase()))f=n+' '+(++i);
  db.ref('teams/'+uid).set({name:f}).catch(()=>e.textContent='Katılım başarısız, tekrar deneyin.')}
 function out(){if(confirm('Çıkış yapmak istediğinize emin misiniz?'))db.ref('teams/'+uid).remove()}
-</script></body></html>
+</script><script>floaters(16)</script></body></html>
