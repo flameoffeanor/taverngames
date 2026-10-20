@@ -889,7 +889,7 @@
           if (name && jsonContent && name.toLowerCase() !== 'script_name') {
             const btn = document.createElement('button');
             btn.className = 'btn-script';
-            btn.setAttribute('style', 'background: rgba(255, 255, 255, 0.03) !important; border: 1px solid #2a2a32 !important; border-left: 4px solid #c0392b !important; color: #ffffff !important; padding: 14px 16px !important; border-radius: 6px !important; font-size: 0.95rem !important; font-weight: 700 !important; cursor: pointer !important; text-align: left !important; display: flex !important; justify-content: space-between !important; align-items: center !important; transition: all 0.2s ease !important; width: 100% !important;');
+           
             btn.innerText = name;
             btn.onclick = () => {
               document.getElementById('linkInput').value = jsonContent;
