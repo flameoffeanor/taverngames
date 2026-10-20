@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Tavern Games - Quiz Night</title>
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quiz Night | Tavern Games</title>
+<meta name="description" content="Tavern Games Quiz Night: takımınla telefonundan katıl, soruları canlı yanıtla, sıralamayı anında gör. Kadıköy'de pub'larda canlı bilgi yarışması."><link rel="canonical" href="https://taverngames.com.tr/quiz/"><meta property="og:title" content="Quiz Night | Tavern Games"><meta property="og:description" content="Tavern Games Quiz Night: takımınla telefonundan katıl, soruları canlı yanıtla, sıralamayı anında gör. Kadıköy'de pub'larda canlı bilgi yarışması."><meta property="og:url" content="https://taverngames.com.tr/quiz/"><meta property="og:image" content="https://taverngames.com.tr/assets/og.jpg"><meta property="og:type" content="website"><meta property="og:locale" content="tr_TR">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -11,7 +12,11 @@
 <h1 id="title" class="text-2xl font-extrabold text-center text-amber-400">Quiz Night</h1><p id="date" class="text-xs text-center text-slate-400"></p>
 <input id="pw" type="password" placeholder="Etkinlik şifresi" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-amber-400">
 <input id="tn" maxlength="24" placeholder="Grup / Takım ismi" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 focus:outline-none focus:border-amber-400">
-<button id="bj" onclick="go()" class="w-full bg-amber-500 hover:bg-amber-600 font-bold py-3 rounded-lg text-slate-950">Odaya Katıl</button><p id="err" class="text-red-400 text-xs text-center"></p></main>
+<button id="bj" onclick="go()" class="w-full bg-amber-500 hover:bg-amber-600 font-bold py-3 rounded-lg text-slate-950">Odaya Katıl</button><p id="err" class="text-red-400 text-xs text-center"></p>
+<div id="info" class="pt-4 mt-2 border-t border-slate-700 space-y-3 text-sm text-slate-300">
+<h2 class="cz text-amber-400 text-base">Quiz Night nasıl işliyor?</h2>
+<ol class="list-decimal pl-5 space-y-1"><li>Etkinlikte moderatörden <b>etkinlik şifresini</b> al.</li><li>Yukarıya şifreyi ve takım adını yaz, odaya katıl.</li><li>Moderatör soruyu sesli okur. Süre başlayınca telefonundan cevabını seç.</li><li>Her sorudan sonra doğru cevap ve takımların durumu açıklanır, sıralama canlı güncellenir.</li></ol>
+<p class="text-slate-400">Tavern Games Quiz Night, Kadıköy'deki pub'larda takımlarla oynanan canlı bilgi yarışmasıdır. Yaklaşan tarihler için <a class="text-amber-400 underline" href="/bilet">bilet sayfasına</a> bak, haberdar olmak için <a class="text-amber-400 underline" href="https://www.instagram.com/taverngamesclub/" target="_blank" rel="noopener">Instagram</a>'ı takip et.</p></div></main>
 <main id="lobby" class="hidden text-center bg-slate-800 p-6 rounded-2xl border border-slate-700"><div class="text-4xl animate-pulse">⏳</div><h2 class="font-bold text-xl my-2">Lobiye Katıldınız!</h2><p class="text-sm text-slate-400 mb-4">Moderatör yarışmayı başlatana kadar bekleyiniz...</p>
 <ul id="tl" class="text-left text-sm bg-slate-900 p-4 rounded-lg max-h-48 overflow-y-auto space-y-1"></ul></main>
 <main id="quiz" class="hidden space-y-3"><div class="flex justify-between bg-slate-800 p-3 rounded-xl border border-slate-700"><b id="qn" class="text-amber-400 text-sm"></b><b id="timer" class="font-mono text-amber-400"></b></div>
