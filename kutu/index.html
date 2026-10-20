@@ -1,7 +1,7 @@
 <!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kutu Oyunları · Tavern Games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" href="/assets/meeple_mavi_beyaz.webp"><link rel="stylesheet" href="/site.css"><link rel="stylesheet" href="/kutu-oyunlari/oyunlar.css"><script src="/nav.js" defer></script></head>
+<link rel="icon" href="/assets/meeple_mavi_beyaz.webp"><link rel="stylesheet" href="/site.css"><link rel="stylesheet" href="/kutu/oyunlar.css"><script src="/nav.js" defer></script></head>
 <body data-theme="kutu">
 <main class="wrap wide">
 <section class="gh"><h1 class="cz">Kutu Oyunları</h1><p><b id="cnt">0</b> oyunluk koleksiyon. Kutulara basınca BoardGameGeek sayfası açılır.</p></section>
@@ -11,7 +11,7 @@
 </main>
 <footer><img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt=""><div>© Tavern Games Club · Puanlar BoardGameGeek'ten</div></footer>
 <script>
-/* Sheet'te "Ekstra" sekmesi: A=Oyun adı, B=BGG puanı (isteğe bağlı), C=Görsel linki (isteğe bağlı), D=BGG linki (isteğe bağlı) */
+/* Sheet'te "Ekstra" sekmesi: A=Oyun adı, B=BGG puanı, C=Görsel (tam link ya da kutu/img klasöründeki dosya adı), D=BGG linki, E=Gizle (x yazarsan o oyun listeden kalkar) */
 const SHEET_ID='1UCMAlpti9YEssy5HXvaITVCxLESZDFmHYzrA1PK7ANY',TAB='Ekstra';
 const $=id=>document.getElementById(id);let all=[];
 const norm=s=>(s||'').toLocaleLowerCase('tr').replace(/[^a-z0-9ğüşıöç]+/g,'');
@@ -25,9 +25,13 @@ function draw(){const q=norm($('q').value),so=$('s').value;const v=all.filter(g=
  const gr=$('grid');gr.replaceChildren(...v.map(card));$('none').hidden=!!v.length}
 $('q').oninput=draw;$('s').onchange=draw;
 const U=(t)=>'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet='+t;
-fetch('/kutu-oyunlari/games.json').then(r=>r.json()).then(j=>{all=j.map(g=>({n:g.n,r:g.r,img:'/kutu-oyunlari/img/'+g.id+'.webp',u:'https://boardgamegeek.com/boardgame/'+g.id}));$('cnt').textContent=all.length;draw();
+fetch('/kutu/games.json').then(r=>r.json()).then(j=>{all=j.map(g=>({n:g.n,r:g.r,img:'/kutu/img/'+g.id+'.webp',u:'https://boardgamegeek.com/boardgame/'+g.id}));$('cnt').textContent=all.length;draw();
  return fetch(U(TAB)).then(r=>r.text()).then(x=>{const o=JSON.parse(x.slice(x.indexOf('{'),x.lastIndexOf('}')+1));const have=new Set(all.map(g=>norm(g.n)));
-  o.table.rows.forEach(r=>{const c=(r.c||[]).map(z=>z?(z.v!=null?String(z.v):''):'');const n=(c[0]||'').trim();if(!n||/^(oyun|oyunlar|ad|ad[ıi])/i.test(n)&&n.length<12||have.has(norm(n)))return;
-   have.add(norm(n));const p=parseFloat(String(c[1]).replace(',','.'));all.push({n,r:isNaN(p)?0:p,img:/^https?:\/\//.test(c[2]||'')?c[2]:'',u:/^https?:\/\//.test(c[3]||'')?c[3]:''})});
+  const hide=new Set(),add=[];
+  o.table.rows.forEach(r=>{const c=(r.c||[]).map(z=>z?(z.v!=null?String(z.v):''):'');const n=(c[0]||'').trim();if(!n||/^(oyun|oyunlar|ad|ad[ıi])$/i.test(n))return;
+   if((c[4]||'').trim()){hide.add(norm(n));return}
+   if(have.has(norm(n)))return;have.add(norm(n));const p=parseFloat(String(c[1]).replace(',','.')),im=(c[2]||'').trim();
+   add.push({n,r:isNaN(p)?0:p,img:/^https?:\/\//.test(im)?im:im?'/kutu/img/'+im:'',u:/^https?:\/\//.test(c[3]||'')?c[3]:''})});
+  all=all.filter(g=>!hide.has(norm(g.n))).concat(add.filter(g=>!hide.has(norm(g.n))));
   $('cnt').textContent=all.length;draw()}).catch(()=>{})});
 </script></body></html>
