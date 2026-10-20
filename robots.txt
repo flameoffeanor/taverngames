@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /quiz/admin.html
+Disallow: /quiz/ekran.html
+
+Sitemap: https://taverngames.com.tr/sitemap.xml
