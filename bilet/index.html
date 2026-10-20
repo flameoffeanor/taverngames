@@ -1,0 +1,51 @@
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Biletler · Tavern Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/assets/meeple_sari_beyaz.webp"><link rel="stylesheet" href="/site.css"><link rel="stylesheet" href="/bilet/bilet.css"><script src="/nav.js" defer></script></head>
+<body data-theme="bilet">
+<main class="wrap">
+<section class="bh"><h1 class="cz">Biletler</h1><p>Yaklaşan etkinlikler ve bilet linkleri.</p></section>
+<div id="list"></div>
+<p id="note" class="note"></p>
+</main>
+<footer><img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt=""><div>© Tavern Games Club</div></footer>
+<script>
+const SHEET_ID='1YPP-iufjWHd43YadvrfHkIpvKAFz69_t7sIb_1xt_y8',TAB='Biletler',KEY='tg_bilet_cache2';
+/* Bölümler: Sheet'teki "Etkinlik" sütununda re ifadesine uyan kelime geçerse o bölüme girer. Yeni tür eklemek için buraya bir satır ekle. */
+const SECTIONS=[
+ {re:/blood|botc|clocktower/i,title:'Blood on the Clocktower',sub:'Vampir Köylünün geldiği son nokta!',c:'#e04a3f'},
+ {re:/kutu|oyun/i,title:'Kutu Oyunları Gecesi',sub:'',c:'#3d9be0'},
+ {re:/quiz/i,title:'Quiz Night',sub:'',c:'#a77bd6'}];
+const AY=['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'],GUN=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+const $=id=>document.getElementById(id);
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+const p2=n=>('0'+n).slice(-2);
+function nd(c){if(!c)return'';let m=String(c.v||'').match(/^Date\((\d+),(\d+),(\d+)/);if(m)return m[1]+'-'+p2(+m[2]+1)+'-'+p2(m[3]);
+ const x=String(c.f!=null?c.f:c.v||'').trim();m=x.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/);if(m)return m[3]+'-'+p2(m[2])+'-'+p2(m[1]);
+ m=x.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+p2(m[2])+'-'+p2(m[3]):''}
+function nt(c){if(!c)return'';const x=String(c.f!=null?c.f:c.v||'');const m=x.match(/(\d{1,2})[:.](\d{2})/);return m?p2(m[1])+':'+m[2]:''}
+const tx=c=>c?String(c.f!=null?c.f:c.v!=null?c.v:'').trim():'';
+function parse(rows){const now=Date.now();
+ return rows.map(r=>({k:tx(r[0]),d:nd(r[1]),t:nt(r[2])||'20:00',yer:tx(r[3]),ln:tx(r[4]),fy:tx(r[5]),du:tx(r[6])}))
+ .filter(e=>e.k&&e.d&&/^https?:\/\//.test(e.ln)).map(e=>{const[y,m,d]=e.d.split('-').map(Number),[h,mi]=e.t.split(':').map(Number);e.dt=new Date(y,m-1,d,h,mi);return e})
+ .filter(e=>e.dt.getTime()+3*36e5>now).sort((a,b)=>a.dt-b.dt)}
+function card(e){const a=el('a','ev');a.href=e.ln;a.target='_blank';a.rel='noopener';
+ const sold=/tükendi|dolu/i.test(e.du);if(sold)a.classList.add('sold');
+ const dt=el('div','dt');dt.append(el('b','',e.dt.getDate()),el('span','',AY[e.dt.getMonth()]));
+ const inf=el('div','inf');inf.append(el('h3','',GUN[e.dt.getDay()]+' · '+e.t),el('p','',e.yer));
+ if(e.fy||(e.du&&!sold)){const tg=el('div','tags');if(e.fy)tg.append(el('span','tag',e.fy));if(e.du&&!sold)tg.append(el('span','tag p',e.du));inf.append(tg)}
+ a.append(dt,inf,el('span','buy',sold?'Tükendi':'Bilet Al'));return a}
+function render(ev){const l=$('list');l.replaceChildren();
+ const groups=SECTIONS.map(s=>({s,items:[]})),other={s:{title:'Diğer Etkinlikler',sub:'',c:'#fdb13b'},items:[]};
+ ev.forEach(e=>{const g=groups.find(g=>g.s.re.test(e.k));if(g)g.items.push(e);else{e.yer=e.k+(e.yer?' · '+e.yer:'');other.items.push(e)}});
+ groups.push(other);
+ groups.forEach(g=>{const sec=el('section','sec');sec.style.setProperty('--c',g.s.c);
+  sec.append(el('h2','cz',g.s.title));if(g.s.sub)sec.append(el('p','ssub',g.s.sub));
+  if(g.items.length)g.items.forEach(e=>sec.append(card(e)));else{if(g===other)return;sec.append(el('div','soon','Yeni tarihler yakında. '));const a=el('a','','Instagram');a.href='https://www.instagram.com/taverngamesclub/';a.target='_blank';a.rel='noopener';sec.lastChild.append(a,"'dan duyuracağız.")}
+  l.append(sec)})}
+function show(rows,note){$('note').textContent=note||'';render(parse(rows))}
+function cached(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet='+TAB).then(r=>r.text()).then(x=>{
+ const j=JSON.parse(x.slice(x.indexOf('{'),x.lastIndexOf('}')+1)),rows=j.table.rows.map(r=>(r.c||[]).map(c=>c?{v:c.v,f:c.f}:null));
+ try{localStorage.setItem(KEY,JSON.stringify(rows))}catch(e){}show(rows)}).catch(()=>{const c=cached();show(c||[],c?'Güncel liste alınamadı, son kayıtlı liste gösteriliyor.':'Liste şu an yüklenemedi.')});
+</script></body></html>
