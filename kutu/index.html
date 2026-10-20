@@ -13,7 +13,7 @@
 <script>
 /* Veri Google Sheet'in ilk sekmesinden gelir: A=Oyun adı, B=BGG puanı, C=Görsel linki. Satır eklemek/silmek yeterli.
    Sheet okunamazsa ya da görsel açılmazsa, bilinen oyunlar için sitedeki kayıtlı kopya kullanılır. */
-const SHEET_ID='1UCMAlpti9YEssy5HXvaITVCxLESZDFmHYzrA1PK7ANY';
+const SHEET_ID='BURAYA_SHEET_ID';
 const $=id=>document.getElementById(id);let all=[],known={};
 const norm=s=>(s||'').toLocaleLowerCase('tr').replace(/[^a-z0-9ğüşıöç]+/g,'');
 function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
