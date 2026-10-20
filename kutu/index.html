@@ -4,34 +4,32 @@
 <link rel="icon" href="/assets/meeple_mavi_beyaz.webp"><link rel="stylesheet" href="/site.css"><link rel="stylesheet" href="/kutu/oyunlar.css"><script src="/nav.js" defer></script></head>
 <body data-theme="kutu">
 <main class="wrap wide">
-<section class="gh"><h1 class="cz">Kutu Oyunları</h1><p><b id="cnt">0</b> oyunluk koleksiyon. Kutulara basınca BoardGameGeek sayfası açılır.</p></section>
+<section class="gh"><h1 class="cz">Kutu Oyunları</h1><p><b id="cnt">0</b> oyunluk koleksiyon. </p></section>
 <div class="bar"><input id="q" type="search" placeholder="Oyun ara…" autocomplete="off"><select id="s"><option value="az">A-Z</option><option value="r">BGG puanı</option></select></div>
 <div id="grid" class="gg"></div>
 <p id="none" class="none" hidden>Aramana uyan oyun yok.</p>
 </main>
-<footer><img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt=""><div>© Tavern Games Club · Puanlar BoardGameGeek'ten</div><div id="src" style="opacity:.4;font-size:.7rem;margin-top:6px"></div></footer>
+<footer><img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt=""><div>© Tavern Games Club · Puanlar BoardGameGeek'ten</div></footer>
 <script>
-/* Veri Google Sheet'in ilk sekmesinden gelir: A=Oyun adı, B=BGG puanı, C=Görsel linki. Satır eklemek/silmek yeterli.
-   Sheet okunamazsa ya da görsel açılmazsa, bilinen oyunlar için sitedeki kayıtlı kopya kullanılır. */
-const SHEET_ID='1eeInnp4_jk19FtBo7oozfdvBzg_jNhiUkEBp8gOP_Tw';
-const $=id=>document.getElementById(id);let all=[],known={};
+/* Veri Google Sheet'ten gelir: A=Oyun adı, B=BGG puanı, C=Görsel linki, D=BGG linki (isteğe bağlı). Satır eklemek/silmek yeterli. */
+const SHEET_ID='1eeInnp4_jk19FtBo7oozfdvBzg_jNhiUkEBp8gOP_Tw',KEY='tg_kutu_cache';
+const $=id=>document.getElementById(id);let all=[];
 const norm=s=>(s||'').toLocaleLowerCase('tr').replace(/[^a-z0-9ğüşıöç]+/g,'');
 function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
 function ph(n){return el('div','ph',n.split(/[\s:]+/).filter(w=>/^[A-Za-zÀ-ÿ0-9]/.test(w)).slice(0,2).map(w=>w[0].toUpperCase()).join(''))}
 function card(g){const a=el(g.u?'a':'div','gc');if(g.u){a.href=g.u;a.target='_blank';a.rel='noopener'}
- const im=el('div','gi'),srcs=[g.img,g.loc].filter(Boolean);
- const tryNext=()=>{im.replaceChildren();const s=srcs.shift();if(!s){im.append(ph(g.n));return}const i=document.createElement('img');i.alt=g.n;i.loading='lazy';i.referrerPolicy='no-referrer';i.onerror=tryNext;i.src=s;im.append(i)};tryNext();
+ const im=el('div','gi');if(g.img){const i=document.createElement('img');i.alt=g.n;i.loading='lazy';i.referrerPolicy='no-referrer';i.onerror=()=>{im.replaceChildren(ph(g.n))};i.src=g.img;im.append(i)}else im.append(ph(g.n));
  a.append(im,el('div','gn',g.n));if(g.r)a.append(el('div','gr','★ '+g.r.toFixed(1)));return a}
 function draw(){const q=norm($('q').value),so=$('s').value;const v=all.filter(g=>!q||norm(g.n).includes(q));
  v.sort(so=='r'?(a,b)=>(b.r||0)-(a.r||0)||a.n.localeCompare(b.n,'tr'):(a,b)=>a.n.replace(/^the /i,'').localeCompare(b.n.replace(/^the /i,''),'tr'));
- $('grid').replaceChildren(...v.map(card));$('none').hidden=!!v.length;$('cnt').textContent=all.length}
+ $('grid').replaceChildren(...v.map(card));$('none').hidden=!!v.length||!all.length;$('cnt').textContent=all.length}
 $('q').oninput=draw;$('s').onchange=draw;
-const ex=g=>({n:g.n,r:g.r,img:'',loc:'/kutu/img/'+g.id+'.webp',u:'https://boardgamegeek.com/boardgame/'+g.id});
-fetch('/kutu/games.json').then(r=>r.json()).then(j=>{j.forEach(g=>known[norm(g.n)]=g);all=j.map(ex);draw();$('src').textContent='Liste: kayıtlı';
- if(SHEET_ID.startsWith('BURAYA'))return;
- return fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&headers=0').then(r=>r.text()).then(x=>{const o=JSON.parse(x.slice(x.indexOf('{'),x.lastIndexOf('}')+1)),list=[],seen=new Set();if(o.table.cols.length<3){$('src').textContent='Liste: kayıtlı (Sheet 3 sütunlu değil)';return}
-  o.table.rows.forEach(r=>{const c=(r.c||[]).map(z=>z?(z.v!=null?String(z.v):''):'');const n=(c[0]||'').trim();if(!n||/^(oyun|oyunlar)$/i.test(n)||seen.has(norm(n)))return;seen.add(norm(n));
-   const k=known[norm(n)],p=parseFloat(String(c[1]).replace(',','.')),im=(c[2]||'').trim();
-   list.push({n,r:isNaN(p)?(k&&k.r)||0:p,img:/^https?:\/\//.test(im)?im:'',loc:k?'/kutu/img/'+k.id+'.webp':'',u:k?'https://boardgamegeek.com/boardgame/'+k.id:''})});
-  if(list.length){all=list;draw();$('src').textContent='Liste: Google Sheet ('+list.length+' oyun)'}else $('src').textContent='Liste: kayıtlı (Sheet boş)'}).catch(e=>{$('src').textContent='Liste: kayıtlı (Sheet okunamadı)'})});
+function parse(rows){const seen=new Set(),list=[];
+ rows.forEach(c=>{const n=(c[0]||'').trim();if(!n||/^(oyun|oyunlar)$/i.test(n)||seen.has(norm(n)))return;seen.add(norm(n));
+  const p=parseFloat(String(c[1]).replace(',','.')),im=(c[2]||'').trim(),u=(c[3]||'').trim();
+  list.push({n,r:isNaN(p)?0:p,img:/^https?:\/\//.test(im)?im:'',u:/^https?:\/\//.test(u)?u:''})});return list}
+function cached(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
+fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&headers=0').then(r=>r.text()).then(x=>{
+ const o=JSON.parse(x.slice(x.indexOf('{'),x.lastIndexOf('}')+1)),rows=o.table.rows.map(r=>(r.c||[]).map(z=>z?(z.v!=null?String(z.v):''):''));
+ try{localStorage.setItem(KEY,JSON.stringify(rows))}catch(e){}all=parse(rows);draw()}).catch(()=>{const c=cached();if(c){all=parse(c);draw()}else{$('none').textContent='Liste şu an yüklenemedi.';$('none').hidden=false}});
 </script></body></html>
