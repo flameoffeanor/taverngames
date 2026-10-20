@@ -39,12 +39,15 @@ function render(){
  $('me').classList.toggle('hidden',!joined);if(joined)$('mn').textContent=teams[uid].name;
  board($('lb'),teams,sc,uid);board($('fb'),teams,sc,uid);$('tl').replaceChildren(...Object.values(teams).map(t=>h('li','text-slate-300',t.name)));
  if(!st)return show('login');if(st.status=='finished')return show('fin');if(!joined)return show('login');if(st.status=='lobby')return show('lobby');
- show('quiz');const rev=st.status=='revealed',l=left(st),up=l!==null&&l<=0;
+ show('quiz');const rev=st.status=='revealed',l=left(st),up=l!==null&&l<=0,ts=st.endsAt>0;
  $('qn').textContent='Soru '+st.currentQuestion+' / '+st.total;$('qt').textContent=st.qText;
  const box=$('opts');box.replaceChildren();
  L.forEach(o=>{const ok=rev&&o==st.correct,bad=rev&&o==mine&&o!=st.correct;
   const b=h('button','w-full text-left p-4 rounded-xl border bg-slate-800 disabled:opacity-80 '+(ok?'border-green-500 !bg-green-500/20 text-green-400 font-bold':bad?'border-red-500 !bg-red-500/20 text-red-400':o==mine?'border-amber-400 !bg-amber-500/25 text-amber-300 font-bold':'border-slate-700'),o+') '+st[o]+(ok?'  ✅':bad?'  ❌':o==mine?'  ✔':''));
-  b.disabled=rev||up;b.onclick=()=>pick(o);box.append(b)});
+  b.disabled=rev||up||!ts;b.onclick=()=>pick(o);box.append(b)});
+ const tt=$('toast');
+ if(!ts&&!rev){tt.textContent='⏱️ Moderatörün süreyi başlatması bekleniyor...';tt.className='text-center text-xs text-amber-400 font-bold animate-pulse';tt.dataset.w=1}
+ else if(tt.dataset.w){tt.textContent='';tt.className='text-center text-xs text-red-400';delete tt.dataset.w}
  $('foot').classList.toggle('hidden',!rev);
  $('fbk').textContent=mine==st.correct?'Tebrikler! Doğru Cevap 🎉':mine?'Maalesef Yanlış Cevap ❌':'Cevap vermediniz'}
 function pick(o){$('toast').textContent='';db.ref().update({['answers/'+qKey+'/'+uid]:o,['answered/'+qKey+'/'+uid]:true}).catch(()=>{$('toast').textContent='Süre doldu, cevap kaydedilmedi.'})}
