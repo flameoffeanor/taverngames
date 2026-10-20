@@ -25,24 +25,21 @@ function nd(c){if(!c)return'';let m=String(c.v||'').match(/^Date\((\d+),(\d+),(\
  m=x.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);return m?m[1]+'-'+p2(m[2])+'-'+p2(m[3]):''}
 function nt(c){if(!c)return'';const x=String(c.f!=null?c.f:c.v||'');const m=x.match(/(\d{1,2})[:.](\d{2})/);return m?p2(m[1])+':'+m[2]:''}
 const tx=c=>c?String(c.f!=null?c.f:c.v!=null?c.v:'').trim():'';
-function parse(rows){const now=Date.now();
+function parse(rows){const td=new Date();td.setHours(0,0,0,0);const now=td.getTime();
  return rows.map(r=>({k:tx(r[0]),d:nd(r[1]),t:nt(r[2])||'20:00',yer:tx(r[3]),ln:tx(r[4]),fy:tx(r[5]),du:tx(r[6])}))
  .filter(e=>e.k&&e.d&&/^https?:\/\//.test(e.ln)).map(e=>{const[y,m,d]=e.d.split('-').map(Number),[h,mi]=e.t.split(':').map(Number);e.dt=new Date(y,m-1,d,h,mi);return e})
- .filter(e=>e.dt.getTime()+3*36e5>now).sort((a,b)=>a.dt-b.dt)}
-function card(e){const a=el('a','ev');a.href=e.ln;a.target='_blank';a.rel='noopener';
+ .filter(e=>e.dt.getTime()>=now).sort((a,b)=>a.dt-b.dt)}
+function card(e){const a=el('a','ev');a.style.setProperty('--c',e.s.c);a.href=e.ln;a.target='_blank';a.rel='noopener';
  const sold=/tükendi|dolu/i.test(e.du);if(sold)a.classList.add('sold');
  const dt=el('div','dt');dt.append(el('b','',e.dt.getDate()),el('span','',AY[e.dt.getMonth()]));
- const inf=el('div','inf');inf.append(el('h3','',GUN[e.dt.getDay()]+' · '+e.t),el('p','',e.yer));
- if(e.fy||(e.du&&!sold)){const tg=el('div','tags');if(e.fy)tg.append(el('span','tag',e.fy));if(e.du&&!sold)tg.append(el('span','tag p',e.du));inf.append(tg)}
+ const inf=el('div','inf');inf.append(el('h3','',e.s.title),el('p','',GUN[e.dt.getDay()]+' · '+e.t+(e.yer?' · '+e.yer:'')));
+ {const tg=el('div','tags');if(e.fy)tg.append(el('span','tag',e.fy));if(e.du&&!sold)tg.append(el('span','tag p',e.du));inf.append(tg)}
  a.append(dt,inf,el('span','buy',sold?'Tükendi':'Bilet Al'));return a}
-function render(ev){const l=$('list');l.replaceChildren();
- const groups=SECTIONS.map(s=>({s,items:[]})),other={s:{title:'Diğer Etkinlikler',sub:'',c:'#fdb13b'},items:[]};
- ev.forEach(e=>{const g=groups.find(g=>g.s.re.test(e.k));if(g)g.items.push(e);else{e.yer=e.k+(e.yer?' · '+e.yer:'');other.items.push(e)}});
- groups.push(other);
- groups.forEach(g=>{const sec=el('section','sec');sec.style.setProperty('--c',g.s.c);
-  sec.append(el('h2','cz',g.s.title));if(g.s.sub)sec.append(el('p','ssub',g.s.sub));
-  if(g.items.length)g.items.forEach(e=>sec.append(card(e)));else{if(g===other)return;sec.append(el('div','soon','Yeni tarihler yakında. '));const a=el('a','','Instagram');a.href='https://www.instagram.com/taverngamesclub/';a.target='_blank';a.rel='noopener';sec.lastChild.append(a,"'dan duyuracağız.")}
-  l.append(sec)})}
+const AYU=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function render(ev){const l=$('list');l.replaceChildren();let last='';
+ ev.forEach(e=>{e.s=SECTIONS.find(s=>s.re.test(e.k))||{title:e.k,c:'#fdb13b'};
+  const m=AYU[e.dt.getMonth()]+' '+e.dt.getFullYear();if(m!==last){last=m;l.append(el('div','mon',m))}
+  l.append(card(e))})}
 function show(rows,note){$('note').textContent=note||'';render(parse(rows))}
 function cached(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
 fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet='+TAB).then(r=>r.text()).then(x=>{

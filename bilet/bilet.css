@@ -31,3 +31,5 @@ body[data-theme=bilet]{--accent:var(--yellow);background:radial-gradient(ellipse
 .ev.sold{opacity:.55}.ev.sold .buy{background:#3a2c20;color:var(--muted)}
 .soon{margin:12px 0 0 16px;color:var(--muted);font-size:.9rem}.soon a{color:var(--c);text-decoration:underline}
 .inf h3{font-size:1.02rem}
+.ev{--c:var(--yellow);border-left:4px solid var(--c)}.ev:hover{border-color:var(--c)}.ev .dt{background:color-mix(in srgb,var(--c) 12%,transparent);border-color:color-mix(in srgb,var(--c) 45%,transparent)}.ev .dt b{color:var(--c)}.ev .buy{background:var(--c);color:#fff}.ev.sold .buy{background:#3a2c20;color:var(--muted)}
+.mon{margin:30px 0 4px;font:700 .8rem 'Cinzel',serif;letter-spacing:.2em;text-transform:uppercase;color:var(--yellow)}.mon:first-child{margin-top:8px}
