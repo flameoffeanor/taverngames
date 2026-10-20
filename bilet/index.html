@@ -41,7 +41,13 @@ function render(ev){const l=$('list');l.replaceChildren();let last='';
  ev.forEach(e=>{e.s=SECTIONS.find(s=>s.re.test(e.k))||{title:e.k,c:'#fdb13b'};
   const m=AYU[e.dt.getMonth()]+' '+e.dt.getFullYear();if(m!==last){last=m;l.append(el('div','mon',m))}
   l.append(card(e))})}
-function show(rows,note){$('note').textContent=note||'';render(parse(rows))}
+function ld(ev){try{const old=document.getElementById('ev-ld');if(old)old.remove();if(!ev.length)return;
+ const g=ev.map(e=>{const sold=/tükendi|dolu/i.test(e.du),pr=(e.fy.match(/\d+/)||[])[0],o={'@type':'Offer',url:e.ln,priceCurrency:'TRY',availability:'https://schema.org/'+(sold?'SoldOut':'InStock')};if(pr)o.price=pr;
+  return{'@type':'Event',name:e.s.title+(e.yer?' - '+e.yer:''),startDate:e.d+'T'+e.t+':00+03:00',eventStatus:'https://schema.org/EventScheduled',eventAttendanceMode:'https://schema.org/OfflineEventAttendanceMode',
+  location:{'@type':'Place',name:e.yer||'Kadıköy, İstanbul',address:{'@type':'PostalAddress',addressLocality:'Kadıköy',addressRegion:'İstanbul',addressCountry:'TR'}},
+  organizer:{'@type':'Organization',name:'Tavern Games',url:'https://taverngames.com.tr/'},offers:o}});
+ const s=document.createElement('script');s.type='application/ld+json';s.id='ev-ld';s.textContent=JSON.stringify(g);document.head.append(s)}catch(e){}}
+function show(rows,note){$('note').textContent=note||'';const ev=parse(rows);render(ev);ld(ev)}
 function cached(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){return null}}
 fetch('https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:json&sheet='+TAB).then(r=>r.text()).then(x=>{
  const j=JSON.parse(x.slice(x.indexOf('{'),x.lastIndexOf('}')+1)),rows=j.table.rows.map(r=>(r.c||[]).map(c=>c?{v:c.v,f:c.f}:null));
