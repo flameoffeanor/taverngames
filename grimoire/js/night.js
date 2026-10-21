@@ -112,14 +112,14 @@ export function nightSteps(S, D, role) {
     if (id === 'dusk' || id === 'dawn') continue;
     if (id === 'minioninfo' || id === 'demoninfo') {
       if (!first) continue;
-      if (S.players.length < 7) continue;
+      if (S.players.filter(p => !p.gone && c.team(p) !== 'traveller').length < 7) continue;
       const tg = id === 'minioninfo' ? 'minion' : 'demon';
-      if (!S.players.some(p => c.team(p) === tg)) continue;
+      if (!S.players.some(p => !p.gone && c.team(p) === tg)) continue;
       steps.push({ key: id, special: id, title: id === 'minioninfo' ? 'Minyon bilgisi' : 'İblis bilgisi' });
       continue;
     }
     // bu rolde uyanacak oyuncular
-    const ps = S.players.filter(p => p.role === id && !WAKES_AS[p.role] || (WAKES_AS[p.role] && p.believed === id));
+    const ps = S.players.filter(p => !p.gone && (p.role === id && !WAKES_AS[p.role] || (WAKES_AS[p.role] && p.believed === id)));
     for (const p of ps) {
       const r = role(id);
       const text = first ? r.first : r.other;

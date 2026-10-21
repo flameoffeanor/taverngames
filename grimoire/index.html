@@ -35,19 +35,18 @@
 <section id="game" class="screen" hidden>
   <header class="bar">
     <button class="ib" data-act="menu" aria-label="Menü">☰</button>
-    <button class="phase-btn" data-act="phase"><span id="phaseTxt"></span><small id="phaseSub"></small></button>
+    <button class="phase-btn" data-act="steps"><span id="phaseTxt"></span><small id="phaseSub"></small></button>
     <div class="bar-r">
       <button class="ib" data-act="undo" aria-label="Geri al" id="undoBtn">↶</button>
-      <button class="ib" data-act="lock" aria-label="Kilit" id="lockBtn">🔓</button>
       <button class="ib" data-act="log" aria-label="Kayıt">📜</button>
     </div>
   </header>
-  <div id="hint" class="hint" hidden></div>
-  <div class="main"><div id="board" class="board"></div><aside id="panel" class="panel"></aside></div>
+  <div id="board" class="board"></div>
 </section>
 
 <div id="sheet" class="sheet" hidden><div class="sheet-bg" data-act="close"></div><div class="sheet-body" id="sheetBody"></div></div>
 <div id="toast" class="toast" hidden></div>
+<div id="show" class="show" hidden></div>
 
 <script>
 firebase.initializeApp({apiKey:"AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",authDomain:"tavern-quiz.firebaseapp.com",databaseURL:"https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tavern-quiz",appId:"1:280835700622:web:043d61c02d689de87056df"});

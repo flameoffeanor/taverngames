@@ -136,6 +136,20 @@ function one(s, ev) {
       (ev.effects || []).forEach(e => one(s, { ...e, id: ev.id }));
       break;
     }
+    case 'addPlayer': {
+      s.players.push({ id: ev.p.id, name: ev.p.name, role: ev.p.role, believed: null, dead: false, ghost: true, reminders: [], evil: ev.p.evil ?? null, traveller: true });
+      const i = s.seats.indexOf(ev.after);
+      s.seats.splice(i >= 0 ? i + 1 : s.seats.length, 0, ev.p.id);
+      s.sides = { ...s.sides, [ev.side]: (s.sides[ev.side] || 0) + 1 };
+      break;
+    }
+    case 'removePlayer': {
+      const p = P(ev.p); if (!p) break;
+      p.gone = true;
+      s.seats = s.seats.filter(x => x !== ev.p);
+      s.sides = { ...s.sides, [ev.side]: Math.max(0, (s.sides[ev.side] || 0) - 1) };
+      break;
+    }
     case 'note': break;
   }
 }

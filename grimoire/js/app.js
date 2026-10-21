@@ -1,6 +1,6 @@
 import { loadData, iconUrl, TEAMS, TEAM_TR, DIST } from './data.js';
 import * as store from './store.js';
-import { layout, nearestSeat, defaultSides } from './table.js';
+import { layout, nearestSeat, defaultSides, sideOfSeat } from './table.js';
 import * as night from './night.js';
 
 // ---------- yardımcılar ----------
@@ -22,7 +22,6 @@ const BELIEVES = { drunk: 'townsfolk', lunatic: 'demon', marionette: 'townsfolk'
 
 let D = null;            // veri
 let S = null;            // oyun durumu
-let locked = localStorage.getItem('tg-grim-lock') === '1';
 
 const role = id => D.roles[id] || { id, name: id, team: 'townsfolk', ability: '', reminders: [] };
 const P = id => S.players.find(p => p.id === id);
@@ -242,7 +241,7 @@ function assignRandom() {
 function beginGame() {
   const players = W.names.map((nm, i) => ({ id: 'p' + i, name: nm, role: W.assign[nm], believed: W.believed[nm] || null }));
   const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides } };
-  locked = false; localStorage.setItem('tg-grim-lock', '0');
+  edit = true;
   store.reset(true);
   store.dispatch('start', data);
 }
@@ -251,25 +250,35 @@ function beginGame() {
 function startGame() { mergeCustom(); show('game'); renderGame(); }
 function mergeCustom() { if (S?.customRoles) for (const [k, v] of Object.entries(S.customRoles)) if (!D.roles[k]) D.roles[k] = v; }
 
-let L = null; // son yerleşim
+let L = null;                 // son yerleşim
+let edit = false;             // oturma düzeni düzenleme modu
 const board = $('board');
 new ResizeObserver(() => { if (!$('game').hidden && S) renderBoard(); }).observe(board);
 
-// Gece/gün paneli anlık durumu (kaydedilmez)
-const NS = { phase: '', cur: null, targets: [], pick: null, apply: null, sailorSelf: false, collapsed: false };
-const fmtText = t => esc(t).replace(/\*([^*]+)\*/g, '<b>$1</b>').replace(/:reminder:/g, '🔖');
+// Anlık arayüz durumu (kaydedilmez)
+const NS = { phase: '', cur: null, targets: [], pick: null, apply: null, sailorSelf: false };
+const DS = { mode: null };    // gündüz: 'exec' = idam/sürgün için oyuncu seçiliyor
+const seated = () => S.seats.map(P).filter(Boolean);
+
+// Gece metnindeki *İŞARETLER* dokunulabilir: oyuncuya gösterilecek bilgi kartını açar
+const MARK = {
+  'YOU ARE': { k: 'youare', t: 'Sen' }, 'THIS CHARACTER SELECTED YOU': { k: 'selected', t: 'Bu karakter seni seçti' },
+  'THESE ARE YOUR MINIONS': { k: 'minions', t: 'Bunlar senin Minyonların' }, 'THIS IS THE DEMON': { k: 'demon', t: 'Bu İblis' },
+  'THESE CHARACTERS ARE NOT IN PLAY': { k: 'notinplay', t: 'Bu karakterler oyunda değil' }, 'THIS PLAYER IS': { k: 'playeris', t: 'Bu oyuncu' },
+};
+function fmtText(t) {
+  return esc(t).replace(/\*([^*]+)\*/g, (m, w) => {
+    const k = MARK[w.toUpperCase()];
+    return `<button class="mk" data-mk="${esc(w)}">${esc(k ? k.t : w)}</button>`;
+  }).replace(/:reminder:/g, '<i class="rmk">🔖</i>');
+}
 
 function renderGame() {
-  $('phaseTxt').textContent = store.phaseLabel(S.phase);
+  $('phaseTxt').textContent = (S.phase.kind === 'night' ? '☾ ' : '☀ ') + store.phaseLabel(S.phase);
   $('phaseSub').textContent = S.script;
-  $('lockBtn').textContent = locked ? '🔒' : '🔓';
-  $('lockBtn').classList.toggle('on', locked);
   $('undoBtn').disabled = store.getEvents().length <= 1;
-  $('hint').hidden = locked;
-  $('hint').textContent = 'Oyuncuları sürükleyip yerleştir. Bitince 🔓 ile kilitle.';
   const pk = store.phaseKey(S.phase);
-  if (NS.phase !== pk) Object.assign(NS, { phase: pk, cur: null, targets: [], pick: null, apply: null, sailorSelf: false });
-  renderPanel();
+  if (NS.phase !== pk) { Object.assign(NS, { phase: pk, cur: null, targets: [], pick: null, apply: null, sailorSelf: false }); DS.mode = null; }
   renderBoard();
   if (openPanel) openPanel();
 }
@@ -282,10 +291,26 @@ function curStep() {
   return { steps, done, step: steps.find(s => s.key === NS.cur) || null };
 }
 function targeting() {
-  const c = curStep(); if (!c?.step || c.done[c.step.key]) return null;
-  if (c.step.special) return null;
+  if (edit) return null;
+  const c = curStep(); if (!c?.step || c.done[c.step.key] || c.step.special) return null;
   const cfg = night.cfgFor(c.step.role, S);
   return cfg.targets[1] > 0 ? { step: c.step, cfg } : null;
+}
+
+// ---------- masa ----------
+const BADGE_ANG = [-58, 58, -102, 102, -146, 146];
+function badges(p, sz) {
+  const items = [];
+  if (p.believed) items.push({ role: p.believed, cls: 'b-bel', title: 'Kendini ' + role(p.believed).name + ' sanıyor' });
+  p.reminders.forEach(r => items.push({ role: r.role, text: remTr(r.text), cls: r.tag ? 'b-' + r.tag : '', title: remTr(r.text) }));
+  const max = 4, out = [];
+  items.slice(0, items.length > max ? max - 1 : max).forEach((it, i) => out.push({ ...it, a: BADGE_ANG[i] }));
+  if (items.length > max) out.push({ text: '+' + (items.length - max + 1), cls: 'b-more', a: BADGE_ANG[max - 1] });
+  return out.map(b => {
+    const r = sz * 0.6, x = Math.sin(b.a * Math.PI / 180) * r, y = -Math.cos(b.a * Math.PI / 180) * r;
+    const inner = b.role ? `<img src="${iconUrl(b.role)}" alt="" onerror="this.replaceWith(document.createTextNode(${JSON.stringify((b.text || '').slice(0, 3))}))">` : esc((b.text || '').slice(0, 3));
+    return `<i class="bdg ${b.cls}" style="transform:translate(calc(-50% + ${x}px),calc(-50% + ${y}px))" title="${esc(b.title || b.text || '')}">${inner}${b.role && b.text ? `<b>${esc(b.text)}</b>` : ''}</i>`;
+  }).join('');
 }
 
 function renderBoard() {
@@ -293,97 +318,231 @@ function renderBoard() {
   if (!W0 || !H0) return;
   L = layout(W0, H0, S.sides);
   const { S: sz, table: t } = L;
-  const alive = S.players.filter(p => !p.dead).length;
-  const votes = S.players.filter(p => !p.dead || p.ghost).length;
   const c = S.phase.kind === 'night' ? curStep() : null;
-  const actor = c?.step?.pid, tg = NS.targets;
-  let html = `<div class="tbl" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px">
-    <div class="tbl-in"><div class="tbl-phase">${S.phase.kind === 'night' ? '☾' : '☀'} ${store.phaseLabel(S.phase)}</div>
-    <div><b>${alive}</b> yaşıyor · <b>${votes}</b> oy</div><div>İdam için <b>${Math.ceil(alive / 2)}</b></div></div></div>`;
+  const tg = targeting();
+  const actor = c?.step?.pid;
   const cx = night.ctx(S, role);
+  const fs = Math.max(14, Math.min(21, t.w / 21, t.h / 26));
+  let html = `<div class="tbl${edit ? ' editing' : ''}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px;--fs:${fs}px"><div class="stage" id="stage">${centerHTML(c)}</div></div>`;
   S.seats.forEach((pid, i) => {
     const p = P(pid), seat = L.seats[i]; if (!seat || !p) return;
     const r = role(p.role);
-    const br = cx.broken(p).filter(b => b.kind !== 'Gerçekte Sarhoş' && b.kind !== 'Gerçekte Deli (Lunatic)');
-    const rem = p.reminders.slice(0, 3).map(x => `<span class="rem${x.tag ? ' tg-' + x.tag : ''}" title="${esc(x.text)}">${esc(remTr(x.text))}</span>`).join('') +
-      (p.reminders.length > 3 ? `<span class="rem more">+${p.reminders.length - 3}</span>` : '');
-    const ti = tg.indexOf(pid);
-    html += `<div class="tok t-${r.team}${p.dead ? ' dead' : ''}${pid === actor ? ' actor' : ''}${ti >= 0 ? ' target' : ''}${cx.isEvil(p) && !['minion', 'demon'].includes(r.team) ? ' evil' : ''}" data-pid="${pid}" data-seat="${i}"
+    const ti = NS.targets.indexOf(pid);
+    let dim = false;
+    if (tg) { if (tg.cfg.alive && p.dead) dim = true; if (tg.cfg.dead && !p.dead) dim = true; if (tg.cfg.notSelf && pid === actor) dim = true; }
+    if (DS.mode === 'exec' && p.dead) dim = true;
+    const evilGood = cx.isEvil(p) && !['minion', 'demon'].includes(r.team);
+    html += `<div class="tok t-${r.team}${p.dead ? ' dead' : ''}${pid === actor ? ' actor' : ''}${ti >= 0 ? ' target' : ''}${dim ? ' dim' : ''}${tg || DS.mode ? ' pickable' : ''}" data-pid="${pid}" data-seat="${i}"
       style="left:${seat.x}px;top:${seat.y}px;--s:${sz}px">
-      <div class="disc"><img src="${iconUrl(p.role)}" alt="" draggable="false" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ini',textContent:${JSON.stringify(r.name.slice(0, 2))}}))">
+      <div class="disc"><img class="ic" src="${iconUrl(p.role)}" alt="" draggable="false" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ini',textContent:${JSON.stringify(r.name.slice(0, 2))}}))">
         ${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}
-        ${p.believed ? `<i class="bel" title="Kendini ${esc(role(p.believed).name)} sanıyor"><img src="${iconUrl(p.believed)}" alt="" onerror="this.remove()"></i>` : ''}
-        ${br.length ? '<i class="brk" title="Yeteneği çalışmıyor">!</i>' : ''}
+        ${badges(p, sz)}
         ${ti >= 0 ? `<i class="tnum">${ti + 1}</i>` : ''}
       </div>
-      <div class="rl">${esc(r.name)}</div>
-      <div class="nm">${esc(p.name)}${p.believed ? ` <em>(${esc(role(p.believed).name)})</em>` : ''}</div>
-      ${rem ? `<div class="rems">${rem}</div>` : ''}</div>`;
+      <div class="rn">${esc(r.name)}${evilGood ? ' ☠' : ''}</div>
+      <div class="pn">${esc(p.name)}</div></div>`;
   });
   board.innerHTML = html;
-  document.documentElement.style.setProperty('--toast-y', (board.getBoundingClientRect().top + t.y + 8) + 'px');
+  document.documentElement.style.setProperty('--toast-y', (board.getBoundingClientRect().top + t.y + 6) + 'px');
 }
 
-// ---- sürükle / dokun / uzun bas ----
+// ---------- orta alan ----------
+function centerHTML(c) {
+  if (edit) return `<div class="cc"><h3>Yerleri düzenle</h3>
+    <p class="muted">Oyuncuları sürükleyip başka bir koltuğa bırak; ikisi yer değiştirir. Yan yana oturanlar komşu sayılır.</p>
+    <button class="btn primary big" data-c="editDone">✓ Bitti</button></div>`;
+  if (S.phase.kind === 'day') return dayHTML();
+  const { steps, done, step } = c;
+  const idx = step ? steps.indexOf(step) : steps.length;
+  const nav = `<div class="cc-nav"><button class="nb" data-c="prev" ${idx <= 0 ? 'disabled' : ''}>‹</button>
+    <button class="prog" data-c="list">${Math.min(idx + 1, steps.length)} / ${steps.length}</button>
+    <button class="nb" data-c="next" ${idx >= steps.length - 1 ? 'disabled' : ''}>›</button></div>`;
+  if (!step) {
+    const died = S.deaths.filter(d => store.phaseKey(d.phase) === store.phaseKey(S.phase));
+    return `<div class="cc">${steps.length ? nav : ''}<h3>Şafak</h3>
+      ${died.length ? `<p>Bu gece ölenler:</p><div class="dlist">${died.map(d => `<span>☠ ${esc(P(d.p).name)}</span>`).join('')}</div>` : '<p class="muted">Bu gece kimse ölmedi.</p>'}
+      <button class="btn primary big" data-c="toDay">☀ ${store.phaseLabel({ kind: 'day', n: S.phase.n })}'e geç</button></div>`;
+  }
+  const x = stepHTML(step, done);
+  return `<div class="cc fixed"><div class="cc-top">${nav}${x.top}</div><div class="cc-body">${x.body}</div><div class="cc-foot">${x.foot}</div></div>`;
+}
+
+function stepHTML(step, done) {
+  const isDone = !!done[step.key];
+  const { notes, info } = night.stepNotes(step, S, role, NS.targets);
+  if (step.special) {
+    return { top: `<div class="who"><span class="sp">${step.special === 'minioninfo' ? 'M' : 'İ'}</span><div><h3>${esc(step.title)}</h3></div></div>`,
+      body: `${info.map(x => `<p class="info">${esc(x)}</p>`).join('')}
+      <div class="mks"><button class="mk" data-mk="${step.special === 'minioninfo' ? 'THIS IS THE DEMON' : 'THESE ARE YOUR MINIONS'}">${step.special === 'minioninfo' ? 'Bu İblis' : 'Bunlar senin Minyonların'}</button>
+      ${step.special === 'demoninfo' ? '<button class="mk" data-mk="THESE CHARACTERS ARE NOT IN PLAY">Bu karakterler oyunda değil</button>' : ''}</div>`,
+      foot: isDone ? '<p class="ok">✓ Tamamlandı</p><button class="btn small" data-c="redo">Geri al</button>' : '<button class="btn primary big" data-c="ok">✓ Tamam</button>' };
+  }
+  const r = role(step.role), p = P(step.pid), cfg = night.cfgFor(step.role, S);
+  const broken = night.ctx(S, role).broken(p);
+  if (NS.apply === null) NS.apply = !broken.length;
+  const top = `<div class="who t-${r.team}"><img src="${iconUrl(step.role)}" alt="" onerror="this.style.visibility='hidden'">
+    <div><h3>${esc(r.name)}</h3><div class="pl">${esc(p.name)}${p.role !== step.role ? ` <em>· gerçekte ${esc(role(p.role).name)}</em>` : ''}</div></div></div>`;
+  let h = notes.map(x => `<p class="note">${esc(x)}</p>`).join('') + info.map(x => `<p class="info">${esc(x)}</p>`).join('');
+  const textHTML = `<div class="ntext">${fmtText(step.text)}</div>`;
+  if (isDone) {
+    h += textHTML;
+    const ev = S.log.find(x => x.id === done[step.key])?.ev;
+    return { top, body: h + `<p class="ok">✓ ${ev ? describe(ev, S) : 'Tamamlandı'}</p>`, foot: '<button class="btn small" data-c="redo">Bu adımı geri al</button>' };
+  }
+  if (cfg.targets[1] > 0) {
+    const slots = Array.from({ length: Math.max(cfg.targets[1], NS.targets.length) }, (_, i) => {
+      const t = NS.targets[i];
+      return t ? `<button class="slot on" data-c="untarget" data-t="${t}">${i + 1}. ${esc(P(t).name)} ✕</button>` : (i < Math.max(cfg.targets[0], 1) || i === NS.targets.length ? `<span class="slot">${i + 1}. ?</span>` : '');
+    }).join('');
+    h += `<div class="slots">${slots}</div>${NS.targets.length ? '' : '<p class="hint2">Hedefe masadan dokun</p>'}`;
+  }
+  const ex = [];
+  if (cfg.pickRole) ex.push(`<button class="btn small" data-c="pick">${NS.pick ? '🎭 ' + esc(role(NS.pick).name) : '🎭 Gösterilen rol'}</button>`);
+  if (NS.targets.length) ex.push(`<button class="btn small" data-c="rem">🔖 Not ekle</button>`);
+  if (cfg.effect === 'sailor') ex.push(`<label class="tgl"><input type="checkbox" data-c="sailor" ${NS.sailorSelf ? 'checked' : ''}> Denizci kendisi sarhoş</label>`);
+  if ((cfg.effect || cfg.demon) && broken.length) ex.push(`<label class="tgl"><input type="checkbox" data-c="apply" ${NS.apply ? 'checked' : ''}> Yine de uygula</label>`);
+  if (ex.length) h += `<div class="extras">${ex.join('')}</div>`;
+  h += textHTML;
+  const ready = NS.targets.length >= cfg.targets[0];
+  return { top, body: h, foot: `<div class="acts"><button class="btn" data-c="skip">Atla</button><button class="btn primary" data-c="ok" ${ready ? '' : 'disabled'}>✓ Onayla</button></div>` };
+}
+
+function dayHTML() {
+  const alive = seated().filter(p => !p.dead).length;
+  const votes = seated().filter(p => !p.dead || p.ghost).length;
+  const ex = S.executed[store.phaseKey(S.phase)];
+  if (DS.mode === 'exec') return `<div class="cc"><h3>İdam / sürgün</h3><p>Oyuncuya dokun.</p><button class="btn" data-c="cancel">Vazgeç</button></div>`;
+  return `<div class="cc"><h3>☀ ${store.phaseLabel(S.phase)}</h3>
+    <div class="stats"><div><b>${alive}</b><small>yaşıyor</small></div><div><b>${votes}</b><small>oy</small></div><div><b>${Math.ceil(alive / 2)}</b><small>idam için</small></div></div>
+    ${ex ? `<p class="ok">⚖ İdam edildi: ${esc(P(ex).name)}</p>` : `<button class="btn big danger" data-c="exec">⚖ İdam / sürgün</button>`}
+    <button class="btn primary big" data-c="toNight">☾ ${store.phaseLabel({ kind: 'night', n: S.phase.n + 1 })}'e geç</button></div>`;
+}
+
+// ---------- dokunma / sürükleme ----------
 let drag = null;
 board.addEventListener('pointerdown', e => {
   const tok = e.target.closest('.tok'); if (!tok) return;
   drag = { tok, pid: tok.dataset.pid, seat: +tok.dataset.seat, x: e.clientX, y: e.clientY, moved: false, long: false };
-  drag.timer = setTimeout(() => { if (drag && !drag.moved) { drag.long = true; navigator.vibrate?.(15); openPlayer(drag.pid); } }, 550);
+  drag.timer = setTimeout(() => { if (drag && !drag.moved) { drag.long = true; navigator.vibrate?.(15); openPlayer(drag.pid); } }, 500);
   tok.setPointerCapture(e.pointerId);
 });
 board.addEventListener('pointermove', e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  if (!drag.moved && !locked && Math.hypot(dx, dy) > 14) { drag.moved = true; clearTimeout(drag.timer); drag.tok.classList.add('dragging'); }
+  if (!drag.moved && edit && Math.hypot(dx, dy) > 12) { drag.moved = true; clearTimeout(drag.timer); drag.tok.classList.add('dragging'); }
   if (drag.moved) drag.tok.style.transform = `translate(calc(-50% + ${dx}px), calc(var(--s) / -2 + ${dy}px))`;
+  else if (Math.hypot(dx, dy) > 30) clearTimeout(drag.timer);
 });
 board.addEventListener('pointerup', e => {
   if (!drag) return;
   const d = drag; drag = null; clearTimeout(d.timer);
   if (d.long) return;
-  const dist = Math.hypot(e.clientX - d.x, e.clientY - d.y);
-  if (!d.moved) {
-    if (locked && dist > 30) flashHint('Masa kilitli. Yer değiştirmek için 🔒 kilidi aç.');
-    return tapToken(d.pid);
-  }
+  if (!d.moved) return tapToken(d.pid);
   const seat = L.seats[d.seat];
-  const to = nearestSeat(L.seats, seat.x + (e.clientX - d.x), seat.y + (e.clientY - d.y), L.S * 1.1);
-  if (to >= 0 && to !== d.seat) store.dispatch('swap', { a: d.pid, b: S.seats[to] });
-  else if (dist < 30) { renderBoard(); tapToken(d.pid); }
-  else renderBoard();
+  const to = nearestSeat(L.seats, seat.x + (e.clientX - d.x), seat.y + (e.clientY - d.y), L.S * 1.2);
+  if (to >= 0 && to !== d.seat) store.dispatch('swap', { a: d.pid, b: S.seats[to] }); else renderBoard();
 });
 board.addEventListener('pointercancel', () => { if (drag) clearTimeout(drag.timer); drag = null; renderBoard(); });
 
 function tapToken(pid) {
+  if (DS.mode === 'exec') return execute(pid);
   const tg = targeting();
   if (!tg) return openPlayer(pid);
   const i = NS.targets.indexOf(pid);
   if (i >= 0) NS.targets.splice(i, 1);
   else { if (NS.targets.length >= tg.cfg.targets[1]) NS.targets.shift(); NS.targets.push(pid); }
-  renderPanel(); renderBoard();
+  renderBoard();
 }
 
-let hintT;
-function flashHint(t) { const h = $('hint'); h.textContent = t; h.hidden = false; clearTimeout(hintT); hintT = setTimeout(() => { if (locked) h.hidden = true; }, 2200); }
+// ---------- orta alan tıklamaları ----------
+board.addEventListener('click', e => {
+  const m = e.target.closest('[data-mk]'); if (m) return showMarker(m.dataset.mk);
+  const b = e.target.closest('[data-c]'); if (!b || b.tagName === 'INPUT') return;
+  const a = b.dataset.c, c = curStep();
+  const go = k => { NS.cur = k; Object.assign(NS, { targets: [], pick: null, apply: null, sailorSelf: false }); renderBoard(); };
+  if (a === 'editDone') { edit = false; renderBoard(); return; }
+  if (a === 'prev' || a === 'next') { const i = c.steps.indexOf(c.step) + (a === 'prev' ? -1 : 1); if (i < 0) return; return go(c.steps[Math.min(i, c.steps.length - 1)]?.key || null); }
+  if (a === 'list') return openSteps();
+  if (a === 'toDay' || a === 'toNight') return nextPhase();
+  if (a === 'exec') { DS.mode = 'exec'; renderBoard(); return; }
+  if (a === 'cancel') { DS.mode = null; renderBoard(); return; }
+  if (a === 'skip') return confirmStep(true);
+  if (a === 'ok') return confirmStep(false);
+  if (a === 'redo') { const k = c.done[NS.cur]; if (k) store.undoTo(k); return; }
+  if (a === 'untarget') { NS.targets = NS.targets.filter(t => t !== b.dataset.t); renderBoard(); return; }
+  if (a === 'pick') return pickRole('Gösterilen rol', id => { NS.pick = id; closeSheet(); renderBoard(); }, closeSheet);
+  if (a === 'rem') return pickReminder(NS.targets[0], closeSheet);
+});
+board.addEventListener('change', e => {
+  const a = e.target.dataset.c;
+  if (a === 'apply') NS.apply = e.target.checked;
+  if (a === 'sailor') NS.sailorSelf = e.target.checked;
+});
 
 function nextPhase() {
   const next = S.phase.kind === 'night' ? { kind: 'day', n: S.phase.n } : { kind: 'night', n: S.phase.n + 1 };
+  if (S.phase.kind === 'night') {
+    const c = curStep(), left = c.steps.filter(s => !c.done[s.key] && !s.skipDead).length;
+    if (left) return confirmBox('Gece bitmedi', `<b>${left}</b> adım onaylanmadı. Yine de güne geçilsin mi?`, 'Güne geç', () => { closeSheet(); act('phase', { phase: next }, `${store.phaseLabel(next)} başladı`); });
+  }
   act('phase', { phase: next }, `${store.phaseLabel(next)} başladı`);
 }
 
-// ---- üst bar ----
+function execute(pid) {
+  const p = P(pid), r = role(p.role), trav = r.team === 'traveller';
+  DS.mode = null;
+  confirmBox(trav ? 'Sürgün edilsin mi?' : 'İdam edilsin mi?', `<b>${esc(p.name)}</b> (${esc(r.name)}) ${trav ? 'sürgün' : 'idam'} edilecek.`, trav ? 'Sürgün et' : '⚖ İdam et', () => {
+    act('die', { p: pid, cause: trav ? 'exile' : 'execution' }, `${p.name} ${trav ? 'sürgün' : 'idam'} edildi`);
+    if (!showTriggers([{ p: pid, cause: trav ? 'exile' : 'execution' }])) closeSheet();
+  }, true);
+  renderBoard();
+}
+
+// ---------- adım listesi ----------
+function openSteps() {
+  if (S.phase.kind !== 'night') return openLog();
+  const render = () => {
+    const { steps, done } = curStep();
+    sheet(`<div class="sh-head"><h3>☾ ${store.phaseLabel(S.phase)} sırası</h3><button class="ib" data-act="close">✕</button></div>
+      <div class="list">${steps.map((s, i) => `<button class="row-btn st-row${s.key === NS.cur ? ' cur' : ''}${done[s.key] ? ' done' : ''}${s.skipDead ? ' skip' : ''}" data-k="${s.key}">
+        <span class="sti">${s.role ? `<img src="${iconUrl(s.role)}" alt="" onerror="this.remove()">` : (s.special === 'minioninfo' ? 'M' : 'İ')}</span>
+        <b>${i + 1}. ${esc(s.role ? role(s.role).name : s.title)}</b><small>${s.pid ? esc(P(s.pid).name) : ''}${done[s.key] ? ' ✓' : s.skipDead ? ' · ölü' : ''}</small></button>`).join('')}</div>`, render);
+    $('sheetBody').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; NS.cur = b.dataset.k; Object.assign(NS, { targets: [], pick: null, apply: null, sailorSelf: false }); closeSheet(); renderBoard(); };
+  };
+  render();
+}
+
+// ---------- bilgi kartı (oyuncuya göster) ----------
+function showCard(title, roles = [], sub = '') {
+  const el = $('show');
+  el.innerHTML = `<div class="show-in"><h1>${esc(title)}</h1>${sub ? `<p>${esc(sub)}</p>` : ''}
+    <div class="show-roles">${roles.map(id => `<div><img src="${iconUrl(id)}" alt="" onerror="this.remove()"><span>${esc(role(id).name)}</span></div>`).join('')}</div>
+    <small>Kapatmak için dokun</small></div>`;
+  el.hidden = false;
+}
+$('show').addEventListener('click', () => { $('show').hidden = true; });
+function showMarker(w) {
+  const m = MARK[w.toUpperCase()], c = S.phase.kind === 'night' ? curStep() : null, st = c?.step;
+  const t = m ? m.t : w;
+  if (!m) return showCard(t);
+  if (m.k === 'selected') return showCard(t, st?.role ? [st.role] : []);
+  if (m.k === 'notinplay') return showCard(t, S.bluffs);
+  if (m.k === 'minions' || m.k === 'demon') return showCard(t);
+  // Sen … / Bu oyuncu … : gösterilecek rolü seç
+  pickRole(t + ': hangi rol?', id => { closeSheet(); showCard(t, [id]); }, closeSheet);
+}
+
+// ---------- üst bar ----------
 $('game').querySelector('.bar').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
   if (a === 'undo') doUndo();
-  if (a === 'lock') { locked = !locked; localStorage.setItem('tg-grim-lock', locked ? '1' : '0'); renderGame(); }
   if (a === 'log') openLog();
   if (a === 'menu') openMenu();
-  if (a === 'phase') openPhase();
+  if (a === 'steps') openSteps();
 });
 
-// ---- eylem + geri al toast'ı ----
+// ---------- eylem + geri al ----------
 let toastT;
 function act(type, data, msg) {
   const ev = store.dispatch(type, data);
@@ -394,7 +553,7 @@ function toast(msg, evId) {
   const t = $('toast');
   t.innerHTML = `<span>${esc(msg)}</span>${evId ? `<button data-undo="${evId}">Geri al</button>` : ''}`;
   t.hidden = false; clearTimeout(toastT);
-  toastT = setTimeout(() => { t.hidden = true; }, 5000);
+  toastT = setTimeout(() => { t.hidden = true; }, 4000);
 }
 $('toast').addEventListener('click', e => {
   const b = e.target.closest('[data-undo]'); if (!b) return;
@@ -407,97 +566,6 @@ function doUndo() {
   const ev = store.undo();
   if (ev) toast('Geri alındı: ' + describe(ev, before).replace(/<[^>]+>/g, ''));
 }
-
-// ================= GECE / GÜN PANELİ =================
-const panel = $('panel');
-function renderPanel() {
-  if (S.phase.kind === 'day') return renderDayPanel();
-  const { steps, done, step } = curStep();
-  const doneN = steps.filter(s => done[s.key]).length;
-  let html = `<div class="pn-head"><b>☾ ${store.phaseLabel(S.phase)}</b><span class="muted">${doneN}/${steps.length}</span>
-    <button class="ib sm" data-pn="collapse">${NS.collapsed ? '▴' : '▾'}</button></div>`;
-  html += `<div class="strip">${steps.map(s => {
-    const id = s.role || (s.special === 'minioninfo' ? 'minion' : 'demon');
-    const p = s.pid ? P(s.pid) : null;
-    return `<button class="st${s.key === NS.cur ? ' cur' : ''}${done[s.key] ? ' done' : ''}${s.skipDead ? ' skip' : ''}" data-step="${s.key}">
-      ${s.role ? `<img src="${iconUrl(s.role)}" alt="" onerror="this.remove()">` : `<span class="sp">${s.special === 'minioninfo' ? 'M' : 'İ'}</span>`}
-      <small>${esc(s.role ? role(s.role).name : s.title)}</small>${done[s.key] ? '<i>✓</i>' : ''}</button>`;
-  }).join('')}</div>`;
-  if (!NS.collapsed) {
-    if (!step) {
-      html += `<div class="card-step"><p class="muted">${steps.length ? 'Gecenin tüm adımları tamam.' : 'Bu gece uyanacak rol yok.'}</p>
-        <button class="btn primary wide" data-pn="next">☀ ${store.phaseLabel({ kind: 'day', n: S.phase.n })}'e geç</button></div>`;
-    } else html += stepCard(step, done);
-  }
-  panel.innerHTML = html;
-  panel.classList.toggle('collapsed', NS.collapsed);
-  panel.querySelector('.st.cur')?.scrollIntoView({ inline: 'center', block: 'nearest' });
-}
-
-function stepCard(step, done) {
-  const isDone = !!done[step.key];
-  const { notes, info } = night.stepNotes(step, S, role, NS.targets);
-  if (step.special) {
-    return `<div class="card-step"><h4>${esc(step.title)}</h4>
-      ${info.map(x => `<p class="info">${esc(x)}</p>`).join('')}
-      ${isDone ? `<p class="ok">✓ Tamamlandı</p>` : `<div class="nav-row"><button class="btn primary" data-pn="ok">Onayla ✓</button></div>`}</div>`;
-  }
-  const r = role(step.role), p = P(step.pid), cfg = night.cfgFor(step.role, S);
-  const broken = night.ctx(S, role).broken(p);
-  const hasEffect = !!cfg.effect && !cfg.demon;
-  if (NS.apply === null) NS.apply = !broken.length;
-  const actEv = isDone ? S.log.find(x => x.id === done[step.key])?.ev : null;
-  let h = `<div class="card-step t-${r.team}">
-    <div class="cs-head"><img src="${iconUrl(step.role)}" alt="" onerror="this.style.visibility='hidden'">
-      <div><h4>${esc(r.name)}</h4><div class="muted">${esc(p.name)}${p.role !== step.role ? ` · gerçekte <b>${esc(role(p.role).name)}</b>` : ''}</div></div></div>
-    <p class="night-text">${fmtText(step.text)}</p>
-    ${notes.map(x => `<p class="note">${esc(x)}</p>`).join('')}
-    ${info.map(x => `<p class="info">${esc(x)}</p>`).join('')}`;
-  if (isDone) {
-    h += `<p class="ok">✓ ${actEv ? describe(actEv, S) : 'Tamamlandı'}</p><div class="nav-row"><button class="btn small" data-pn="redo">Bu adımı geri al</button></div></div>`;
-    return h;
-  }
-  if (cfg.targets[1] > 0) {
-    h += `<div class="tg-line">${NS.targets.length ? NS.targets.map((t, i) => `<span class="tg">${i + 1}. ${esc(P(t).name)}</span>`).join('') :
-      `<span class="muted">Hedef: masadan ${cfg.targets[0] === cfg.targets[1] ? cfg.targets[1] : cfg.targets[0] + '–' + cfg.targets[1]} oyuncuya dokun</span>`}</div>`;
-  }
-  const extras = [];
-  if (cfg.pickRole) extras.push(`<button class="btn small" data-pn="pick">${NS.pick ? 'Rol: ' + esc(role(NS.pick).name) : 'Rol seç'}</button>`);
-  if (NS.targets.length) extras.push(`<button class="btn small" data-pn="rem">＋ Hatırlatıcı (${esc(P(NS.targets[0]).name)})</button>`);
-  if (cfg.effect === 'sailor') extras.push(`<label class="tgl"><input type="checkbox" data-pn="sailor" ${NS.sailorSelf ? 'checked' : ''}> Denizci kendisi sarhoş olsun</label>`);
-  if (hasEffect || cfg.demon) extras.push(`<label class="tgl"><input type="checkbox" data-pn="apply" ${NS.apply ? 'checked' : ''}> Etkiyi uygula${broken.length ? ' (yeteneği çalışmıyor)' : ''}</label>`);
-  if (extras.length) h += `<div class="extras">${extras.join('')}</div>`;
-  const ready = NS.targets.length >= cfg.targets[0];
-  h += `<div class="nav-row"><button class="btn" data-pn="skip">Atla</button><button class="btn primary" data-pn="ok" ${ready ? '' : 'disabled'}>Onayla ✓</button></div></div>`;
-  return h;
-}
-
-function renderDayPanel() {
-  const ex = S.executed[store.phaseKey(S.phase)];
-  panel.classList.remove('collapsed');
-  panel.innerHTML = `<div class="pn-head"><b>☀ ${store.phaseLabel(S.phase)}</b>
-    <span class="muted">${ex ? 'İdam: ' + esc(P(ex).name) : 'İdam yok'}</span></div>
-    <p class="muted small">İdam ve gündüz yetenekleri için oyuncuya dokun.</p>
-    <button class="btn primary wide" data-pn="next">☾ ${store.phaseLabel({ kind: 'night', n: S.phase.n + 1 })}'e geç</button>`;
-}
-
-panel.addEventListener('click', e => {
-  const b = e.target.closest('[data-pn],[data-step]'); if (!b) return;
-  if (b.dataset.step) { NS.cur = b.dataset.step; Object.assign(NS, { targets: [], pick: null, apply: null, sailorSelf: false }); renderPanel(); renderBoard(); return; }
-  const a = b.dataset.pn;
-  if (a === 'collapse') { NS.collapsed = !NS.collapsed; renderPanel(); return; }
-  if (a === 'next') return nextPhase();
-  if (a === 'skip') return confirmStep(true);
-  if (a === 'ok') return confirmStep(false);
-  if (a === 'redo') { const k = curStep().done[NS.cur]; if (k) store.undoTo(k); return; }
-  if (a === 'pick') return pickRole('Gösterilen rol', id => { NS.pick = id; closeSheet(); renderPanel(); }, closeSheet);
-  if (a === 'rem') return pickReminder(NS.targets[0], closeSheet);
-});
-panel.addEventListener('change', e => {
-  const a = e.target.dataset.pn;
-  if (a === 'apply') NS.apply = e.target.checked;
-  if (a === 'sailor') NS.sailorSelf = e.target.checked;
-});
 
 function advance() { Object.assign(NS, { cur: null, targets: [], pick: null, apply: null, sailorSelf: false }); }
 
@@ -524,20 +592,19 @@ function confirmStep(skip) {
   finish();
 }
 
-// İblis hedeflerini tek tek çöz: öldür / ölmedi / Fang Gu atlaması / İmp devri
 function resolveKills(demon, targets, acc, done) {
   if (!targets.length) { closeSheet(); return done(acc); }
   const [tid, ...rest] = targets, t = P(tid);
   const checks = night.killChecks(S, role, tid, demon);
   const jump = demon.role === 'fanggu' && role(t.role).team === 'outsider' && !S.used[demon.id + ':fanggu'];
   const starPass = demon.role === 'imp' && tid === demon.id;
-  const minions = starPass ? S.players.filter(q => !q.dead && role(q.role).team === 'minion') : [];
+  const minions = starPass ? seated().filter(q => !q.dead && role(q.role).team === 'minion') : [];
   sheet(`<h3>${esc(role(demon.role).name)} → ${esc(t.name)}</h3>
     ${checks.map(x => `<p class="note">${esc(x)}</p>`).join('') || '<p class="muted">Engel görünmüyor.</p>'}
     <div class="list">
       ${jump ? `<button class="row-btn hot" data-k="jump"><b>Fang Gu atlaması</b><small>${esc(t.name)} kötü Fang Gu olur, ${esc(demon.name)} ölür</small></button>` : ''}
-      ${minions.map(m => `<button class="row-btn hot" data-k="star" data-m="${m.id}"><b>${esc(m.name)} İmp olsun</b><small>${esc(role(m.role).name)} → İmp, ${esc(demon.name)} ölür</small></button>`).join('')}
-      ${!starPass ? `<button class="row-btn" data-k="kill"><b>☠ ${esc(t.name)} ölsün</b><small>Şafakta ölü olarak işaretlenir</small></button>` : ''}
+      ${minions.map(m => `<button class="row-btn hot" data-k="star" data-m="${m.id}"><b>${esc(m.name)} ${esc(role('imp').name)} olsun</b><small>${esc(role(m.role).name)} → ${esc(role('imp').name)}, ${esc(demon.name)} ölür</small></button>`).join('')}
+      ${!starPass ? `<button class="row-btn" data-k="kill"><b>☠ ${esc(t.name)} ölsün</b></button>` : ''}
       <button class="row-btn" data-k="none"><b>Ölmedi</b><small>Korundu, engellendi ya da sen öyle karar verdin</small></button>
     </div>`);
   $('sheetBody').onclick = e => {
@@ -552,7 +619,7 @@ function resolveKills(demon, targets, acc, done) {
 
 function showTriggers(deaths) {
   const items = deaths.flatMap(d => night.deathTriggers(S, role, d.p, d.cause));
-  if (!items.length) return;
+  if (!items.length) return false;
   sheet(`<h3>Unutma</h3>${items.map((x, i) => `<div class="trig${x.strong ? ' strong' : ''}"><p>${esc(x.text)}</p>
     ${x.action ? `<button class="btn small" data-ta="${i}">${esc(x.action.label)}</button>` : ''}</div>`).join('')}
     <button class="btn wide" data-act="close">Tamam</button>`);
@@ -560,16 +627,15 @@ function showTriggers(deaths) {
     const b = e.target.closest('[data-ta]'); if (!b) return;
     const a = items[+b.dataset.ta].action;
     if (a.type === 'role') act('role', { p: a.p, role: a.role, old: P(a.p).role }, `${P(a.p).name} artık ${role(a.role).name}`);
-    if (a.type === 'die') { act('die', { p: a.p, cause: a.cause }, `${P(a.p).name} öldü`); }
+    if (a.type === 'die') act('die', { p: a.p, cause: a.cause }, `${P(a.p).name} öldü`);
     b.disabled = true; b.textContent = '✓ ' + b.textContent;
   };
+  return true;
 }
 
 // ================= ALT PANEL (sheet) =================
 let openPanel = null;
-function sheet(html, refresh = null) {
-  $('sheetBody').innerHTML = html; $('sheet').hidden = false; openPanel = refresh;
-}
+function sheet(html, refresh = null) { $('sheetBody').innerHTML = html; $('sheet').hidden = false; openPanel = refresh; }
 function closeSheet() { $('sheet').hidden = true; openPanel = null; }
 $('sheet').addEventListener('click', e => { if (e.target.closest('[data-act="close"]')) closeSheet(); });
 
@@ -584,34 +650,38 @@ function confirmBox(title, text, okLabel, onOk, danger = false) {
 function openPlayer(pid) {
   const render = () => {
     const p = P(pid); if (!p) return closeSheet();
-    const r = role(p.role), day = S.phase.kind === 'day';
+    const r = role(p.role), day = S.phase.kind === 'day', trav = r.team === 'traveller' || p.traveller;
     const br = night.ctx(S, role).broken(p);
+    const evil = night.ctx(S, role).isEvil(p);
     sheet(`<div class="pp-head t-${r.team}">
         <img src="${iconUrl(p.role)}" alt="" onerror="this.style.visibility='hidden'">
         <div><h3>${esc(r.name)}</h3>
-        <div class="team">${esc(p.name)} <button class="link" data-p="rename">✎</button> · ${TEAM_TR[r.team] || r.team}${p.dead ? ' · <b>Ölü</b>' : ''}${p.evil != null ? (p.evil ? ' · Kötü' : ' · İyi') : ''}</div>
+        <div class="team">${esc(p.name)} <button class="link" data-p="rename">✎</button> · ${TEAM_TR[r.team] || r.team} · ${evil ? 'Kötü' : 'İyi'}${p.dead ? ' · <b>Ölü</b>' : ''}</div>
         ${p.believed ? `<div class="bel-line">Kendini <b>${esc(role(p.believed).name)}</b> sanıyor</div>` : ''}
         ${br.map(b => `<div class="note">⚠ ${esc(b.kind)}</div>`).join('')}</div>
         <button class="ib" data-act="close">✕</button></div>
       <p class="ability">${esc(r.ability) || '<span class="muted">Yetenek metni yok.</span>'}</p>
+      ${p.reminders.length ? `<div class="rem-list">${p.reminders.map(x =>
+        `<button class="rem big${x.tag ? ' tg-' + x.tag : ''}" data-rdel="${x.id}">${x.role ? `<img src="${iconUrl(x.role)}" alt="" onerror="this.remove()">` : ''}${esc(remTr(x.text))}${x.src ? ` <small>(${esc(P(x.src)?.name || '')})</small>` : ''} ✕</button>`).join('')}</div>` : ''}
       <div class="grid2">
-        ${p.dead ? `<button class="btn" data-p="revive">Dirilt</button>` : (day ? `<button class="btn danger" data-p="exec">⚖ İdam et</button>` : '') + `<button class="btn danger" data-p="die">☠ Öldü</button>`}
-        ${p.dead ? `<button class="btn ${p.ghost ? '' : 'off'}" data-p="ghost">${p.ghost ? 'Ölü oyunu kullandı' : 'Ölü oyunu geri ver'}</button>` : ''}
+        ${p.dead ? `<button class="btn" data-p="revive">Dirilt</button><button class="btn ${p.ghost ? '' : 'off'}" data-p="ghost">${p.ghost ? 'Ölü oyunu kullandı' : 'Ölü oyunu geri ver'}</button>`
+          : `${day ? `<button class="btn danger" data-p="exec">${trav ? 'Sürgün et' : '⚖ İdam et'}</button>` : ''}<button class="btn danger" data-p="die">☠ Öldü</button>`}
+        <button class="btn" data-p="remAdd">🔖 Hatırlatıcı</button>
         <button class="btn" data-p="role">Rolü değiştir</button>
         <button class="btn" data-p="believed">Sandığı rol${p.believed ? ' ✓' : ''}</button>
-        <button class="btn" data-p="remAdd">＋ Hatırlatıcı</button>
-      </div>
-      ${p.reminders.length ? `<h4>Hatırlatıcılar</h4><div class="rem-list">${p.reminders.map(x =>
-        `<button class="rem big${x.tag ? ' tg-' + x.tag : ''}" data-rdel="${x.id}">${x.role ? `<img src="${iconUrl(x.role)}" alt="" onerror="this.remove()">` : ''}${esc(remTr(x.text))}${x.src ? ` <small>(${esc(P(x.src)?.name || '')})</small>` : ''} ✕</button>`).join('')}</div>` : ''}`, render);
+        <button class="btn" data-p="align">${evil ? 'İyi yap' : 'Kötü yap'}</button>
+        ${trav ? '<button class="btn" data-p="leave">Masadan çıkar</button>' : ''}
+      </div>`, render);
     $('sheetBody').onclick = e => {
       const b = e.target.closest('[data-p],[data-rdel]'); if (!b) return;
       const k = b.dataset.p;
       if (b.dataset.rdel) { const x = p.reminders.find(r => r.id === b.dataset.rdel); return act('remDel', { p: pid, rid: x.id, text: x.text }, `${p.name}: ${remTr(x.text)} kaldırıldı`); }
-      const killed = cause => { act('die', { p: pid, cause }, `${p.name} ${cause === 'execution' ? 'idam edildi' : 'öldü'}`); const tr = night.deathTriggers(S, role, pid, cause); if (tr.length) showTriggers([{ p: pid, cause }]); else render(); };
-      if (k === 'exec') return confirmBox('İdam edilsin mi?', `<b>${esc(p.name)}</b> (${esc(r.name)}) idam edilecek.`, '⚖ İdam et', () => killed('execution'), true);
-      if (k === 'die') return confirmBox('Öldü mü?', `<b>${esc(p.name)}</b> (${esc(r.name)}) ölü olarak işaretlenecek.`, '☠ Öldü', () => killed('manual'), true);
+      if (k === 'exec') return execute(pid);
+      if (k === 'die') return confirmBox('Öldü mü?', `<b>${esc(p.name)}</b> (${esc(r.name)}) ölü olarak işaretlenecek.`, '☠ Öldü', () => { act('die', { p: pid, cause: 'manual' }, `${p.name} öldü`); if (!showTriggers([{ p: pid, cause: 'manual' }])) render(); }, true);
       if (k === 'revive') return confirmBox('Diriltilsin mi?', `<b>${esc(p.name)}</b> yeniden canlanacak.`, 'Dirilt', () => { act('revive', { p: pid }, `${p.name} dirildi`); render(); });
       if (k === 'ghost') return act('ghost', { p: pid, value: !p.ghost }, p.ghost ? `${p.name} ölü oyunu kullandı` : `${p.name} ölü oyu geri verildi`);
+      if (k === 'align') return act('align', { p: pid, evil: !evil }, `${p.name} artık ${evil ? 'iyi' : 'kötü'}`);
+      if (k === 'leave') return confirmBox('Masadan çıksın mı?', `<b>${esc(p.name)}</b> masadan kalkacak. Kayıtta kalır.`, 'Çıkar', () => { act('removePlayer', { p: pid, side: sideOfSeat(S.seats.indexOf(pid), S.sides) }, `${p.name} masadan çıktı`); closeSheet(); }, true);
       if (k === 'rename') { const n = prompt('Yeni isim', p.name); if (n && n.trim() && n.trim() !== p.name) act('rename', { p: pid, name: n.trim(), old: p.name }, 'İsim değişti'); return; }
       if (k === 'role') return pickRole('Yeni rol', id => confirmBox('Rol değişsin mi?', `<b>${esc(p.name)}</b>: ${esc(r.name)} → <b>${esc(role(id).name)}</b>`, 'Değiştir', () => { act('role', { p: pid, role: id, old: p.role }, `${p.name} artık ${role(id).name}`); render(); }), render);
       if (k === 'believed') return pickRole('Kendini hangi rol sanıyor?', id => { act('believed', { p: pid, role: id }, id ? `${p.name} kendini ${role(id).name} sanıyor` : `${p.name}: sandığı rol kaldırıldı`); render(); }, render, true);
@@ -621,18 +691,20 @@ function openPlayer(pid) {
   render();
 }
 
-function pickRole(title, cb, back, allowNone = false) {
+function pickRole(title, cb, back, allowNone = false, only = null) {
   let all = false, q = '';
   const render = () => {
-    const ids = (all ? Object.keys(D.roles).filter(id => D.roles[id].team !== 'reminder') : S.scriptRoles)
-      .filter(id => !q || role(id).name.toLocaleLowerCase('tr').includes(q));
+    let ids = all ? Object.keys(D.roles).filter(id => D.roles[id].team !== 'reminder') : S.scriptRoles;
+    if (only) ids = (all ? Object.keys(D.roles) : [...new Set([...S.scriptRoles, ...Object.keys(D.roles)])]).filter(id => role(id).team === only);
+    ids = ids.filter(id => !q || role(id).name.toLocaleLowerCase('tr').includes(q));
     const g = teamGroups(ids);
     sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>${title}</h3></div>
-      <div class="tabs"><button class="${all ? '' : 'on'}" id="tS">Script</button><button class="${all ? 'on' : ''}" id="tA">Tümü</button>
+      <div class="tabs">${only ? '' : `<button class="${all ? '' : 'on'}" id="tS">Script</button><button class="${all ? 'on' : ''}" id="tA">Tümü</button>`}
       <input id="q" placeholder="Ara" value="${esc(q)}"></div>
       ${allowNone ? '<button class="btn small" data-rid="">Hiçbiri</button>' : ''}
       ${TEAMS.filter(t => g[t]?.length).map(t => `<h4 class="t-${t}">${TEAM_TR[t]}</h4><div class="chips">${g[t].map(id => roleChip(id, { attr: `data-rid="${id}"` })).join('')}</div>`).join('')}`, render);
-    $('bk').onclick = back; $('tS').onclick = () => { all = false; render(); }; $('tA').onclick = () => { all = true; render(); };
+    $('bk').onclick = back;
+    if (!only) { $('tS').onclick = () => { all = false; render(); }; $('tA').onclick = () => { all = true; render(); }; }
     const qi = $('q'); qi.oninput = () => { q = qi.value.toLocaleLowerCase('tr'); const pos = qi.selectionStart; render(); const n = $('q'); n.focus(); n.setSelectionRange(pos, pos); };
     $('sheetBody').onclick = e => { const b = e.target.closest('[data-rid]'); if (b) cb(b.dataset.rid); };
   };
@@ -640,10 +712,10 @@ function pickRole(title, cb, back, allowNone = false) {
 }
 
 function pickReminder(pid, back) {
-  const inPlay = [...new Set([...S.players.map(p => p.role), ...S.players.map(p => p.believed).filter(Boolean), ...S.scriptRoles])];
+  const inPlay = [...new Set([...seated().map(p => p.role), ...seated().map(p => p.believed).filter(Boolean), ...S.scriptRoles])];
   const rows = [];
   inPlay.forEach(id => [...(role(id).reminders || []), ...(role(id).remindersGlobal || [])].forEach(t => rows.push({ role: id, text: t })));
-  const playing = new Set(S.players.map(p => p.role));
+  const playing = new Set(seated().map(p => p.role));
   rows.sort((a, b) => (playing.has(b.role) - playing.has(a.role)));
   sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>Hatırlatıcı: ${esc(P(pid).name)}</h3></div>
     <div class="row-in"><input id="cr" placeholder="Özel not"><button class="btn small" id="crOk">Ekle</button></div>
@@ -655,32 +727,59 @@ function pickReminder(pid, back) {
   $('sheetBody').onclick = e => { const b = e.target.closest('[data-t]'); if (b) add(b.dataset.t, b.dataset.r); };
 }
 
-// ---- faz ----
-function openPhase() {
-  const next = S.phase.kind === 'night' ? { kind: 'day', n: S.phase.n } : { kind: 'night', n: S.phase.n + 1 };
-  sheet(`<div class="sh-head"><h3>${store.phaseLabel(S.phase)}</h3><button class="ib" data-act="close">✕</button></div>
-    <button class="btn primary wide" id="np">${next.kind === 'day' ? '☀' : '☾'} ${store.phaseLabel(next)}'e geç</button>`);
-  $('np').onclick = () => { closeSheet(); nextPhase(); };
-}
-
 // ---- menü ----
 function openMenu() {
   const render = () => sheet(`<div class="sh-head"><h3>Menü</h3><button class="ib" data-act="close">✕</button></div>
     <div class="list">
-      <button class="row-btn" id="mSides"><b>Masa düzeni</b><small>Kenar başına koltuk sayısı</small></button>
+      <button class="row-btn" id="mEdit"><b>Yerleri düzenle</b><small>Oyuncuları sürükleyerek yerleştir</small></button>
+      <button class="row-btn" id="mTrav"><b>Gezgin ekle</b><small>Sonradan gelen oyuncu</small></button>
+      <button class="row-btn" id="mShow"><b>Bilgi kartı göster</b><small>Oyuncuya ekranı göster</small></button>
       <button class="row-btn" id="mBluffs"><b>Blöfler</b><small>${S.bluffs.length ? S.bluffs.map(rname).join(', ') : 'İblise gösterilen 3 rol'}</small></button>
+      <button class="row-btn" id="mSides"><b>Masa düzeni</b><small>Kenar başına koltuk sayısı</small></button>
       <button class="row-btn" id="mNew"><b>Yeni oyun</b><small>Bu oyun arşive alınır</small></button>
       <button class="row-btn" id="mOut"><b>Çıkış yap</b><small>${esc(auth.currentUser?.email || '')}</small></button>
     </div><p class="muted small">Karakter verisi: ${new Date(D.at).toLocaleString('tr-TR')}${D.offline ? ' (kayıtlı kopya)' : ''}</p>`, render);
   render();
+  $('mEdit').onclick = () => { edit = true; closeSheet(); renderBoard(); };
+  $('mTrav').onclick = addTraveller;
+  $('mShow').onclick = openShowMenu;
   $('mSides').onclick = openSides;
   $('mBluffs').onclick = openBluffs;
   $('mNew').onclick = () => confirmBox('Yeni oyun?', 'Mevcut oyun kapanır ve arşive alınır.', 'Yeni oyun', () => { store.reset(); }, true);
   $('mOut').onclick = () => confirmBox('Çıkış yapılsın mı?', 'Oyun bu cihazda kayıtlı kalır.', 'Çıkış', () => { closeSheet(); auth.signOut(); });
 }
 
+function openShowMenu() {
+  sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>Bilgi kartı</h3></div><div class="list">
+    ${Object.entries(MARK).map(([k, v]) => `<button class="row-btn" data-mk="${k}"><b>${esc(v.t)}</b></button>`).join('')}
+    <button class="row-btn" id="custom"><b>Özel metin…</b></button></div>`);
+  $('bk').onclick = openMenu;
+  $('custom').onclick = () => { const t = prompt('Gösterilecek metin'); if (t) { closeSheet(); showCard(t); } };
+  $('sheetBody').onclick = e => { const b = e.target.closest('[data-mk]'); if (b) { const m = MARK[b.dataset.mk]; if (['youare', 'playeris'].includes(m.k)) showMarker(b.dataset.mk); else { closeSheet(); showMarker(b.dataset.mk); } } };
+}
+
+function addTraveller() {
+  pickRole('Gezgin rolü', id => {
+    const name = (prompt('Oyuncunun adı') || '').trim();
+    if (!name) return closeSheet();
+    sheet(`<div class="sh-head"><h3>${esc(name)} · ${esc(role(id).name)}</h3></div>
+      <h4>Takımı</h4><div class="grid2"><button class="btn on-sel" data-al="0">İyi</button><button class="btn" data-al="1">Kötü</button></div>
+      <h4>Kimin solunda oturuyor? (saat yönünde ondan sonra)</h4>
+      <div class="list">${seated().map(p => `<button class="row-btn" data-af="${p.id}"><b>${esc(p.name)}</b><small>${esc(role(p.role).name)}</small></button>`).join('')}</div>`);
+    let evil = false;
+    $('sheetBody').onclick = e => {
+      const a = e.target.closest('[data-al]');
+      if (a) { evil = a.dataset.al === '1'; $('sheetBody').querySelectorAll('[data-al]').forEach(x => x.classList.toggle('on-sel', x === a)); return; }
+      const b = e.target.closest('[data-af]'); if (!b) return;
+      const side = sideOfSeat(S.seats.indexOf(b.dataset.af), S.sides);
+      act('addPlayer', { p: { id: 't' + store.newId(), name, role: id, evil }, after: b.dataset.af, side }, `${name} masaya katıldı`);
+      closeSheet();
+    };
+  }, openMenu, false, 'traveller');
+}
+
 function openSides() {
-  const sd = { ...S.sides }, n = S.players.length;
+  const sd = { ...S.sides }, n = S.seats.length;
   const render = () => {
     const sum = Object.values(sd).reduce((a, b) => a + b, 0);
     sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>Masa düzeni</h3></div>${sidesEditor(sd)}
@@ -696,7 +795,7 @@ function openSides() {
 function openBluffs() {
   const sel = [...S.bluffs];
   const render = () => {
-    const inPlay = new Set(S.players.map(p => p.role));
+    const inPlay = new Set(seated().map(p => p.role));
     const opts = S.scriptRoles.filter(id => ['townsfolk', 'outsider'].includes(role(id).team) && !inPlay.has(id));
     const g = teamGroups(opts);
     sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>Blöfler <small class="muted">${sel.length}/3</small></h3></div>
@@ -710,7 +809,7 @@ function openBluffs() {
 }
 
 // ---- kayıt (log) ----
-const CAUSE = { demon: 'İblis öldürdü', execution: 'idam edildi', fanggu: 'Fang Gu atlamasıyla öldü', starpass: 'İmp devri için öldü', grandmother: 'torunu öldüğü için öldü', manual: 'öldü' };
+const CAUSE = { demon: 'İblis tarafından öldürüldü', execution: 'idam edildi', exile: 'sürgün edildi', fanggu: 'Fang Gu atlamasıyla öldü', starpass: 'İblis devri için öldü', grandmother: 'torunu öldüğü için öldü', manual: 'öldü' };
 function describe(ev, st) {
   const n = id => pname(st, id);
   const pr = id => { const p = st?.players.find(q => q.id === id); return p ? `${esc(p.name)} (${rname(p.role)})` : '?'; };
@@ -722,12 +821,15 @@ function describe(ev, st) {
     case 'ghost': return ev.value ? `${n(ev.p)} ölü oyunu geri aldı` : `${n(ev.p)} ölü oyunu kullandı`;
     case 'rename': return `${esc(ev.old)} → ${esc(ev.name)} (isim)`;
     case 'role': return `${n(ev.p)}: ${rname(ev.old)} → <b>${rname(ev.role)}</b>`;
+    case 'align': return `${n(ev.p)} artık ${ev.evil ? 'kötü' : 'iyi'}`;
     case 'believed': return ev.role ? `${n(ev.p)} kendini ${rname(ev.role)} sanıyor` : `${n(ev.p)}: sandığı rol kaldırıldı`;
     case 'remAdd': return `${n(ev.p)}: <i>${esc(remTr(ev.text))}</i> eklendi${ev.role ? ` (${rname(ev.role)})` : ''}`;
     case 'remDel': return `${n(ev.p)}: <i>${esc(remTr(ev.text))}</i> kaldırıldı`;
     case 'swap': return `${n(ev.a)} ↔ ${n(ev.b)} yer değiştirdi`;
     case 'sides': return 'Masa düzeni değişti';
     case 'bluffs': return `Blöfler: ${ev.bluffs.map(rname).join(', ') || '—'}`;
+    case 'addPlayer': return `${esc(ev.p.name)} (${rname(ev.p.role)}, ${ev.p.evil ? 'kötü' : 'iyi'}) masaya katıldı`;
+    case 'removePlayer': return `${n(ev.p)} masadan çıktı`;
     case 'act': {
       if (ev.special) return ev.special === 'minioninfo' ? 'Minyonlar birbirini ve İblisi gördü' : 'İblis minyonlarını ve blöfleri gördü';
       const who = `<b>${rname(ev.role)}</b> ${n(ev.actor)}`;
