@@ -75,7 +75,7 @@ const clone = o => JSON.parse(JSON.stringify(o));
 function apply(s, ev) {
   if (ev.type === 'start') {
     return {
-      script: ev.script, scriptRoles: ev.scriptRoles,
+      script: ev.script, scriptRoles: ev.scriptRoles, customRoles: ev.customRoles || {},
       players: ev.players.map(p => ({ id: p.id, name: p.name, role: p.role, believed: p.believed || null,
         dead: false, ghost: true, reminders: [] })),
       seats: ev.players.map(p => p.id),

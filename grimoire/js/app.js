@@ -82,7 +82,12 @@ function renderSetup() {
 
   if (W.step === 1) {
     html += `<h2>Script seç</h2><div class="list">` + D.scripts.map((s, i) =>
-      `<button class="row-btn" data-script="${i}"><b>${esc(s.name)}</b><small>${s.roles.length} rol</small></button>`).join('') + `</div>`;
+      `<button class="row-btn" data-script="${i}"><b>${esc(s.name)}</b><small>${s.roles.length} rol</small></button>`).join('') + `</div>
+      <h3>Kayıtlı olmayan script</h3>
+      <p class="muted small">Script Tool'dan alınan JSON'u yapıştır. Ev yapımı rollerin tanımı JSON'da varsa onlar da gelir.</p>
+      <textarea id="paste" rows="5" placeholder='[{"id":"_meta","name":"…"},"washerwoman","imp", …]'>${esc(localStorage.getItem('tg-grim-paste') || '')}</textarea>
+      <p id="pasteErr" class="warn" hidden></p>
+      <div class="nav-row"><button class="btn" data-act="clip">📋 Panodan yapıştır</button><button class="btn primary" data-act="usePaste">Bu script'le devam</button></div>`;
   }
 
   if (W.step === 2) {
@@ -170,6 +175,17 @@ $('setup').addEventListener('click', e => {
   if (b.dataset.act === 'randRoles') { randomRoles(); return renderSetup(); }
   if (b.dataset.act === 'shuffle') { assignRandom(); return renderSetup(); }
   if (b.dataset.act === 'begin') return beginGame();
+  if (b.dataset.act === 'clip') {
+    navigator.clipboard?.readText().then(t => { $('paste').value = t; }).catch(() => pasteErr('Panoya erişilemedi. Kutuya elle yapıştır.'));
+    return;
+  }
+  if (b.dataset.act === 'usePaste') {
+    try {
+      const sc = parseScript($('paste').value);
+      localStorage.setItem('tg-grim-paste', $('paste').value);
+      W.script = sc; W.picked = []; W.step = 2; renderSetup();
+    } catch (err) { pasteErr(err.message); }
+  }
 });
 $('setup').addEventListener('change', e => {
   const s = e.target;
@@ -181,6 +197,35 @@ $('setup').addEventListener('change', e => {
   }
   if (s.dataset.believe) { W.believed[s.dataset.believe] = s.value || undefined; renderSetup(); }
 });
+
+function pasteErr(m) { const e = $('pasteErr'); e.textContent = m; e.hidden = false; }
+
+// Script Tool JSON'u: ["id", {id:"x"}, {id:"_meta", name}] ya da ev yapımı rol tanımları {id, name, team, ability, ...}
+const TEAM_ALIAS = { traveler: 'traveller', townsfolk: 'townsfolk', outsider: 'outsider', minion: 'minion', demon: 'demon', fabled: 'fabled', traveller: 'traveller' };
+const normId = x => String(x).toLowerCase().replace(/[^a-z0-9]/g, '');
+function parseScript(text) {
+  let arr;
+  try { arr = JSON.parse(text.trim()); } catch (e) { throw new Error('JSON okunamadı. Script Tool çıktısını olduğu gibi yapıştır.'); }
+  if (!Array.isArray(arr)) throw new Error('Script bir liste olmalı: [ ... ]');
+  let name = 'Özel script'; const ids = [], custom = {}, unknown = [];
+  for (const it of arr) {
+    const raw = typeof it === 'string' ? it : it && it.id;
+    if (!raw) continue;
+    if (raw === '_meta') { if (it.name) name = String(it.name); continue; }
+    const id = normId(raw);
+    if (typeof it === 'object' && it.name && it.team && !D.roles[id]) {
+      custom[id] = { id, name: String(it.name), team: TEAM_ALIAS[String(it.team).toLowerCase()] || 'townsfolk',
+        ability: String(it.ability || ''), first: String(it.firstNightReminder || ''), other: String(it.otherNightReminder || ''),
+        reminders: Array.isArray(it.reminders) ? it.reminders.map(String) : [], remindersGlobal: Array.isArray(it.remindersGlobal) ? it.remindersGlobal.map(String) : [],
+        setup: !!it.setup, official: false, custom: true };
+    }
+    if (D.roles[id] || custom[id]) { if (!ids.includes(id)) ids.push(id); } else unknown.push(raw);
+  }
+  if (unknown.length) throw new Error('Tanınmayan rol: ' + unknown.join(', '));
+  if (ids.length < 5) throw new Error('Script\'te en az 5 rol olmalı.');
+  Object.assign(D.roles, custom);
+  return { name, roles: ids, custom };
+}
 
 function randomRoles() {
   const n = W.names.length, g = teamGroups(W.script.roles);
@@ -195,14 +240,15 @@ function assignRandom() {
 
 function beginGame() {
   const players = W.names.map((nm, i) => ({ id: 'p' + i, name: nm, role: W.assign[nm], believed: W.believed[nm] || null }));
-  const data = { script: W.script.name, scriptRoles: W.script.roles, players, sides: { ...W.sides } };
+  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides } };
   locked = false; localStorage.setItem('tg-grim-lock', '0');
   store.reset(true);
   store.dispatch('start', data);
 }
 
 // ================= OYUN =================
-function startGame() { show('game'); renderGame(); }
+function startGame() { mergeCustom(); show('game'); renderGame(); }
+function mergeCustom() { if (S?.customRoles) for (const [k, v] of Object.entries(S.customRoles)) if (!D.roles[k]) D.roles[k] = v; }
 
 let L = null; // son yerleşim
 const board = $('board');
