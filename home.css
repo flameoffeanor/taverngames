@@ -28,6 +28,5 @@ section{margin-top:8px}
 .faq summary::-webkit-details-marker{display:none}
 .faq p{padding:0 0 14px;color:var(--muted);font-size:.93rem}.faq p a{color:var(--gold);text-decoration:underline}
 .about p{color:var(--muted);max-width:40em}
-.fl-links{display:flex;gap:6px 16px;justify-content:center;flex-wrap:wrap;margin:10px 0 12px}.fl-links a{color:var(--cream);opacity:.8}.fl-links a:hover{opacity:1;color:var(--gold)}
 footer{margin-top:40px}
 .zone{position:relative;text-align:center}.zone .logo{display:inline-block;position:relative;z-index:1}

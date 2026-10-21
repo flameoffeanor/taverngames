@@ -47,3 +47,4 @@ footer img{height:46px;width:auto;margin-bottom:8px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .links .ns{display:none}@media(max-width:760px){.links .nf{display:none}.links .ns{display:inline}}.links a{font-size:.8rem;font-weight:500}
 html{scrollbar-gutter:stable}
+.fl-links{display:flex;gap:6px 16px;justify-content:center;flex-wrap:wrap;margin:10px 0 12px}.fl-links a{color:var(--cream);opacity:.8}.fl-links a:hover{opacity:1;color:var(--gold)}
