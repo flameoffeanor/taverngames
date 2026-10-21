@@ -949,12 +949,6 @@
     async function processInputLink() {
       const inputVal = document.getElementById('linkInput').value.trim();
       if (!inputVal) return;
-      if (!pendingScriptName && inputVal.startsWith('[')) {
-        try {
-          const meta = JSON.parse(inputVal).find(i => i && i.id === '_meta');
-          if (meta && meta.name) pendingScriptName = String(meta.name);
-        } catch (e) {}
-      }
 
       const charIds = await extractCharactersFromUrl(inputVal);
       if (charIds.length > 0) {
