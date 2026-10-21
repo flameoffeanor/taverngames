@@ -1111,6 +1111,8 @@
 
     function loadAndRender(charIds) {
       document.body.classList.add('has-script');
+      {const sc = document.getElementById('searchContainer'), ct = document.getElementById('content');
+       if (sc && ct && sc.parentNode === ct) ct.parentNode.insertBefore(sc, ct);}
       const inputSec = document.getElementById('inputSection');
       if (inputSec) inputSec.style.display = 'none';
 
@@ -1263,6 +1265,10 @@
       }
 
       container.innerHTML = html;
+
+      {const sc = document.getElementById('searchContainer');
+       const firstTeam = container.querySelector('.team-group, .collapsible-group');
+       if (sc && firstTeam) container.insertBefore(sc, firstTeam);}
       
       document.getElementById('distribution-container').style.display = 'block';
       document.getElementById('notesSection').style.display = 'block';
