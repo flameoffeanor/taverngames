@@ -56,6 +56,9 @@ export function phaseLabel(p) {
   if (!p) return '';
   return (p.kind === 'night' ? 'Gece ' : 'Gün ') + p.n;
 }
+// Fazları sıralamak için: Gece 1 = 1, Gün 1 = 2, Gece 2 = 3 …
+export const phaseIdx = p => p.n * 2 - (p.kind === 'night' ? 1 : 0);
+export const phaseKey = p => (p.kind === 'night' ? 'N' : 'D') + p.n;
 
 export function state() {
   if (!events.length || events[0].type !== 'start') return null;
@@ -77,14 +80,23 @@ function apply(s, ev) {
     return {
       script: ev.script, scriptRoles: ev.scriptRoles, customRoles: ev.customRoles || {},
       players: ev.players.map(p => ({ id: p.id, name: p.name, role: p.role, believed: p.believed || null,
-        dead: false, ghost: true, reminders: [] })),
+        dead: false, ghost: true, reminders: [], evil: null })),
       seats: ev.players.map(p => p.id),
       sides: ev.sides,
       bluffs: ev.bluffs || [],
       phase: { kind: 'night', n: 1 },
+      done: {},      // faz anahtarı → { adımAnahtarı: olayId }
+      used: {},      // "pid:etiket" → true (bir kez kullanılan yetenekler)
+      deaths: [],    // { p, phase, cause, by }
+      executed: {},  // gün anahtarı → pid
     };
   }
   s = clone(s);
+  one(s, ev);
+  return s;
+}
+
+function one(s, ev) {
   const P = id => s.players.find(p => p.id === id);
   switch (ev.type) {
     case 'swap': {
@@ -93,19 +105,39 @@ function apply(s, ev) {
       break;
     }
     case 'sides': s.sides = ev.sides; break;
-    case 'phase': s.phase = ev.phase; break;
-    case 'die': P(ev.p).dead = true; break;
+    case 'phase': {
+      s.phase = ev.phase;
+      const idx = phaseIdx(ev.phase);
+      // Süresi dolan hatırlatıcılar (zehir, koruma …) kendiliğinden düşer
+      s.players.forEach(p => { p.reminders = p.reminders.filter(r => !(r.exp && idx >= r.exp)); });
+      break;
+    }
+    case 'die': {
+      const p = P(ev.p); if (!p) break;
+      p.dead = true;
+      s.deaths.push({ p: ev.p, phase: { ...s.phase }, cause: ev.cause || 'manual', by: ev.by || null });
+      if (ev.cause === 'execution') s.executed[phaseKey(s.phase)] = ev.p;
+      break;
+    }
     case 'revive': P(ev.p).dead = false; break;
     case 'ghost': P(ev.p).ghost = ev.value; break;
     case 'rename': P(ev.p).name = ev.name; break;
-    case 'role': P(ev.p).role = ev.role; break;
+    case 'role': { const p = P(ev.p); p.role = ev.role; if (ev.evil != null) p.evil = ev.evil; if (!['drunk', 'lunatic', 'marionette'].includes(ev.role)) p.believed = null; break; }
+    case 'align': P(ev.p).evil = ev.evil; break;
     case 'believed': P(ev.p).believed = ev.role || null; break;
-    case 'remAdd': P(ev.p).reminders.push({ id: ev.rid, role: ev.role, text: ev.text }); break;
+    case 'remAdd': P(ev.p).reminders.push({ id: ev.rid, role: ev.role || null, text: ev.text, tag: ev.tag || null, src: ev.src || null, exp: ev.exp || null, at: { ...s.phase } }); break;
     case 'remDel': { const p = P(ev.p); p.reminders = p.reminders.filter(r => r.id !== ev.rid); break; }
     case 'bluffs': s.bluffs = ev.bluffs; break;
+    case 'use': s.used[ev.key] = true; break;
+    case 'act': {
+      // Gece/gün adımı: kayıt + içindeki etkiler tek olay olarak uygulanır (tek geri alma hepsini geri alır)
+      const k = phaseKey(s.phase);
+      (s.done[k] = s.done[k] || {})[ev.step] = ev.id;
+      (ev.effects || []).forEach(e => one(s, { ...e, id: ev.id }));
+      break;
+    }
     case 'note': break;
   }
-  return s;
 }
 
 export { newId };

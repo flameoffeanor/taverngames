@@ -1,58 +1,43 @@
-// Dikdörtgen masa geometrisi. Koltuklar sol üst köşeden başlayıp saat yönünde dizilir:
-// üst kenar soldan sağa, sağ kenar yukarıdan aşağı, alt kenar sağdan sola, sol kenar aşağıdan yukarı.
-// Ekran dikeyse (telefon) masa 90° döndürülerek çizilir; uzun kenarlar ekranın uzun eksenine oturur.
-// Saat yönü sırası döndürmede korunur.
+// Dikdörtgen masa geometrisi. Kenarlar ekrana göredir (Üst/Sağ/Alt/Sol ekranda gördüğün gibi).
+// Koltuklar sol üstten saat yönünde: üst soldan sağa, sağ yukarıdan aşağı, alt sağdan sola, sol aşağıdan yukarı.
+// Üst ve alt sıralar ekranın tüm genişliğini kullanır; yan sütunlar bu iki sıranın arasında kalır.
 
-export function defaultSides(n) {
+export function defaultSides(n, portrait = true) {
   if (n <= 4) return { top: Math.ceil(n / 2), right: 0, bottom: Math.floor(n / 2), left: 0 };
-  const short = n >= 12 ? 2 : 1;
+  // Dikeyde uzun kenarlar sol/sağ, yatayda üst/alt
+  const short = n >= 13 ? 3 : n >= 9 ? 2 : 1;
   const rest = n - short * 2;
-  return { top: Math.ceil(rest / 2), right: short, bottom: Math.floor(rest / 2), left: short };
-}
-
-// Jetonun etiketi (isim + rol) her zaman diskin altında, ekran koordinatında aşağı doğru durur.
-// rot=true iken "mantıksal" düzlem ekrana göre 90° saat yönünde döndürülmüştür:
-// mantıksal x → ekran aşağı, mantıksal y → ekran sola.
-function core(W, H, sides, rot) {
-  const { top, right, bottom, left } = sides;
-  const horiz = Math.max(top, bottom, 1), vert = Math.max(left, right, 0);
-  const sx = W / (horiz + (left ? 1 : 0) + (right ? 1 : 0) + 0.3);
-  const sy = H / (vert + 2 + 0.7);
-  let S = Math.min(sx * (rot ? 0.6 : 0.72), sy * (rot ? 0.66 : 0.58), 104);
-  S = Math.max(S, 36);
-  const label = Math.max(26, S * 0.42);
-  const half = S * 0.82; // etiketin yatay yarı genişliği (ekranda)
-  let x0, x1, y0, y1;
-  if (!rot) { x0 = S / 2 + 6; x1 = W - S / 2 - 6; y0 = S / 2 + 6; y1 = H - S / 2 - label - 4; }
-  else { x0 = S / 2 + 6; x1 = W - S / 2 - label - 4; y0 = half; y1 = H - half; }
-  if (!rot) { if (left) x0 += S * 0.15; if (right) x1 -= S * 0.15; }
-  const gapX = rot ? S * 1.25 : S * 1.05, gapY0 = rot ? S * 1.05 : S * 1.1, gapY1 = rot ? S * 1.05 : S * 0.9;
-  const innerX0 = left ? x0 + gapX : x0, innerX1 = right ? x1 - gapX : x1;
-  const spread = (a, b, k) => Array.from({ length: k }, (_, i) => a + ((i + 0.5) * (b - a)) / k);
-  const seats = [];
-  spread(innerX0, innerX1, top).forEach(x => seats.push({ x, y: y0 }));
-  spread(y0 + gapY0, y1 - gapY1, right).forEach(y => seats.push({ x: x1, y }));
-  spread(innerX0, innerX1, bottom).reverse().forEach(x => seats.push({ x, y: y1 }));
-  spread(y0 + gapY0, y1 - gapY1, left).reverse().forEach(y => seats.push({ x: x0, y }));
-  let t;
-  if (!rot) {
-    const tx0 = left ? x0 + S * 0.9 : x0 - S * 0.2, tx1 = right ? x1 - S * 0.9 : x1 + S * 0.2;
-    t = { x: tx0, y: y0 + S / 2 + label + 8, w: tx1 - tx0, h: (y1 - S / 2 - 8) - (y0 + S / 2 + label + 8) };
-  } else {
-    const tx0 = left ? x0 + S / 2 + label + 10 : x0, tx1 = right ? x1 - S / 2 - 10 : x1;
-    t = { x: tx0, y: y0 + half + 8, w: tx1 - tx0, h: (y1 - half - 8) - (y0 + half + 8) };
-  }
-  return { S, label, seats, table: t };
+  const a = Math.ceil(rest / 2), b = Math.floor(rest / 2);
+  return portrait ? { top: short, right: a, bottom: short, left: b } : { top: a, right: short, bottom: b, left: short };
 }
 
 export function layout(W, H, sides) {
-  if (H <= W * 1.1) return core(W, H, sides, false);
-  const L = core(H, W, sides, true);
-  return {
-    ...L,
-    seats: L.seats.map(s => ({ x: W - s.y, y: s.x })),
-    table: { x: W - (L.table.y + L.table.h), y: L.table.x, w: L.table.h, h: L.table.w },
-  };
+  const { top, right, bottom, left } = sides;
+  const horiz = Math.max(top, bottom, 1), vert = Math.max(left, right);
+  const hasSide = left > 0 || right > 0;
+  // Bir jetonun dikey yer ihtiyacı: disk + rol + isim + hatırlatıcı satırı ≈ 1.75 S
+  const ROW = 1.75;
+  const byW = W / horiz * 0.8;
+  const byH = (H - 8) / ((2 + vert) * ROW);
+  // Yan sütunlar varken masa için en az ~%30 genişlik kalsın
+  const bySide = hasSide ? W / 4.4 : Infinity;
+  let S = Math.min(byW, byH, bySide, 112);
+  S = Math.max(S, 40);
+  const rowH = S * ROW;
+  const y0 = S / 2 + 6;                 // üst sıra disk merkezi
+  const y1 = H - rowH + S / 2 - 4;       // alt sıra disk merkezi
+  const colX = S * 0.95;                 // yan sütun disk merkezi (kenardan)
+  const spread = (a, b, k) => Array.from({ length: k }, (_, i) => a + ((i + 0.5) * (b - a)) / k);
+  const seats = [];
+  spread(0, W, top).forEach(x => seats.push({ x, y: y0 }));
+  const sy0 = y0 - S / 2 + rowH, sy1 = y1 - S / 2;      // yan sütunun kullanılabilir dikey aralığı
+  const sideYs = k => spread(sy0, sy1, k).map(y => y - S * 0.35); // diskin altında etiket payı
+  sideYs(right).forEach(y => seats.push({ x: W - colX, y }));
+  spread(0, W, bottom).reverse().forEach(x => seats.push({ x, y: y1 }));
+  sideYs(left).reverse().forEach(y => seats.push({ x: colX, y }));
+  const tx0 = left ? colX * 2 + 4 : 10, tx1 = right ? W - colX * 2 - 4 : W - 10;
+  const table = { x: tx0, y: sy0 + 4, w: tx1 - tx0, h: Math.max(sy1 - sy0 - 8, 40) };
+  return { S, seats, table };
 }
 
 export function nearestSeat(seats, x, y, maxDist) {
