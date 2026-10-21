@@ -1016,7 +1016,7 @@
       cards.forEach(card => {
         const text = card.textContent.toLowerCase();
         if (text.includes(query)) {
-          card.style.display = 'block';
+          card.style.display = '';
         } else {
           card.style.display = 'none';
         }
@@ -1085,6 +1085,7 @@
     });
 
     function loadAndRender(charIds) {
+      document.body.classList.add('has-script');
       const inputSec = document.getElementById('inputSection');
       if (inputSec) inputSec.style.display = 'none';
 
@@ -1198,7 +1199,7 @@
                   ${group.roles.map(r => {
                     const charIdClean = cleanId(r.id);
                     return `
-                      <div class="card">
+                      <div class="card card-team-${cleanId(teamKey)}">
                         <div class="card-header-wrapper">
                           <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
                           <div class="card-title">${r.name}</div>
@@ -1217,7 +1218,7 @@
                 ${group.roles.map(r => {
                   const charIdClean = cleanId(r.id);
                   return `
-                    <div class="card">
+                    <div class="card card-team-${cleanId(teamKey)}">
                       <div class="card-header-wrapper">
                         <img src="${charIdClean}.png" alt="${r.name}" class="card-icon" onerror="this.style.display='none'">
                         <div class="card-title">${r.name}</div>
