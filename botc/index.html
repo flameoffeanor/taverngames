@@ -754,6 +754,8 @@
     </a>
   </div>
 
+  <h2 id="scriptTitle" class="script-title" hidden></h2>
+
   <!-- Link Yapıştırma Alanı & Dinamik Butonlar -->
   <div class="input-section" id="inputSection">
     <label for="linkInput">Script Linki veya JSON Yapıştırın:</label>
@@ -814,12 +816,12 @@
 
   <!-- Oyuncu Not Alma Alanı -->
   <div class="notes-group" id="notesSection" style="display: none;">
-    <button class="notes-trigger" onclick="toggleNotes(this)">
+    <button class="notes-trigger collapsed" onclick="toggleNotes(this)">
       <span>📝 Oyuncu Notları</span>
       <span class="badge">Gizlemek / Açmak İçin Tıklayın</span>
       <span class="arrow">▼</span>
     </button>
-    <div class="notes-content" id="notesContent">
+    <div class="notes-content hidden" id="notesContent">
       <textarea class="notes-textarea" id="playerNotes" placeholder="Oyun sırasındaki tahminlerinizi, iddiaları ve notlarınızı buraya yazabilirsiniz (Sayfayı kapatsanız da silinmez)..." oninput="saveNotes()"></textarea>
     </div>
   </div>
@@ -865,6 +867,8 @@
     };
 
     let allRolesData = [];
+    let scriptsMeta = [];
+    let pendingScriptName = '';
 
     function cleanId(idStr) {
       if (!idStr) return '';
@@ -892,7 +896,12 @@
             btn.className = 'btn-script';
            
             btn.innerText = name;
+            try {
+              const arr = JSON.parse(jsonContent);
+              if (Array.isArray(arr)) scriptsMeta.push({ name, ids: arr.map(i => typeof i === 'string' ? i : (i && i.id !== '_meta' ? i.id : null)).filter(Boolean).map(c => cleanId(c)) });
+            } catch (e) {}
             btn.onclick = () => {
+              pendingScriptName = name;
               document.getElementById('linkInput').value = jsonContent;
               processInputLink();
             };
@@ -940,6 +949,12 @@
     async function processInputLink() {
       const inputVal = document.getElementById('linkInput').value.trim();
       if (!inputVal) return;
+      if (!pendingScriptName && inputVal.startsWith('[')) {
+        try {
+          const meta = JSON.parse(inputVal).find(i => i && i.id === '_meta');
+          if (meta && meta.name) pendingScriptName = String(meta.name);
+        } catch (e) {}
+      }
 
       const charIds = await extractCharactersFromUrl(inputVal);
       if (charIds.length > 0) {
@@ -947,6 +962,7 @@
         window.history.pushState({path: newUrl}, '', newUrl);
 
         loadAndRender(charIds);
+        resolveScriptName(charIds);
       }
     }
 
@@ -1066,7 +1082,7 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       loadSavedNotes();
-      fetchScriptsList();
+      const scriptsReady = fetchScriptsList();
 
       const urlParams = new URLSearchParams(window.location.search);
       const initialChars = urlParams.get('characters');
@@ -1076,6 +1092,8 @@
         const charIds = await extractCharactersFromUrl(initialChars);
         if (charIds.length > 0) {
           loadAndRender(charIds);
+          await scriptsReady;
+          resolveScriptName(charIds);
         }
       }
 
@@ -1083,6 +1101,19 @@
         updatePlayerDistribution(parseInt(initialPlayers));
       }
     });
+
+    function resolveScriptName(charIds) {
+      let name = pendingScriptName;
+      pendingScriptName = '';
+      if (!name) {
+        const set = new Set(charIds.map(c => cleanId(c)));
+        const hit = scriptsMeta.find(m => m.ids.length === set.size && m.ids.every(i => set.has(i)));
+        if (hit) name = hit.name;
+      }
+      const el = document.getElementById('scriptTitle');
+      el.textContent = name || '';
+      el.hidden = !name;
+    }
 
     function loadAndRender(charIds) {
       document.body.classList.add('has-script');

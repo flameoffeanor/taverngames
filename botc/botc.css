@@ -99,7 +99,7 @@ header .header-link{display:none}
 .card .card-ability{grid-column:2;font-size:.84rem;line-height:1.45}
 
 /* Script açıkken üst kısmı küçült */
-body.has-script header{padding:14px 0 12px;margin-bottom:12px}
+body.has-script header{padding:12px 0 10px;margin-bottom:10px}
 body.has-script .header-subtext{font-size:0}
 body.has-script .header-subtext strong{font-size:1.25rem;margin:0;text-shadow:none}
 body.has-script .social-card{gap:8px;margin-bottom:12px}
@@ -111,3 +111,26 @@ body.has-script .input-section{padding:12px;gap:10px;margin-bottom:14px}
 body.has-script .scripts-title{margin-bottom:8px}
 body.has-script .scripts-list{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
 body.has-script .btn-script{min-height:44px;padding:8px 10px!important;font-size:.8rem!important;border-radius:10px!important}
+
+/* Script görünümü: seçim ekranı gizli, sadece script adı */
+body.has-script .input-section{display:none!important}
+.script-title{font-family:'Cinzel',serif;font-size:1.05rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:center;color:#fff;margin:0 auto 12px}
+.script-title[hidden]{display:none}
+body.has-script header{margin-bottom:10px}
+/* Oyuncu sayısı kartı: kompakt */
+body.has-script #distribution-container{padding:10px 10px 10px;margin-bottom:14px;border-radius:14px}
+body.has-script .player-selector-title{font-size:.68rem;margin-bottom:8px}
+body.has-script .player-buttons-grid{gap:5px;margin-bottom:8px}
+body.has-script .player-btn{padding:6px 0;font-size:.78rem;border-radius:8px;max-width:48px}
+body.has-script .dist-cards-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+body.has-script .dist-card-item{flex-direction:column;align-items:center;gap:1px;padding:7px 4px;border-left-width:3px;text-align:center}
+body.has-script .dist-card-label{font-size:.62rem;font-weight:600;letter-spacing:.01em}
+body.has-script .dist-card-val{font-size:1.05rem}
+/* Notlar kapalı gelir: daha ince başlık */
+body.has-script .notes-trigger{padding:10px 14px;font-size:.9rem}
+body.has-script .notes-group{margin-bottom:14px}
+/* Hatırlatmalar: biraz küçük yazı */
+.reminder-single-card{padding:13px}
+.reminder-single-header{font-size:.9rem}
+.reminder-item-title{font-size:.84rem}
+.reminder-item-ability{font-size:.78rem;line-height:1.45}
