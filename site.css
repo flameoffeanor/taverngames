@@ -46,3 +46,4 @@ footer{margin-top:auto;padding:40px 18px 28px;text-align:center;color:var(--mute
 footer img{height:46px;width:auto;margin-bottom:8px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .links .ns{display:none}@media(max-width:760px){.links .nf{display:none}.links .ns{display:inline}}.links a{font-size:.8rem;font-weight:500}
+html{scrollbar-gutter:stable}
