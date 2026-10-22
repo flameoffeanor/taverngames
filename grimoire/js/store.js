@@ -85,6 +85,7 @@ function apply(s, ev) {
       seats: ev.players.map(p => p.id),
       sides: ev.sides,
       bluffs: ev.bluffs || [],
+      prep: ev.prep || {},   // ilk gece bilgileri (adım anahtarı → hedefler, gösterilecek rol)
       phase: { kind: 'night', n: 1 },
       done: {},      // faz anahtarı → { adımAnahtarı: olayId }
       used: {},      // "pid:etiket" → true (bir kez kullanılan yetenekler)

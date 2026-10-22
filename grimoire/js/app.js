@@ -53,11 +53,11 @@ function onState(st, last) {
 }
 
 // ================= KURULUM =================
-const W = { step: 1, script: null, names: [], picked: [], assign: {}, believed: {}, sides: null, rh: null, bluffs: [] };
+const W = { step: 1, script: null, names: [], picked: [], assign: {}, believed: {}, sides: null, rh: null, bluffs: [], prep: {} };
 
 function startSetup() {
   closeSheet();
-  Object.assign(W, { step: 1, script: null, picked: [], assign: {}, believed: {}, sides: null, rh: null, bluffs: [] });
+  Object.assign(W, { step: 1, script: null, picked: [], assign: {}, believed: {}, sides: null, rh: null, bluffs: [], prep: {} });
   try { W.names = JSON.parse(localStorage.getItem('tg-grim-names')) || []; } catch (e) { W.names = []; }
   show('setup'); renderSetup();
 }
@@ -145,8 +145,9 @@ function renderSetup() {
         <div class="chips">${pool.map(id => roleChip(id, { on: W.bluffs.includes(id), attr: `data-bluff="${id}"` })).join('')}</div>
         <div class="nav-row"><button class="btn" data-act="bluffRand">🎲 Rastgele 3</button></div>`;
     }
-    if (!hasFT && !hasDemon) html += `<p class="muted">Bu rollerde ön hazırlık gerekmiyor.</p>`;
-    html += `<p class="muted small">Diğer roller için Kütüphaneci, Çamaşırcı gibi bilgileri gece sırasında kendi adımlarında seçersin.</p>
+    html += prepHTML();
+    if (!hasFT && !hasDemon && !prepOwners().length) html += `<p class="muted">Bu rollerde ön hazırlık gerekmiyor.</p>`;
+    html += `
       <div class="nav-row"><button class="btn" data-go="4">Geri</button><button class="btn primary" data-go="6">Devam</button></div>`;
   }
 
@@ -171,6 +172,60 @@ function renderSetup() {
   }
 }
 
+// İlk gece bilgisi gece başlamadan hazırlanabilen roller
+const PREP = {
+  washerwoman: { n: 2, team: 'townsfolk', pick: true, hint: 'Kasabalı + bir yanlış oyuncu' },
+  librarian: { n: 2, team: 'outsider', pick: true, hint: 'Yabancı + bir yanlış oyuncu' },
+  investigator: { n: 2, team: 'minion', pick: true, hint: 'Minyon + bir yanlış oyuncu' },
+  grandmother: { n: 1, kind: 'good', hint: 'Torun: iyi bir oyuncu' },
+  steward: { n: 1, kind: 'good', hint: 'İyi bir oyuncu' },
+  noble: { n: 3, kind: 'noble', hint: '3 oyuncu, tam olarak 1\'i kötü' },
+  knight: { n: 2, kind: 'knight', hint: '2 oyuncu, İblis değil' },
+};
+const prepOwners = () => W.names.flatMap(nm => [...new Set([W.assign[nm], W.believed[nm]])].filter(id => PREP[id])
+  .map(id => ({ id, nm, key: id + ':p' + W.names.indexOf(nm), fake: id !== W.assign[nm] })));
+const teamOf = nm => role(W.assign[nm]).team, isGoodNm = nm => ['townsfolk', 'outsider'].includes(teamOf(nm));
+function suggestPrep(o) {
+  const k = PREP[o.id], others = W.names.filter(n => n !== o.nm), one = arr => arr[Math.floor(Math.random() * arr.length)];
+  if (k.team) {
+    const real = others.filter(n => teamOf(n) === k.team); if (!real.length) return { t: [], pick: null };
+    const x = one(real), y = one(others.filter(n => n !== x));
+    return { t: shuffle([x, y]), pick: W.assign[x] };
+  }
+  if (k.kind === 'good') return { t: [one(others.filter(isGoodNm))] };
+  if (k.kind === 'noble') { const e = one(others.filter(n => !isGoodNm(n))), g = shuffle(others.filter(n => isGoodNm(n))).slice(0, 2); return { t: shuffle([e, ...g]) }; }
+  return { t: shuffle(others.filter(n => teamOf(n) !== 'demon')).slice(0, 2) };
+}
+function prepWarn(o, v) {
+  const k = PREP[o.id]; if (o.fake || ['drunk', 'lunatic'].includes(W.assign[o.nm])) return '';
+  const t = v.t.filter(Boolean);
+  if (k.team) {
+    if (!W.names.some(n => n !== o.nm && teamOf(n) === k.team)) return 'Oyunda böyle rol yok: gece "0" göstereceksin.';
+    if (t.length < 2) return 'İki oyuncu seç.';
+    if (!t.some(n => teamOf(n) === k.team)) return 'Seçilenlerden biri ' + TEAM_TR[k.team].toLocaleLowerCase('tr') + ' olmalı.';
+    if (v.pick && !t.some(n => W.assign[n] === v.pick)) return 'Gösterilen rol seçilen oyunculardan birinin rolü olmalı.';
+    return '';
+  }
+  if (t.length < k.n) return k.n + ' oyuncu seç.';
+  if (t.includes(o.nm)) return 'Kendini seçemez.';
+  if (k.kind === 'good' && !isGoodNm(t[0])) return 'İyi bir oyuncu olmalı.';
+  if (k.kind === 'noble' && t.filter(n => !isGoodNm(n)).length !== 1) return 'Tam olarak 1 kötü olmalı.';
+  if (k.kind === 'knight' && t.some(n => teamOf(n) === 'demon')) return 'İblis olamaz.';
+  return '';
+}
+function prepHTML() {
+  const owners = prepOwners(); if (!owners.length) return '';
+  owners.forEach(o => { if (!W.prep[o.key]) W.prep[o.key] = suggestPrep(o); });
+  return `<h3>📋 İlk gece bilgileri</h3><p class="muted small">Gece sırasında sadece "göster" demen yeterli olur; burada seçtiklerin otomatik dolar.</p>` + owners.map(o => {
+    const k = PREP[o.id], v = W.prep[o.key], r = role(o.id), others = W.names.filter(n => n !== o.nm), w = prepWarn(o, v);
+    const noRole = k.team && !others.some(n => teamOf(n) === k.team);
+    const sel = noRole ? '' : Array.from({ length: k.n }, (_, i) => `<select data-prep="${o.key}" data-i="${i}"><option value="">—</option>${others.map(n => `<option ${v.t[i] === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`).join('');
+    const pk = k.pick && !noRole ? `<select data-prepick="${o.key}"><option value="">Gösterilen rol</option>${[...new Set(v.t.filter(Boolean).map(n => W.assign[n]))].map(id => `<option value="${id}" ${v.pick === id ? 'selected' : ''}>${esc(role(id).name)}</option>`).join('')}</select>` : '';
+    return `<div class="prep t-${r.team}"><div class="prep-h"><img src="${iconUrl(o.id)}" alt="" onerror="this.style.visibility='hidden'"><b>${esc(r.name)}</b><span>${esc(o.nm)}${o.fake ? ' <em>(sanıyor)</em>' : ''}</span><button class="btn small" data-act="prepRand" data-k="${o.key}">🎲</button></div>
+      <p class="muted small">${esc(k.hint)}</p><div class="prep-sel">${sel}${pk}</div>${w ? `<p class="warn">${esc(w)}</p>` : ''}</div>`;
+  }).join('');
+}
+
 function sidesEditor(sd) {
   const lbl = { top: 'Üst', right: 'Sağ', bottom: 'Alt', left: 'Sol' };
   return `<div class="sides"><div class="sides-box">${['top', 'right', 'bottom', 'left'].map(k =>
@@ -185,7 +240,7 @@ $('setup').addEventListener('click', e => {
     const to = +b.dataset.go;
     if (to === 3 && W.step === 2) { localStorage.setItem('tg-grim-names', JSON.stringify(W.names)); W.picked = W.picked.filter(id => W.script.roles.includes(id)); }
     if (to === 4 && W.step === 3) assignRandom();
-    if (to === 5) W.bluffs = W.bluffs.filter(id => !W.picked.includes(id));
+    if (to === 5) { W.bluffs = W.bluffs.filter(id => !W.picked.includes(id)); if (W.step === 4) W.prep = {}; }
     W.step = to; return renderSetup();
   }
   if (b.dataset.pick) {
@@ -202,6 +257,7 @@ $('setup').addEventListener('click', e => {
     W.bluffs = shuffle(W.script.roles.filter(id => ['townsfolk', 'outsider'].includes(role(id).team) && !W.picked.includes(id))).slice(0, 3);
     return renderSetup();
   }
+  if (b.dataset.act === 'prepRand') { const o = prepOwners().find(x => x.key === b.dataset.k); if (o) W.prep[o.key] = suggestPrep(o); return renderSetup(); }
   if (b.dataset.act === 'rhRand') { W.rh = null; return renderSetup(); }
   if (b.dataset.side) { W.sides[b.dataset.side] = Math.max(0, W.sides[b.dataset.side] + +b.dataset.d); return renderSetup(); }
   if (b.dataset.act === 'randRoles') { randomRoles(); return renderSetup(); }
@@ -228,6 +284,12 @@ $('setup').addEventListener('change', e => {
     renderSetup();
   }
   if (s.id === 'rhSel') { W.rh = s.value; }
+  if (s.dataset.prep) {
+    const o = prepOwners().find(x => x.key === s.dataset.prep), v = W.prep[s.dataset.prep]; v.t[+s.dataset.i] = s.value;
+    if (PREP[o.id].pick && !v.t.some(n => n && W.assign[n] === v.pick)) { const x = v.t.find(n => n && teamOf(n) === PREP[o.id].team); v.pick = x ? W.assign[x] : null; }
+    renderSetup();
+  }
+  if (s.dataset.prepick) { W.prep[s.dataset.prepick].pick = s.value || null; renderSetup(); }
   if (s.dataset.believe) { W.believed[s.dataset.believe] = s.value || undefined; renderSetup(); }
 });
 
@@ -274,7 +336,8 @@ function assignRandom() {
 function beginGame() {
   const players = W.names.map((nm, i) => ({ id: 'p' + i, name: nm, role: W.assign[nm], believed: W.believed[nm] || null,
     rem: W.picked.includes('fortuneteller') && nm === W.rh ? [{ role: 'fortuneteller', text: 'Red Herring' }] : [] }));
-  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides }, bluffs: W.bluffs.filter(id => !W.picked.includes(id)) };
+  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides }, bluffs: W.bluffs.filter(id => !W.picked.includes(id)),
+    prep: Object.fromEntries(prepOwners().map(o => [o.key, { targets: (W.prep[o.key]?.t || []).filter(Boolean).map(n => 'p' + W.names.indexOf(n)), pick: W.prep[o.key]?.pick || null }])) };
   edit = true;
   store.reset(true);
   store.dispatch('start', data);
@@ -364,10 +427,20 @@ function badges(p, sz) {
   }).join('');
 }
 
+function prefill() {
+  if (S.phase.kind !== 'night' || S.phase.n !== 1 || edit) return;
+  const c = curStep(), st = c?.step;
+  if (!st || c.done[st.key] || st.special || NS.pre === st.key) return;
+  NS.pre = st.key;
+  const pp = S.prep?.[st.key];
+  if (pp && !NS.targets.length) { NS.targets = pp.targets.filter(id => P(id) && !P(id).gone); NS.pick = pp.pick || null; }
+}
+
 function renderBoard() {
   const W0 = board.clientWidth, H0 = board.clientHeight;
   if (!W0 || !H0) return;
   L = layout(W0, H0, S.sides);
+  prefill();
   const { S: sz, table: t } = L;
   const c = S.phase.kind === 'night' ? curStep() : null;
   const tg = targeting();
