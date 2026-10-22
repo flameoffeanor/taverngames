@@ -436,6 +436,34 @@ function prefill() {
   if (pp && !NS.targets.length) { NS.targets = pp.targets.filter(id => P(id) && !P(id).gone); NS.pick = pp.pick || null; }
 }
 
+// Hatırlatıcılar: jetonun masa ortasına bakan tarafında, okunur haplar halinde (3-4 tane de olsa sığar)
+function pillItems(p) {
+  const its = [];
+  if (p.believed) its.push({ role: p.believed, text: 'Sanıyor: ' + role(p.believed).name, cls: 'b-bel' });
+  p.reminders.forEach(r => its.push({ role: r.role, text: remTr(r.text), cls: r.tag ? 'b-' + r.tag : '' }));
+  if (its.length > 4) { const more = its.length - 3; its.length = 3; its.push({ text: '+' + more + ' daha', cls: 'b-more' }); }
+  return its;
+}
+function remPills(W0, H0, t, sz) {
+  const fs = Math.max(11, Math.min(14, sz * 0.19)), hP = fs * 1.75 + 3;
+  const stacks = S.seats.map((pid, i) => { const p = P(pid); return p ? { pid, i, its: pillItems(p), side: sideOfSeat(i, S.sides) } : null; }).filter(s => s && s.its.length);
+  const hOf = s => s.its.length * hP;
+  const topH = Math.max(0, ...stacks.filter(s => s.side === 'top').map(hOf)), botH = Math.max(0, ...stacks.filter(s => s.side === 'bottom').map(hOf));
+  return stacks.map(s => {
+    const seat = L.seats[s.i], h = hOf(s), vertical = s.side === 'left' || s.side === 'right';
+    let css;
+    if (vertical) {
+      const cy = Math.min(Math.max(seat.y, t.y + topH + h / 2 + 6), t.y + t.h - botH - h / 2 - 6);
+      css = (s.side === 'left' ? `left:${t.x + 4}px;align-items:flex-start;` : `right:${W0 - (t.x + t.w) + 4}px;align-items:flex-end;`) + `top:${cy - h / 2}px;max-width:${Math.max(84, t.w / 2 - 8)}px`;
+    } else {
+      const w = sz * 1.7, cx = Math.min(Math.max(seat.x, t.x + w / 2 + 2), t.x + t.w - w / 2 - 2);
+      css = `left:${cx - w / 2}px;width:${w}px;align-items:center;` + (s.side === 'top' ? `top:${t.y + 4}px` : `bottom:${H0 - (t.y + t.h) + 4}px`);
+    }
+    return `<div class="rps" data-pid="${s.pid}" style="font-size:${fs}px;${css}">${s.its.map(it =>
+      `<div class="rp ${it.cls}" data-pid="${s.pid}">${it.role ? `<img src="${iconUrl(it.role)}" alt="" onerror="this.remove()">` : ''}<span>${esc(it.text)}</span></div>`).join('')}</div>`;
+  }).join('');
+}
+
 function renderBoard() {
   const W0 = board.clientWidth, H0 = board.clientHeight;
   if (!W0 || !H0) return;
@@ -459,12 +487,12 @@ function renderBoard() {
       style="left:${seat.x}px;top:${seat.y}px;--s:${sz}px">
       <div class="disc"><img class="ic" src="${iconUrl(p.role)}" alt="" draggable="false" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ini',textContent:${JSON.stringify(r.name.slice(0, 2))}}))">
         ${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}
-        ${badges(p, sz)}
         ${ti >= 0 ? `<i class="tnum">${ti + 1}</i>` : ''}
       </div>
       <div class="rn">${esc(r.name)}${evilGood ? ' ☠' : ''}</div>
       <div class="pn">${esc(p.name)}</div></div>`;
   });
+  html += remPills(W0, H0, t, sz);
   board.innerHTML = html;
   renderPanel(c);
 }
@@ -551,6 +579,7 @@ function stepHTML(step, done) {
   const ex = [];
   if (cfg.pickRole) ex.push(`<button class="btn small" data-c="pick">${NS.pick ? '🎭 ' + esc(role(NS.pick).name) : '🎭 Gösterilen rol'}</button>`);
   if (NS.targets.length) ex.push(`<button class="btn small" data-c="rem">🔖 Not ekle</button>`);
+  ex.push(`<button class="btn small" data-c="showtok">🎭 Token göster${NS.pick ? ': ' + esc(role(NS.pick).name) : ''}</button>`);
   if (cfg.effect === 'sailor') ex.push(`<label class="tgl"><input type="checkbox" data-c="sailor" ${NS.sailorSelf ? 'checked' : ''}> Denizci kendisi sarhoş</label>`);
   if ((cfg.effect || cfg.demon) && broken.length) ex.push(`<label class="tgl"><input type="checkbox" data-c="apply" ${NS.apply ? 'checked' : ''}> Yine de uygula</label>`);
   if (ex.length) h += `<div class="extras">${ex.join('')}</div>`;
@@ -567,7 +596,9 @@ function dayHTML() {
     const list = seated().slice().sort((x, y) => (x.dead - y.dead)).map(p => `<button class="row-btn${p.dead ? ' skip' : ''}" data-c="execp" data-pid="${p.id}"><b>${esc(p.name)}</b><small>${esc(role(p.role).name)}${p.dead ? ' · ölü' : ''}</small></button>`).join('');
     return `<div class="cc fixed"><div class="cc-top"><h3>İdam / sürgün</h3><p class="muted">Masadan dokun ya da listeden seç</p></div><div class="cc-body"><div class="list">${list}</div></div><div class="cc-foot"><button class="btn" data-c="cancel">Vazgeç</button></div></div>`;
   }
-  return `<div class="cc"><h3>☀ ${store.phaseLabel(S.phase)}</h3>
+  const moons = S.players.filter(p => p.role === 'moonchild' && p.dead && !S.used[p.id + ':moonchild']);
+  const moonH = moons.map(p => { const br = night.ctx(S, role).broken(p); return `<div class="note">☾ ${esc(role('moonchild').name)} ${esc(p.name)} öldü. Ölümü açıklandıktan sonra herkesin önünde bir oyuncu seçer.${br.length ? ' ⚠ ' + esc(br.map(b => b.kind).join(', ')) + ': yeteneği çalışmaz.' : ''}</div><button class="btn" data-c="moonpick" data-pid="${p.id}">☾ Hedefi seç</button>`; }).join('');
+  return `<div class="cc"><h3>☀ ${store.phaseLabel(S.phase)}</h3>${moonH}
     <div class="stats"><div><b>${alive}</b><small>yaşıyor</small></div><div><b>${votes}</b><small>oy</small></div><div><b>${Math.ceil(alive / 2)}</b><small>idam için</small></div></div>
     ${ex ? `<p class="ok">⚖ İdam edildi: ${esc(P(ex).name)}</p>` : `<button class="btn big danger" data-c="exec">⚖ İdam / sürgün</button>`}
     <button class="btn primary big" data-c="toNight">☾ ${store.phaseLabel({ kind: 'night', n: S.phase.n + 1 })}'e geç</button></div>`;
@@ -619,6 +650,8 @@ function toggleTarget(pid) {
 pager.addEventListener('click', e => {
   const m = e.target.closest('[data-mk]'); if (m) return showMarker(m.dataset.mk);
   const b = e.target.closest('[data-c]');
+  const rp = e.target.closest('.rp');
+  if (rp && !b) { if (noClick) return; return tapToken(rp.dataset.pid); }
   const tok = e.target.closest('.tok');
   if (tok && !b) { if (noClick) return; return tapToken(tok.dataset.pid); }
   if (!b || b.tagName === 'INPUT') return;
@@ -626,6 +659,8 @@ pager.addEventListener('click', e => {
   const go = k => { NS.cur = k; Object.assign(NS, { targets: [], pick: null, apply: null, sailorSelf: false }); renderBoard(); };
   if (a === 'editDone') { edit = false; applyLayout(); renderBoard(); goPane(1); return; }
   if (a === 'topanel') return goPane(1);
+  if (a === 'showtok') return NS.pick ? showToken(NS.pick) : pickAndShowToken();
+  if (a === 'moonpick') return moonPick(b.dataset.pid);
   if (a === 'tgt') return toggleTarget(b.dataset.pid);
   if (a === 'prev' || a === 'next') { const i = c.steps.indexOf(c.step) + (a === 'prev' ? -1 : 1); if (i < 0) return; return go(c.steps[Math.min(i, c.steps.length - 1)]?.key || null); }
   if (a === 'list') return openSteps();
@@ -645,6 +680,20 @@ pager.addEventListener('change', e => {
   if (a === 'apply') NS.apply = e.target.checked;
   if (a === 'sailor') NS.sailorSelf = e.target.checked;
 });
+
+function moonPick(mid) {
+  const m = P(mid);
+  sheet(`<div class="sh-head"><h3>${esc(role('moonchild').name)}: kimi seçti?</h3><button class="ib" data-act="close">✕</button></div>
+    <div class="list">${seated().filter(q => !q.dead && q.id !== mid).map(q => `<button class="row-btn" data-k="${q.id}"><b>${esc(q.name)}</b><small>${esc(role(q.role).name)}</small></button>`).join('')}</div>`);
+  $('sheetBody').onclick = e => {
+    const b = e.target.closest('[data-k]'); if (!b) return;
+    const tid = b.dataset.k, t = P(tid), br = night.ctx(S, role).broken(m);
+    const effects = [{ type: 'remAdd', p: tid, rid: store.newId(), role: 'moonchild', text: role('moonchild').name + ' hedefi', tag: 'moonkill', src: mid, exp: null }, { type: 'use', key: mid + ':moonchild' }];
+    const go = () => { const ev = store.dispatch('act', { step: 'moon:' + mid, role: 'moonchild', actor: mid, targets: [tid], broken: br.map(x => x.kind), applied: !br.length, effects }); closeSheet(); toast(describe(ev, S).replace(/<[^>]+>/g, ''), ev.id); };
+    if (br.length) confirmBox('Yeteneği çalışmıyor', `${esc(m.name)} ${esc(br.map(x => x.kind).join(', ').toLocaleLowerCase('tr'))}. Yine de ${esc(t.name)} hedef olarak işaretlensin mi? Gece adımında yine sen karar verirsin.`, 'İşaretle', go);
+    else go();
+  };
+}
 
 function nextPhase() {
   const next = S.phase.kind === 'night' ? { kind: 'day', n: S.phase.n } : { kind: 'night', n: S.phase.n + 1 };
@@ -688,6 +737,12 @@ function showCard(title, roles = [], sub = '') {
   el.hidden = false;
 }
 $('show').addEventListener('click', () => { $('show').hidden = true; });
+function showToken(id) {
+  const el = $('show'), r = role(id);
+  el.innerHTML = `<div class="tokonly t-${r.team}"><img src="${iconUrl(id)}" alt="" onerror="this.style.visibility='hidden'"><span>${esc(r.name)}</span></div>`;
+  el.hidden = false;
+}
+function pickAndShowToken() { pickRole('Hangi token gösterilsin?', id => { closeSheet(); showToken(id); }, closeSheet); }
 function showMarker(w) {
   const m = MARK[w.toUpperCase()], c = S.phase.kind === 'night' ? curStep() : null, st = c?.step;
   const t = m ? m.t : w;
@@ -829,12 +884,14 @@ function openPlayer(pid) {
         ${br.map(b => `<div class="note">⚠ ${esc(b.kind)}</div>`).join('')}</div>
         <button class="ib" data-act="close">✕</button></div>
       <p class="ability">${esc(r.ability) || '<span class="muted">Yetenek metni yok.</span>'}</p>
-      ${p.reminders.length ? `<div class="rem-list">${p.reminders.map(x =>
-        `<button class="rem big${x.tag ? ' tg-' + x.tag : ''}" data-rdel="${x.id}">${x.role ? `<img src="${iconUrl(x.role)}" alt="" onerror="this.remove()">` : ''}${esc(remTr(x.text))}${x.src ? ` <small>(${esc(P(x.src)?.name || '')})</small>` : ''} ✕</button>`).join('')}</div>` : ''}
+      ${p.reminders.length ? `<h4>Hatırlatıcılar</h4><div class="rem-rows">${p.reminders.map(x =>
+        `<div class="rem-row${x.tag ? ' tg-' + x.tag : ''}">${x.role ? `<img src="${iconUrl(x.role)}" alt="" onerror="this.remove()">` : ''}<span>${esc(remTr(x.text))}${x.src ? ` <small>(${esc(P(x.src)?.name || '')})</small>` : ''}</span><button class="btn small danger" data-rdel="${x.id}">✕ Kaldır</button></div>`).join('')}</div>` : ''}
       <div class="grid2">
         ${p.dead ? `<button class="btn" data-p="revive">Dirilt</button><button class="btn ${p.ghost ? '' : 'off'}" data-p="ghost">${p.ghost ? 'Ölü oyunu kullandı' : 'Ölü oyunu geri ver'}</button>`
           : `${day ? `<button class="btn danger" data-p="exec">${trav ? 'Sürgün et' : '⚖ İdam et'}</button>` : ''}<button class="btn danger" data-p="die">☠ Öldü</button>`}
-        <button class="btn" data-p="remAdd">🔖 Hatırlatıcı</button>
+        <button class="btn" data-p="showown">🎭 Tokeni göster</button>
+        <button class="btn" data-p="showany">🎭 Başka rol göster</button>
+        <button class="btn" data-p="remAdd">🔖 Hatırlatıcı ekle</button>
         <button class="btn" data-p="role">Rolü değiştir</button>
         <button class="btn" data-p="believed">Sandığı rol${p.believed ? ' ✓' : ''}</button>
         <button class="btn" data-p="align">${evil ? 'İyi yap' : 'Kötü yap'}</button>
@@ -844,6 +901,8 @@ function openPlayer(pid) {
       const b = e.target.closest('[data-p],[data-rdel]'); if (!b) return;
       const k = b.dataset.p;
       if (b.dataset.rdel) { const x = p.reminders.find(r => r.id === b.dataset.rdel); return act('remDel', { p: pid, rid: x.id, text: x.text }, `${p.name}: ${remTr(x.text)} kaldırıldı`); }
+      if (k === 'showown') { closeSheet(); return showToken(p.believed || p.role); }
+      if (k === 'showany') return pickRole('Hangi token gösterilsin?', id => { closeSheet(); showToken(id); }, render);
       if (k === 'exec') return execute(pid);
       if (k === 'die') return confirmBox('Öldü mü?', `<b>${esc(p.name)}</b> (${esc(r.name)}) ölü olarak işaretlenecek.`, '☠ Öldü', () => { act('die', { p: pid, cause: 'manual' }, `${p.name} öldü`); if (!showTriggers([{ p: pid, cause: 'manual' }])) render(); }, true);
       if (k === 'revive') return confirmBox('Diriltilsin mi?', `<b>${esc(p.name)}</b> yeniden canlanacak.`, 'Dirilt', () => { act('revive', { p: pid }, `${p.name} dirildi`); render(); });
@@ -981,7 +1040,7 @@ function openBluffs() {
 }
 
 // ---- kayıt (log) ----
-const CAUSE = { demon: 'İblis tarafından öldürüldü', execution: 'idam edildi', exile: 'sürgün edildi', fanggu: 'Fang Gu atlamasıyla öldü', starpass: 'İblis devri için öldü', grandmother: 'torunu öldüğü için öldü', manual: 'öldü' };
+const CAUSE = { demon: 'İblis tarafından öldürüldü', execution: 'idam edildi', exile: 'sürgün edildi', fanggu: 'Fang Gu atlamasıyla öldü', starpass: 'İblis devri için öldü', grandmother: 'torunu öldüğü için öldü', moonchild: 'Ay Çocuğu hedefi olarak öldü', manual: 'öldü' };
 function describe(ev, st) {
   const n = id => pname(st, id);
   const pr = id => { const p = st?.players.find(q => q.id === id); return p ? `${esc(p.name)} (${rname(p.role)})` : '?'; };

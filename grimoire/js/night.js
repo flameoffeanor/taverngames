@@ -24,6 +24,7 @@ export const CFG = {
   devilsadvocate: { targets: [1, 1], alive: true, effect: 'safe' },
   scarletwoman: { targets: [0, 0] },
   harpy: { targets: [2, 2], effect: 'mad' },
+  moonchild: { targets: [0, 0], effect: 'moonkill' },   // hedefi gündüz seçilir; gece sadece sonucu uygulanır
   imp: { targets: [1, 1], effect: 'kill', demon: true },
   po: { targets: [0, 3], effect: 'kill', demon: true },
   fanggu: { targets: [1, 1], effect: 'kill', demon: true },
@@ -121,6 +122,7 @@ export function nightSteps(S, D, role) {
     // bu rolde uyanacak oyuncular
     const ps = S.players.filter(p => !p.gone && (p.role === id && !WAKES_AS[p.role] || (WAKES_AS[p.role] && p.believed === id)));
     for (const p of ps) {
+      if (id === 'moonchild' && !S.players.some(q => q.reminders.some(x => x.tag === 'moonkill' && x.src === p.id))) continue;   // hedef seçilmediyse adım yok
       const r = role(id);
       const text = first ? r.first : r.other;
       if (!text) continue;
@@ -216,6 +218,12 @@ export function stepNotes(step, S, role, targets, pick) {
       if (!br.length && pick && role(pick).team !== tm) notes.push(`${RN(role, pick)} bir ${TR.toLocaleLowerCase('tr')} değil.`);
       break;
     }
+    case 'moonchild': {
+      S.players.forEach(q => q.reminders.filter(x => x.tag === 'moonkill' && x.src === p.id).forEach(() => {
+        info.push(c.isEvil(q) ? `Hedef: ${q.name} kötü: ölmez.` : q.dead ? `Hedef: ${q.name} zaten ölü.` : `Hedef: ${q.name} iyi: bu gece ölür. Onayla → ölür.`);
+      }));
+      break;
+    }
     case 'monk': if (targets.includes(p.id)) notes.push(`${RN(role,'monk')} kendini seçemez.`); break;
     case 'devilsadvocate': {
       const last = lastTargets(S, step.key);
@@ -272,6 +280,10 @@ export function buildEffects(step, S, role, targets, opts, newId) {
     case 'master': targets.forEach(t => rem(t, 'Efendi', null, nextNight)); break;
     case 'sailor': rem(opts.sailorSelf ? p.id : targets[0], 'Sarhoş', 'drunk', nextNight); break;
     case 'host': targets.forEach(t => rem(t, 'Konak', 'host', null)); break;
+    case 'moonkill': S.players.forEach(q => q.reminders.filter(x => x.tag === 'moonkill' && x.src === p.id).forEach(x => {
+      effs.push({ type: 'remDel', p: q.id, rid: x.id, text: x.text });
+      if (!q.dead && !c.isEvil(q)) effs.push({ type: 'die', p: q.id, cause: 'moonchild', by: p.id });
+    })); break;
     case 'revive': if (targets[0]) { effs.push({ type: 'use', key: p.id + ':professor' }); if (role(c.P(targets[0]).role).team === 'townsfolk') effs.push({ type: 'revive', p: targets[0] }); } break;
   }
   return effs;
@@ -285,7 +297,7 @@ export function deathTriggers(S, role, pid, cause) {
   const r = p.role, night = S.phase.kind === 'night';
   const alive = S.players.filter(q => !q.dead).length;
   if (r === 'ravenkeeper' && night) out.push({ text: `${p.name} ${RN(role,'ravenkeeper')}: bu gece uyanıp bir oyuncu seçecek.` });
-  if (r === 'moonchild') out.push({ text: `${p.name} ${RN(role,'moonchild')}: bir oyuncu seçecek; iyi ise o oyuncu bu gece ölür.` });
+  if (r === 'moonchild') out.push({ text: `${p.name} ${RN(role,'moonchild')} öldü. Ölümü açıklanınca GÜNDÜZ herkesin önünde bir oyuncu seçer (Gündüz panelinde "Hedefi seç"). Seçilen iyiyse sonraki gece ölür.`, strong: true });
   if (r === 'klutz') out.push({ text: `${p.name} ${RN(role,'klutz')}: hemen yaşayan bir oyuncu seçmeli; kötü seçerse kendi takımı kaybeder.` });
   if (r === 'saint' && cause === 'execution') out.push({ text: `${p.name} ${RN(role,'saint')} idam edildi: iyi takım kaybeder (zehirli/sarhoş değilse).`, strong: true });
   if (role(r).team === 'demon' && cause !== 'fanggu' && cause !== 'starpass') {
