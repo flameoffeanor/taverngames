@@ -11,7 +11,7 @@ import { phaseIdx, phaseKey } from './store.js';
 export const CFG = {
   // Tavern'in Spesyali
   librarian: { info: true, targets: [0, 2], pickRole: true },
-  grandmother: { targets: [1, 1], effect: 'grandchild', first: true },
+  grandmother: { targets: [0, 0], first: { targets: [1, 1], effect: 'grandchild' } },   // torunu sadece ilk gece seçer
   fortuneteller: { info: true, targets: [2, 2] },
   empath: { info: true, targets: [0, 0] },
   monk: { targets: [1, 1], notSelf: true, effect: 'protect' },
@@ -95,7 +95,7 @@ const RN = (role, id) => role(id).name;
 // ---- gece adımları ----
 // Sarhoş/Deli kendini sandığı rolün sırasında uyanır.
 const WAKES_AS = { drunk: true, lunatic: true, marionette: true };
-const DEAD_WAKE = new Set(['ravenkeeper', 'sage', 'moonchild', 'klutz', 'banshee', 'barber', 'sweetheart', 'plaguedoctor', 'grandmother', 'scarletwoman']);
+const DEAD_WAKE = new Set(['ravenkeeper', 'sage', 'moonchild', 'klutz', 'banshee', 'barber', 'sweetheart', 'plaguedoctor', 'scarletwoman']);
 
 export function nightSteps(S, D, role) {
   const first = S.phase.n === 1;
@@ -126,7 +126,8 @@ export function nightSteps(S, D, role) {
       if (!text) continue;
       if (changed.has(p.id) && p.role === id && !(S.done[nKey] || {})[id + ':' + p.id]) continue;
       const deadBefore = p.dead && !diedTonight.has(p.id);
-      steps.push({ key: id + ':' + p.id, role: id, pid: p.id, text, skipDead: deadBefore && !DEAD_WAKE.has(id) });
+      if (deadBefore && !DEAD_WAKE.has(id)) continue;   // ölü oyuncu uyanmaz: sıradan tamamen çıkar
+      steps.push({ key: id + ':' + p.id, role: id, pid: p.id, text });
     }
   }
   return steps;

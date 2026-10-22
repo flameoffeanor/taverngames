@@ -411,7 +411,10 @@ function dayHTML() {
   const alive = seated().filter(p => !p.dead).length;
   const votes = seated().filter(p => !p.dead || p.ghost).length;
   const ex = S.executed[store.phaseKey(S.phase)];
-  if (DS.mode === 'exec') return `<div class="cc"><h3>İdam / sürgün</h3><p>Oyuncuya dokun.</p><button class="btn" data-c="cancel">Vazgeç</button></div>`;
+  if (DS.mode === 'exec') {
+    const list = seated().slice().sort((x, y) => (x.dead - y.dead)).map(p => `<button class="row-btn${p.dead ? ' skip' : ''}" data-c="execp" data-pid="${p.id}"><b>${esc(p.name)}</b><small>${esc(role(p.role).name)}${p.dead ? ' · ölü' : ''}</small></button>`).join('');
+    return `<div class="cc fixed"><div class="cc-top"><h3>İdam / sürgün</h3><p class="muted">Masadan dokun ya da listeden seç</p></div><div class="cc-body"><div class="list">${list}</div></div><div class="cc-foot"><button class="btn" data-c="cancel">Vazgeç</button></div></div>`;
+  }
   return `<div class="cc"><h3>☀ ${store.phaseLabel(S.phase)}</h3>
     <div class="stats"><div><b>${alive}</b><small>yaşıyor</small></div><div><b>${votes}</b><small>oy</small></div><div><b>${Math.ceil(alive / 2)}</b><small>idam için</small></div></div>
     ${ex ? `<p class="ok">⚖ İdam edildi: ${esc(P(ex).name)}</p>` : `<button class="btn big danger" data-c="exec">⚖ İdam / sürgün</button>`}
@@ -466,6 +469,7 @@ board.addEventListener('click', e => {
   if (a === 'toDay' || a === 'toNight') return nextPhase();
   if (a === 'exec') { DS.mode = 'exec'; renderBoard(); return; }
   if (a === 'cancel') { DS.mode = null; renderBoard(); return; }
+  if (a === 'execp') return execute(b.dataset.pid);
   if (a === 'skip') return confirmStep(true);
   if (a === 'ok') return confirmStep(false);
   if (a === 'redo') { const k = c.done[NS.cur]; if (k) store.undoTo(k); return; }
@@ -583,7 +587,7 @@ function confirmStep(skip) {
   const effects = night.buildEffects(step, S, role, targets, { apply: NS.apply, sailorSelf: NS.sailorSelf }, store.newId);
   const finish = (extra = []) => {
     const ev = store.dispatch('act', { ...data, effects: [...effects, ...extra] });
-    advance();
+    advance(); renderGame();
     toast(describe(ev, S).replace(/<[^>]+>/g, ''), ev.id);
     const deaths = [...effects, ...extra].filter(x => x.type === 'die');
     if (deaths.length) showTriggers(deaths);

@@ -211,7 +211,8 @@ h3.t-townsfolk,h3.t-outsider,h3.t-minion,h3.t-demon,h3.t-traveller,h4[class^=t-]
 .tgl input{width:auto}
 
 ​.toast{position:fixed;left:50%;top:calc(4px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;display:flex;gap:12px;align-items:center;background:#2a1d14;border:1px solid #5a3b2a;padding:8px 10px 8px 14px;width:max-content;max-width:min(92vw,520px);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.6);font-size:.88rem;max-width:calc(100% - 24px)}
-.toast button{color:var(--gold);font-weight:700;padding:4px 8px;white-space:nowrap}
+.toast{pointer-events:none}
+.toast button{pointer-events:auto;color:var(--gold);font-weight:700;padding:4px 8px;white-space:nowrap}
 
 @media (min-width:900px){.sheet{align-items:center}.sheet-body{border-radius:20px;border-bottom:1px solid var(--line)}}
 
