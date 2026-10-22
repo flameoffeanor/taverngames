@@ -20,7 +20,7 @@ export function sideOfSeat(i, sides) {
 
 const ROW = 1.62;   // disk + rol şeridi + isim şeridi, S cinsinden
 const LBL = 1.36;   // etiket genişliği, S cinsinden
-const CENTER_W = 210, CENTER_H = 230;
+const CENTER_W = 150, CENTER_H = 120;
 
 export function layout(W, H, sides) {
   const { top, right, bottom, left } = sides;

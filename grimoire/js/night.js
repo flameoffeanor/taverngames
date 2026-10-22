@@ -140,7 +140,7 @@ export function cfgFor(id, S) {
 }
 
 // Adım kartında gösterilecek uyarılar ve otomatik bilgi
-export function stepNotes(step, S, role, targets) {
+export function stepNotes(step, S, role, targets, pick) {
   const c = ctx(S, role), notes = [], info = [];
   if (step.special === 'minioninfo') {
     const dem = S.players.filter(p => c.team(p) === 'demon'), mins = S.players.filter(p => c.team(p) === 'minion');
@@ -201,6 +201,19 @@ export function stepNotes(step, S, role, targets) {
       const died = S.deaths.some(d => d.p === p.id && phaseKey(d.phase) === phaseKey(S.phase));
       if (!died) notes.push(`${RN(role,'ravenkeeper')} bu gece ölmedi; uyandırma.`);
       if (targets.length) info.push(`Göster: ${RN(role, c.P(targets[0]).role)}`);
+      break;
+    }
+    case 'washerwoman': case 'librarian': case 'investigator': {
+      const tm = { washerwoman: 'townsfolk', librarian: 'outsider', investigator: 'minion' }[step.role];
+      const TR = { townsfolk: 'Kasabalı', outsider: 'Yabancı', minion: 'Minyon' }[tm];
+      const real = S.players.filter(q => !q.gone && c.team(q) === tm);
+      info.push(real.length ? `Oyundaki ${TR.toLocaleLowerCase('tr')}lar: ${real.map(q => `${q.name} (${RN(role, q.role)})`).join(', ')}` : `Oyunda ${TR.toLocaleLowerCase('tr')} yok: "0" göster.`);
+      if (!br.length && targets.length) {
+        const ts = targets.map(c.P);
+        if (!ts.some(q => c.team(q) === tm)) notes.push(`Seçtiğin oyuncular arasında ${TR.toLocaleLowerCase('tr')} yok. Yeteneği çalışıyorsa ikisinden biri ${TR.toLocaleLowerCase('tr')} olmalı.`);
+        else if (pick && !ts.some(q => q.role === pick)) notes.push(`Gösterdiğin rol (${RN(role, pick)}) seçtiğin oyunculardan hiçbirinin rolü değil.`);
+      }
+      if (!br.length && pick && role(pick).team !== tm) notes.push(`${RN(role, pick)} bir ${TR.toLocaleLowerCase('tr')} değil.`);
       break;
     }
     case 'monk': if (targets.includes(p.id)) notes.push(`${RN(role,'monk')} kendini seçemez.`); break;

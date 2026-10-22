@@ -36,12 +36,13 @@
   <header class="bar">
     <button class="ib" data-act="menu" aria-label="Menü">☰</button>
     <button class="phase-btn" data-act="steps"><span id="phaseTxt"></span><small id="phaseSub"></small></button>
-    <div class="bar-r">
-      <button class="ib" data-act="undo" aria-label="Geri al" id="undoBtn">↶</button>
-      <button class="ib" data-act="log" aria-label="Kayıt">📜</button>
-    </div>
+    <div class="seg" id="seg"><button data-pg="0" class="on">Masa</button><button data-pg="1">Panel</button></div>
+    <button class="ib" data-act="undo" aria-label="Geri al" id="undoBtn">↶</button>
   </header>
-  <div id="board" class="board"></div>
+  <div id="pager" class="pager">
+    <section class="pane" id="pane1"><div id="board" class="board"></div></section>
+    <section class="pane" id="pane2"><div id="panel" class="panel"></div></section>
+  </div>
 </section>
 
 <div id="sheet" class="sheet" hidden><div class="sheet-bg" data-act="close"></div><div class="sheet-body" id="sheetBody"></div></div>

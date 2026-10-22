@@ -80,7 +80,8 @@ function apply(s, ev) {
     return {
       script: ev.script, scriptRoles: ev.scriptRoles, customRoles: ev.customRoles || {},
       players: ev.players.map(p => ({ id: p.id, name: p.name, role: p.role, believed: p.believed || null,
-        dead: false, ghost: true, reminders: [], evil: null })),
+        dead: false, ghost: true, evil: null,
+        reminders: (p.rem || []).map((r, i) => ({ id: 's' + p.id + i, role: r.role || null, text: r.text, tag: null, src: null, exp: null, at: { kind: 'night', n: 1 } })) })),
       seats: ev.players.map(p => p.id),
       sides: ev.sides,
       bluffs: ev.bluffs || [],

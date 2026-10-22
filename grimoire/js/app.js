@@ -14,7 +14,7 @@ const REM_TR = {
   Poisoned: 'Zehirli', Drunk: 'Sarhoş', Dead: 'Ölü', Protected: 'Korunuyor', Safe: 'Güvende',
   Used: 'Kullanıldı', 'No ability': 'Yeteneği yok', Mad: 'Deli', Townsfolk: 'Kasabalı',
   Outsider: 'Yabancı', Minion: 'Minyon', Demon: 'İblis', Wrong: 'Yanlış', Grandchild: 'Torun',
-  Executed: 'İdam edildi', Once: 'Bir kez',
+  Executed: 'İdam edildi', Once: 'Bir kez', 'Red Herring': 'Kırmızı ringa',
 };
 const remTr = t => REM_TR[t] || t;
 // Kendini başka rol sanan roller ve sandıkları rolün takımı
@@ -53,11 +53,11 @@ function onState(st, last) {
 }
 
 // ================= KURULUM =================
-const W = { step: 1, script: null, names: [], picked: [], assign: {}, believed: {}, sides: null };
+const W = { step: 1, script: null, names: [], picked: [], assign: {}, believed: {}, sides: null, rh: null, bluffs: [] };
 
 function startSetup() {
   closeSheet();
-  Object.assign(W, { step: 1, script: null, picked: [], assign: {}, believed: {}, sides: null });
+  Object.assign(W, { step: 1, script: null, picked: [], assign: {}, believed: {}, sides: null, rh: null, bluffs: [] });
   try { W.names = JSON.parse(localStorage.getItem('tg-grim-names')) || []; } catch (e) { W.names = []; }
   show('setup'); renderSetup();
 }
@@ -76,7 +76,7 @@ function roleChip(id, { on = false, attr = '' } = {}) {
 
 function renderSetup() {
   const el = $('setup');
-  const steps = ['Script', 'Oyuncular', 'Roller', 'Dağıtım', 'Masa'];
+  const steps = ['Script', 'Oyuncular', 'Roller', 'Dağıtım', 'Hazırlık', 'Masa'];
   let html = `<div class="setup-wrap"><div class="steps">${steps.map((s, i) => `<span class="${i + 1 === W.step ? 'cur' : i + 1 < W.step ? 'done' : ''}">${i + 1}. ${s}</span>`).join('')}</div>`;
   if (D.offline) html += `<p class="warn">İnternet yok: karakterler son kayıtlı kopyadan geldi.</p>`;
 
@@ -130,11 +130,32 @@ function renderSetup() {
   }
 
   if (W.step === 5) {
+    const good = W.names.filter(nm => ['townsfolk', 'outsider'].includes(role(W.assign[nm]).team));
+    const hasFT = W.picked.includes('fortuneteller'), hasDemon = W.picked.some(id => role(id).team === 'demon');
+    html += `<h2>Hazırlık</h2><p class="muted">Oyun başlamadan yapılması gerekenler. Gece sırasında uğraşmayasın diye şimdi seç.</p>`;
+    if (hasFT) {
+      if (!good.includes(W.rh)) W.rh = good.length ? good[Math.floor(Math.random() * good.length)] : null;
+      html += `<h3>🔖 ${rname('fortuneteller')}: Kırmızı ringa</h3><p class="muted small">İyi bir oyuncu. Ona bakınca ${rname('fortuneteller')} "Evet" görür.</p>
+        <div class="row-in"><select id="rhSel">${good.map(nm => `<option ${nm === W.rh ? 'selected' : ''}>${esc(nm)}</option>`).join('')}</select><button class="btn" data-act="rhRand">🎲</button></div>`;
+    }
+    if (hasDemon) {
+      const pool = W.script.roles.filter(id => ['townsfolk', 'outsider'].includes(role(id).team) && !W.picked.includes(id));
+      if (!W.bluffs.length) W.bluffs = shuffle(pool).slice(0, 3);
+      html += `<h3>🎭 İblis blöfleri <small class="muted">${W.bluffs.length}/3</small></h3><p class="muted small">Oyunda olmayan 3 iyi rol. İblise gösterilir.</p>
+        <div class="chips">${pool.map(id => roleChip(id, { on: W.bluffs.includes(id), attr: `data-bluff="${id}"` })).join('')}</div>
+        <div class="nav-row"><button class="btn" data-act="bluffRand">🎲 Rastgele 3</button></div>`;
+    }
+    if (!hasFT && !hasDemon) html += `<p class="muted">Bu rollerde ön hazırlık gerekmiyor.</p>`;
+    html += `<p class="muted small">Diğer roller için Kütüphaneci, Çamaşırcı gibi bilgileri gece sırasında kendi adımlarında seçersin.</p>
+      <div class="nav-row"><button class="btn" data-go="4">Geri</button><button class="btn primary" data-go="6">Devam</button></div>`;
+  }
+
+  if (W.step === 6) {
     const n = W.names.length; W.sides = W.sides || defaultSides(n, innerHeight >= innerWidth);
     const sum = Object.values(W.sides).reduce((a, b) => a + b, 0);
     html += `<h2>Masa</h2><p class="muted">Her kenarda kaç kişi oturuyor? Toplam ${n} olmalı.</p>${sidesEditor(W.sides)}
       <p class="${sum === n ? 'muted' : 'warn'}">Toplam: ${sum}/${n}</p>
-      <div class="nav-row"><button class="btn" data-go="4">Geri</button><button class="btn primary" data-act="begin" ${sum === n ? '' : 'disabled'}>Oyunu başlat</button></div>`;
+      <div class="nav-row"><button class="btn" data-go="5">Geri</button><button class="btn primary" data-act="begin" ${sum === n ? '' : 'disabled'}>Oyunu başlat</button></div>`;
   }
   el.innerHTML = html + '</div>';
 
@@ -164,6 +185,7 @@ $('setup').addEventListener('click', e => {
     const to = +b.dataset.go;
     if (to === 3 && W.step === 2) { localStorage.setItem('tg-grim-names', JSON.stringify(W.names)); W.picked = W.picked.filter(id => W.script.roles.includes(id)); }
     if (to === 4 && W.step === 3) assignRandom();
+    if (to === 5) W.bluffs = W.bluffs.filter(id => !W.picked.includes(id));
     W.step = to; return renderSetup();
   }
   if (b.dataset.pick) {
@@ -171,6 +193,16 @@ $('setup').addEventListener('click', e => {
     if (i >= 0) W.picked.splice(i, 1); else W.picked.push(id);
     return renderSetup();
   }
+  if (b.dataset.bluff) {
+    const id = b.dataset.bluff, i = W.bluffs.indexOf(id);
+    if (i >= 0) W.bluffs.splice(i, 1); else if (W.bluffs.length < 3) W.bluffs.push(id);
+    return renderSetup();
+  }
+  if (b.dataset.act === 'bluffRand') {
+    W.bluffs = shuffle(W.script.roles.filter(id => ['townsfolk', 'outsider'].includes(role(id).team) && !W.picked.includes(id))).slice(0, 3);
+    return renderSetup();
+  }
+  if (b.dataset.act === 'rhRand') { W.rh = null; return renderSetup(); }
   if (b.dataset.side) { W.sides[b.dataset.side] = Math.max(0, W.sides[b.dataset.side] + +b.dataset.d); return renderSetup(); }
   if (b.dataset.act === 'randRoles') { randomRoles(); return renderSetup(); }
   if (b.dataset.act === 'shuffle') { assignRandom(); return renderSetup(); }
@@ -195,6 +227,7 @@ $('setup').addEventListener('change', e => {
     W.assign[nm] = nr; delete W.believed[nm];
     renderSetup();
   }
+  if (s.id === 'rhSel') { W.rh = s.value; }
   if (s.dataset.believe) { W.believed[s.dataset.believe] = s.value || undefined; renderSetup(); }
 });
 
@@ -239,21 +272,38 @@ function assignRandom() {
 }
 
 function beginGame() {
-  const players = W.names.map((nm, i) => ({ id: 'p' + i, name: nm, role: W.assign[nm], believed: W.believed[nm] || null }));
-  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides } };
+  const players = W.names.map((nm, i) => ({ id: 'p' + i, name: nm, role: W.assign[nm], believed: W.believed[nm] || null,
+    rem: W.picked.includes('fortuneteller') && nm === W.rh ? [{ role: 'fortuneteller', text: 'Red Herring' }] : [] }));
+  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides }, bluffs: W.bluffs.filter(id => !W.picked.includes(id)) };
   edit = true;
   store.reset(true);
   store.dispatch('start', data);
 }
 
 // ================= OYUN =================
-function startGame() { mergeCustom(); show('game'); renderGame(); }
+function startGame() { mergeCustom(); show('game'); curPane = 0; pager.scrollTop = 0; renderGame(); }
 function mergeCustom() { if (S?.customRoles) for (const [k, v] of Object.entries(S.customRoles)) if (!D.roles[k]) D.roles[k] = v; }
 
 let L = null;                 // son yerleşim
 let edit = false;             // oturma düzeni düzenleme modu
-const board = $('board');
+const board = $('board'), panel = $('panel'), pager = $('pager');
 new ResizeObserver(() => { if (!$('game').hidden && S) renderBoard(); }).observe(board);
+
+// ---------- iki ekran: Masa / Panel ----------
+const splitPref = () => { try { return localStorage.getItem('tg-grim-split'); } catch (e) { return null; } };
+const splitOn = () => { const p = splitPref(); return p === 'on' || (p !== 'off' && innerWidth > innerHeight && innerWidth >= 900); };
+let curPane = 0;
+function applyLayout() {
+  const sp = splitOn();
+  if (pager.classList.contains('split') !== sp) pager.classList.toggle('split', sp);
+  pager.classList.toggle('editing', !!edit);
+  updSeg();
+}
+function updSeg() { document.querySelectorAll('#seg [data-pg]').forEach(b => b.classList.toggle('on', +b.dataset.pg === curPane)); }
+function goPane(i) { if (splitOn()) return; curPane = i; updSeg(); pager.scrollTo({ top: i * pager.clientHeight, behavior: 'smooth' }); }
+pager.addEventListener('scroll', () => { if (splitOn()) return; const i = pager.scrollTop > pager.clientHeight / 2 ? 1 : 0; if (i !== curPane) { curPane = i; updSeg(); } }, { passive: true });
+addEventListener('resize', () => { applyLayout(); if (!splitOn()) pager.scrollTop = curPane * pager.clientHeight; });
+
 
 // Anlık arayüz durumu (kaydedilmez)
 const NS = { phase: '', cur: null, targets: [], pick: null, apply: null, sailorSelf: false };
@@ -279,6 +329,7 @@ function renderGame() {
   $('undoBtn').disabled = store.getEvents().length <= 1;
   const pk = store.phaseKey(S.phase);
   if (NS.phase !== pk) { Object.assign(NS, { phase: pk, cur: null, targets: [], pick: null, apply: null, sailorSelf: false }); DS.mode = null; }
+  applyLayout();
   renderBoard();
   if (openPanel) openPanel();
 }
@@ -322,8 +373,7 @@ function renderBoard() {
   const tg = targeting();
   const actor = c?.step?.pid;
   const cx = night.ctx(S, role);
-  const fs = Math.max(14, Math.min(21, t.w / 21, t.h / 26));
-  let html = `<div class="tbl${edit ? ' editing' : ''}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px;--fs:${fs}px"><div class="stage" id="stage">${centerHTML(c)}</div></div>`;
+  let html = `<div class="tbl${edit ? ' editing' : ''}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px">${miniHTML(c)}</div>`;
   S.seats.forEach((pid, i) => {
     const p = P(pid), seat = L.seats[i]; if (!seat || !p) return;
     const r = role(p.role);
@@ -343,7 +393,30 @@ function renderBoard() {
       <div class="pn">${esc(p.name)}</div></div>`;
   });
   board.innerHTML = html;
-  document.documentElement.style.setProperty('--toast-y', (board.getBoundingClientRect().top + t.y + 6) + 'px');
+  renderPanel(c);
+}
+
+// masanın ortası: kısa özet (dokununca Panel'e geçer)
+function miniHTML(c) {
+  if (edit) return `<div class="mini"><b>Yerleri düzenle</b><small>Jetonu sürükleyip başka koltuğa bırak</small><button class="btn primary" data-c="editDone">✓ Bitti</button></div>`;
+  if (S.phase.kind === 'day') {
+    const alive = seated().filter(p => !p.dead).length, ex = S.executed[store.phaseKey(S.phase)];
+    return `<button class="mini" data-c="topanel"><b>☀ ${store.phaseLabel(S.phase)}</b><small>${alive} yaşıyor${ex ? ' · idam: ' + esc(P(ex).name) : ''}</small><small>Panel ▾</small></button>`;
+  }
+  const st = c?.step;
+  if (!st) return `<button class="mini" data-c="topanel"><b>Şafak</b><small>Gece bitti</small><small>Panel ▾</small></button>`;
+  const idx = c.steps.indexOf(st) + 1, name = st.role ? role(st.role).name : st.title, tg = NS.targets.map(t => P(t)?.name).filter(Boolean);
+  return `<button class="mini t-${st.role ? role(st.role).team : 'townsfolk'}">${st.role ? `<img src="${iconUrl(st.role)}" alt="" onerror="this.style.visibility='hidden'">` : ''}<b>${esc(name)}</b>
+    <small>${st.pid ? esc(P(st.pid).name) + ' · ' : ''}${idx}/${c.steps.length}</small>${tg.length ? `<small>→ ${esc(tg.join(', '))}</small>` : ''}<small data-c="topanel">Panel ▾</small></button>`;
+}
+
+let panelKey = '';
+function renderPanel(c) {
+  const key = [store.phaseKey(S.phase), NS.cur, DS.mode, edit, S.log.length].join('|');
+  const old = panel.querySelector('.cc-body'), keep = old && key === panelKey ? old.scrollTop : 0;
+  panel.innerHTML = centerHTML(c);
+  panelKey = key;
+  const nb = panel.querySelector('.cc-body'); if (nb && keep) nb.scrollTop = keep;
 }
 
 // ---------- orta alan ----------
@@ -369,7 +442,7 @@ function centerHTML(c) {
 
 function stepHTML(step, done) {
   const isDone = !!done[step.key];
-  const { notes, info } = night.stepNotes(step, S, role, NS.targets);
+  const { notes, info } = night.stepNotes(step, S, role, NS.targets, NS.pick);
   if (step.special) {
     return { top: `<div class="who"><span class="sp">${step.special === 'minioninfo' ? 'M' : 'İ'}</span><div><h3>${esc(step.title)}</h3></div></div>`,
       body: `${info.map(x => `<p class="info">${esc(x)}</p>`).join('')}
@@ -394,7 +467,13 @@ function stepHTML(step, done) {
       const t = NS.targets[i];
       return t ? `<button class="slot on" data-c="untarget" data-t="${t}">${i + 1}. ${esc(P(t).name)} ✕</button>` : (i < Math.max(cfg.targets[0], 1) || i === NS.targets.length ? `<span class="slot">${i + 1}. ?</span>` : '');
     }).join('');
-    h += `<div class="slots">${slots}</div>${NS.targets.length ? '' : '<p class="hint2">Hedefe masadan dokun</p>'}`;
+    const tg = targeting();
+    const grid = seated().map(q => {
+      const ti = NS.targets.indexOf(q.id), t = role(q.role).team;
+      const dim = !!(tg && ((tg.cfg.alive && q.dead) || (tg.cfg.dead && !q.dead) || (tg.cfg.notSelf && q.id === step.pid)));
+      return `<button class="pc t-${t}${q.dead ? ' dead' : ''}${ti >= 0 ? ' sel' : ''}${dim ? ' dim' : ''}" data-c="tgt" data-pid="${q.id}"><b>${esc(q.name)}</b><small>${esc(role(q.role).name)}${q.dead ? ' · ölü' : ''}</small>${ti >= 0 ? `<i>${ti + 1}</i>` : ''}</button>`;
+    }).join('');
+    h += `<div class="slots">${slots}</div><div class="pgrid">${grid}</div>`;
   }
   const ex = [];
   if (cfg.pickRole) ex.push(`<button class="btn small" data-c="pick">${NS.pick ? '🎭 ' + esc(role(NS.pick).name) : '🎭 Gösterilen rol'}</button>`);
@@ -422,35 +501,41 @@ function dayHTML() {
 }
 
 // ---------- dokunma / sürükleme ----------
-let drag = null;
+let drag = null, noClick = false;
+const blockClick = () => { noClick = true; setTimeout(() => { noClick = false; }, 450); };
+board.addEventListener('contextmenu', e => e.preventDefault());
 board.addEventListener('pointerdown', e => {
-  const tok = e.target.closest('.tok'); if (!tok) return;
+  const tok = e.target.closest('.tok'); if (!tok || e.target.closest('[data-c]')) return;
   drag = { tok, pid: tok.dataset.pid, seat: +tok.dataset.seat, x: e.clientX, y: e.clientY, moved: false, long: false };
-  drag.timer = setTimeout(() => { if (drag && !drag.moved) { drag.long = true; navigator.vibrate?.(15); openPlayer(drag.pid); } }, 500);
-  tok.setPointerCapture(e.pointerId);
+  if (edit) { try { tok.setPointerCapture(e.pointerId); } catch (_) {} }
+  drag.timer = setTimeout(() => { if (drag && !drag.moved) { drag.long = true; blockClick(); navigator.vibrate?.(15); openPlayer(drag.pid); } }, 550);
 });
 board.addEventListener('pointermove', e => {
   if (!drag) return;
-  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  if (!drag.moved && edit && Math.hypot(dx, dy) > 12) { drag.moved = true; clearTimeout(drag.timer); drag.tok.classList.add('dragging'); }
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y, d = Math.hypot(dx, dy);
+  if (d > 10) clearTimeout(drag.timer);
+  if (!drag.moved && edit && d > 12) { drag.moved = true; drag.tok.classList.add('dragging'); }
   if (drag.moved) drag.tok.style.transform = `translate(calc(-50% + ${dx}px), calc(var(--s) / -2 + ${dy}px))`;
-  else if (Math.hypot(dx, dy) > 30) clearTimeout(drag.timer);
 });
 board.addEventListener('pointerup', e => {
   if (!drag) return;
   const d = drag; drag = null; clearTimeout(d.timer);
-  if (d.long) return;
-  if (!d.moved) return tapToken(d.pid);
-  const seat = L.seats[d.seat];
-  const to = nearestSeat(L.seats, seat.x + (e.clientX - d.x), seat.y + (e.clientY - d.y), L.S * 1.2);
-  if (to >= 0 && to !== d.seat) store.dispatch('swap', { a: d.pid, b: S.seats[to] }); else renderBoard();
+  if (d.moved) {
+    blockClick();
+    const seat = L.seats[d.seat];
+    const to = nearestSeat(L.seats, seat.x + (e.clientX - d.x), seat.y + (e.clientY - d.y), L.S * 1.2);
+    if (to >= 0 && to !== d.seat) store.dispatch('swap', { a: d.pid, b: S.seats[to] }); else renderBoard();
+  }
 });
-board.addEventListener('pointercancel', () => { if (drag) clearTimeout(drag.timer); drag = null; renderBoard(); });
+board.addEventListener('pointercancel', () => { if (drag) { clearTimeout(drag.timer); const m = drag.moved; drag = null; if (m) renderBoard(); } });
 
 function tapToken(pid) {
   if (DS.mode === 'exec') return execute(pid);
-  const tg = targeting();
-  if (!tg) return openPlayer(pid);
+  if (!targeting()) return openPlayer(pid);
+  toggleTarget(pid);
+}
+function toggleTarget(pid) {
+  const tg = targeting(); if (!tg) return;
   const i = NS.targets.indexOf(pid);
   if (i >= 0) NS.targets.splice(i, 1);
   else { if (NS.targets.length >= tg.cfg.targets[1]) NS.targets.shift(); NS.targets.push(pid); }
@@ -458,12 +543,17 @@ function tapToken(pid) {
 }
 
 // ---------- orta alan tıklamaları ----------
-board.addEventListener('click', e => {
+pager.addEventListener('click', e => {
   const m = e.target.closest('[data-mk]'); if (m) return showMarker(m.dataset.mk);
-  const b = e.target.closest('[data-c]'); if (!b || b.tagName === 'INPUT') return;
+  const b = e.target.closest('[data-c]');
+  const tok = e.target.closest('.tok');
+  if (tok && !b) { if (noClick) return; return tapToken(tok.dataset.pid); }
+  if (!b || b.tagName === 'INPUT') return;
   const a = b.dataset.c, c = curStep();
   const go = k => { NS.cur = k; Object.assign(NS, { targets: [], pick: null, apply: null, sailorSelf: false }); renderBoard(); };
-  if (a === 'editDone') { edit = false; renderBoard(); return; }
+  if (a === 'editDone') { edit = false; applyLayout(); renderBoard(); goPane(1); return; }
+  if (a === 'topanel') return goPane(1);
+  if (a === 'tgt') return toggleTarget(b.dataset.pid);
   if (a === 'prev' || a === 'next') { const i = c.steps.indexOf(c.step) + (a === 'prev' ? -1 : 1); if (i < 0) return; return go(c.steps[Math.min(i, c.steps.length - 1)]?.key || null); }
   if (a === 'list') return openSteps();
   if (a === 'toDay' || a === 'toNight') return nextPhase();
@@ -477,7 +567,7 @@ board.addEventListener('click', e => {
   if (a === 'pick') return pickRole('Gösterilen rol', id => { NS.pick = id; closeSheet(); renderBoard(); }, closeSheet);
   if (a === 'rem') return pickReminder(NS.targets[0], closeSheet);
 });
-board.addEventListener('change', e => {
+pager.addEventListener('change', e => {
   const a = e.target.dataset.c;
   if (a === 'apply') NS.apply = e.target.checked;
   if (a === 'sailor') NS.sailorSelf = e.target.checked;
@@ -545,6 +635,7 @@ $('game').querySelector('.bar').addEventListener('click', e => {
   if (a === 'menu') openMenu();
   if (a === 'steps') openSteps();
 });
+$('seg').addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) goPane(+b.dataset.pg); });
 
 // ---------- eylem + geri al ----------
 let toastT;
@@ -735,6 +826,8 @@ function pickReminder(pid, back) {
 function openMenu() {
   const render = () => sheet(`<div class="sh-head"><h3>Menü</h3><button class="ib" data-act="close">✕</button></div>
     <div class="list">
+      <button class="row-btn" id="mLog"><b>Kayıt</b><small>Olay geçmişi, geri alma</small></button>
+      <button class="row-btn" id="mSplit"><b>Yatay ekranda bölünmüş görünüm</b><small>${{ on: 'Açık', off: 'Kapalı' }[splitPref()] || 'Otomatik (tablet yatayda açık)'}</small></button>
       <button class="row-btn" id="mEdit"><b>Yerleri düzenle</b><small>Oyuncuları sürükleyerek yerleştir</small></button>
       <button class="row-btn" id="mTrav"><b>Gezgin ekle</b><small>Sonradan gelen oyuncu</small></button>
       <button class="row-btn" id="mShow"><b>Bilgi kartı göster</b><small>Oyuncuya ekranı göster</small></button>
@@ -744,7 +837,9 @@ function openMenu() {
       <button class="row-btn" id="mOut"><b>Çıkış yap</b><small>${esc(auth.currentUser?.email || '')}</small></button>
     </div><p class="muted small">Karakter verisi: ${new Date(D.at).toLocaleString('tr-TR')}${D.offline ? ' (kayıtlı kopya)' : ''}</p>`, render);
   render();
-  $('mEdit').onclick = () => { edit = true; closeSheet(); renderBoard(); };
+  $('mEdit').onclick = () => { edit = true; closeSheet(); applyLayout(); renderBoard(); goPane(0); };
+  $('mLog').onclick = openLog;
+  $('mSplit').onclick = () => { const nx = { null: 'on', on: 'off', off: null }[splitPref()]; try { nx ? localStorage.setItem('tg-grim-split', nx) : localStorage.removeItem('tg-grim-split'); } catch (e) {} applyLayout(); renderBoard(); render(); };
   $('mTrav').onclick = addTraveller;
   $('mShow').onclick = openShowMenu;
   $('mSides').onclick = openSides;
