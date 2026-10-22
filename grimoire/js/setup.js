@@ -1,9 +1,9 @@
 // Oyun kurulumu: Script → Roller → Masa. Tokenlar masaya gelir; isimler masada, hazırlık "İlk gece öncesi" ekranında.
-import { G, $, esc, rich, icon, shuffle, role, rname, teamGroups, roleChip } from './core.js?v=20261023-0135';
-import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261023-0135';
-import * as store from './store.js?v=20261023-0135';
-import { defaultSides } from './table.js?v=20261023-0135';
-import * as prep from './prep.js?v=20261023-0135';
+import { G, $, esc, rich, icon, shuffle, role, rname, teamGroups, roleChip } from './core.js?v=20261023-0147';
+import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261023-0147';
+import * as store from './store.js?v=20261023-0147';
+import { defaultSides } from './table.js?v=20261023-0147';
+import * as prep from './prep.js?v=20261023-0147';
 
 const SKEY = 'tg-grim-setup-v2';
 const W = { step: 1, script: null, n: 10, picked: [], sides: null };
@@ -165,9 +165,8 @@ function beginGame() {
   const players = roles.map((rid, i) => ({ id: 'p' + i, name: String(i + 1), unnamed: true, role: rid, believed: null, rem: [],
     evil: role(rid).team === 'traveller' ? false : null, reminders: [] }));
   const ini = prep.initial(players, W.script.roles);
-  if (ini.rh) players.find(p => p.id === ini.rh).rem.push({ role: 'fortuneteller', text: 'Kırmızı ringa', tag: 'redherring' });
   players.forEach(p => { delete p.reminders; });
-  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides }, bluffs: ini.bluffs, prep: ini.prep, pre: true };
+  const data = { script: W.script.name, scriptRoles: W.script.roles, customRoles: W.script.custom || {}, players, sides: { ...W.sides }, bluffs: ini.bluffs, prep: {}, pre: true };
   G.edit = false;
   store.reset(true);
   try { localStorage.removeItem(SKEY); } catch (e) {}

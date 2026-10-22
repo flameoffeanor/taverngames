@@ -1,8 +1,8 @@
 // "İlk gece öncesi": gece sırası gibi adım adım akan hazırlık.
 // Sarhoş'un sandığı rol, gezgin takımı, kırmızı ringa, ilk gece bilgileri (Almanac: "while preparing the first night"),
 // Çırak / Cüce, İblis blöfleri. Oyuncular masada dokunarak seçilir. Her adım tek olay ('pre'): tek geri alma.
-import { G, esc, role, rname, icon, roleChip, shuffle, P, seated } from './core.js?v=20261023-0135';
-import { TEAM_TR } from './data.js?v=20261023-0135';
+import { G, esc, role, rname, icon, roleChip, shuffle, P, seated } from './core.js?v=20261023-0147';
+import { TEAM_TR } from './data.js?v=20261023-0147';
 
 // Kendini başka rol sanan roller ve sandıkları rolün takımı
 export const BELIEVES = { drunk: 'townsfolk', lunatic: 'demon', marionette: 'townsfolk' };
@@ -84,7 +84,7 @@ export function prefill(st, NS) {
   if (st.kind === 'bel') NS.pick = p.believed || null;
   if (st.kind === 'aln') NS.pick = p.evil ? 'evil' : 'good';
   if (st.kind === 'rh') { const x = seated().find(q => q.reminders.some(r => r.tag === 'redherring')); if (x) NS.targets = [x.id]; }
-  if (st.kind === 'prep') { const v = S.prep[st.o.key] || suggest(st.o, seated()); NS.targets = (v.targets || []).filter(id => id && P(id) && !P(id).gone); NS.pick = v.pick || null; }
+  if (st.kind === 'prep') { /* oyuncuları sen seçersin (🎲 öneri var) */ const v = S.prep[st.o.key] || { targets: [], pick: null }; NS.targets = (v.targets || []).filter(id => id && P(id) && !P(id).gone); NS.pick = v.pick || null; }
   if (st.kind === 'gain') NS.pick = S.prep['apprentice:' + st.pid]?.pick || null;
   if (st.kind === 'amigo') { const x = seated().find(q => q.reminders.some(r => r.tag === 'amigo' && r.src === st.pid)); if (x) NS.targets = [x.id]; }
   if (st.kind === 'bluffs') {

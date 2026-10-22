@@ -1,9 +1,9 @@
 // Masa (Masa ekranı) ve paneldeki küçük masa.
 // Koltuk = [disk + altında oyuncu adı] [rol adı + hatırlatıcılar]
-import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0135';
-import * as store from './store.js?v=20261023-0135';
-import { layout, nearestSeat } from './table.js?v=20261023-0135';
-import * as rules from './rules.js?v=20261023-0135';
+import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0147';
+import * as store from './store.js?v=20261023-0147';
+import { layout, nearestSeat } from './table.js?v=20261023-0147';
+import * as rules from './rules.js?v=20261023-0147';
 
 let L = null;   // son masa yerleşimi
 export const lastLayout = () => L;
@@ -137,7 +137,7 @@ board.addEventListener('pointerdown', e => {
   // sadece tokenın kendisi (disk) dokunmaya açık
   const el = e.target.closest('.seat'); if (!el || !e.target.closest('.disc') || e.target.closest('[data-c]')) return;
   drag = { el, pid: el.dataset.pid, seat: +el.dataset.seat, x: e.clientX, y: e.clientY, moved: false, long: false };
-  if (canDrag()) { try { el.setPointerCapture(e.pointerId); } catch (_) {} }
+  if (canDrag()) { try { e.target.closest('.disc').setPointerCapture(e.pointerId); } catch (_) {} }   // disk yakalar: click hedefi disk kalır
   drag.timer = setTimeout(() => {
     if (drag && !drag.moved) {
       drag.long = true; blockClick(); guardSheet(); navigator.vibrate?.(15);

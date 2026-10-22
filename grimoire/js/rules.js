@@ -2,7 +2,7 @@
 // İlke: sistem hatırlatır, uyarır, hesaplar ve kaydeder; son karar her zaman Hikaye Anlatıcısınındır.
 // Kaynak: BotC kural kitabı + Almanac'lar + wiki (bkz. her rolün yanındaki not).
 
-import { phaseIdx, phaseKey } from './store.js?v=20261023-0135';
+import { phaseIdx, phaseKey } from './store.js?v=20261023-0147';
 
 // ---------------- hatırlatıcı etiketleri ----------------
 // Metinler masada ve oyuncu panelinde görünür.

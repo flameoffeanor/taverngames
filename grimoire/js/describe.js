@@ -1,6 +1,6 @@
 // Olay kaydının okunur metinleri
-import { esc, role, rname, remTr } from './core.js?v=20261023-0135';
-import * as store from './store.js?v=20261023-0135';
+import { esc, role, rname, remTr } from './core.js?v=20261023-0147';
+import * as store from './store.js?v=20261023-0147';
 
 const RN = id => role(id).name;
 const CAUSES = {

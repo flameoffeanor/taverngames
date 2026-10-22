@@ -50,7 +50,7 @@ async function fetchText(url) {
 }
 
 export async function loadData() {
-  const official = await (await fetch('data/official.json?v=20261023-0135')).json();
+  const official = await (await fetch('data/official.json?v=20261023-0147')).json();
   let sheet, offline = false;
   try {
     const [c, s] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL)]);

@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261023-0135';
-import * as store from './store.js?v=20261023-0135';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0135';
-import { describe } from './describe.js?v=20261023-0135';
-import { startSetup } from './setup.js?v=20261023-0135';
-import { renderBoard, clickBlocked } from './board.js?v=20261023-0135';
-import * as panel from './panel.js?v=20261023-0135';
-import * as sheets from './sheets.js?v=20261023-0135';
+import { loadData } from './data.js?v=20261023-0147';
+import * as store from './store.js?v=20261023-0147';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0147';
+import { describe } from './describe.js?v=20261023-0147';
+import { startSetup } from './setup.js?v=20261023-0147';
+import { renderBoard, clickBlocked } from './board.js?v=20261023-0147';
+import * as panel from './panel.js?v=20261023-0147';
+import * as sheets from './sheets.js?v=20261023-0147';
 
-export const VERSION = '20261023-0135';
+export const VERSION = '20261023-0147';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------
@@ -76,7 +76,7 @@ function renderAll() {
 $('board').addEventListener('click', e => {
   const seat = e.target.closest('.seat'); if (!seat || !e.target.closest('.disc') || e.target.closest('[data-c]')) return;
   if (clickBlocked()) return;
-  if (G.edit || G.S.pre) return sheets.openPlayer(seat.dataset.pid);
+  if (G.edit) return sheets.openPlayer(seat.dataset.pid);
   panel.tapSeat(seat.dataset.pid);
 });
 
