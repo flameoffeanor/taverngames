@@ -1,6 +1,6 @@
 // Ortak durum ve yardımcılar. Modüller birbirini doğrudan çağırmak yerine `hooks` üzerinden çağırır.
-import * as store from './store.js?v=20261022-2247';
-import { iconUrl, TEAMS } from './data.js?v=20261022-2247';
+import * as store from './store.js?v=20261022-2320';
+import { iconUrl, TEAMS } from './data.js?v=20261022-2320';
 
 export const G = {
   D: null,          // karakter + script verisi

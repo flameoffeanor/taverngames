@@ -31,10 +31,10 @@ export function dims(S, mini, rows) {
   const lab = Math.round(f * 1.3);                                     // tek satır yazı yüksekliği
   const pf = mini ? f : clamp(f * 0.88, 10.5, 14);                     // hatırlatıcı yazı boyu
   const pill = Math.round(pf * 1.5 + 4);                               // bir hatırlatıcı satırı (boşluk dahil)
-  const minInfo = mini ? f * 4.4 : f * 6.2;                            // rol adını okutacak en dar kutu
+  const minInfo = mini ? f * 4.4 : f * 5.6;   // mini: rol adı; masa: hatırlatıcılar                            // rol adını okutacak en dar kutu
   const maxInfo = mini ? f * 8.5 : f * 12;
   const discCol = S + lab;                                             // disk + altındaki isim
-  const infoH = lab + rows * pill;                                     // rol adı + hatırlatıcılar
+  const infoH = mini ? lab : rows * pill + (rows ? 2 : 0);             // mini: rol adı; masa: hatırlatıcılar (rol adı diskin içinde)
   return { f, lab, pf, pill, rows, minInfo, maxInfo, discCol, infoH };
 }
 
@@ -116,10 +116,15 @@ function layoutOnce(W, H, sides, opt) {
       const cxSlot = pad + r.slot * (i + 0.5);
       if (r.orient === 'h') {
         const w = S + gap + r.infoW, x = cxSlot - w / 2;
-        out.push({ x, y, w, h: r.h, cx: x + S / 2, cy: discY(y, r.h), orient: 'h', flip: false, side, infoW: r.infoW, infoH: r.h });
+        // sıranın sağ yarısı aynalanır (disk dışta, hatırlatıcılar içte): simetrik görünüm
+        const flip = !mini && (i + 0.5) > n / 2 + 0.01;
+        const xx = flip ? cxSlot + w / 2 - w : x;
+        out.push({ x: xx, y, w, h: r.h, cx: flip ? xx + w - S / 2 : x + S / 2, cy: discY(y, r.h), orient: 'h', flip, side, infoW: r.infoW, infoH: r.h });
       } else {
         const w = Math.max(S, r.infoW), x = cxSlot - w / 2;
-        out.push({ x, y, w, h: r.h, cx: cxSlot, cy: y + S / 2, orient: 'v', flip: false, side, infoW: w, infoH: d.infoH });
+        // alt sırada hatırlatıcılar diskin üstünde (masanın ortasına doğru): simetri
+        const cy = side === 'bottom' && !mini ? y + r.h - d.discCol + S / 2 : y + S / 2;
+        out.push({ x, y, w, h: r.h, cx: cxSlot, cy, orient: 'v', flip: side === 'bottom' && !mini, side, infoW: w, infoH: d.infoH });
       }
     }
     return out;

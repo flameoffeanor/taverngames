@@ -1,9 +1,9 @@
 // Panel ekranı: gece adımı ve gündüz akışı. Masa ekranındaki dokunmalar da buradan yönetilir.
-import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS } from './core.js?v=20261022-2247';
-import * as store from './store.js?v=20261022-2247';
-import * as rules from './rules.js?v=20261022-2247';
-import { miniMapHTML } from './board.js?v=20261022-2247';
-import { describe } from './describe.js?v=20261022-2247';
+import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS } from './core.js?v=20261022-2320';
+import * as store from './store.js?v=20261022-2320';
+import * as rules from './rules.js?v=20261022-2320';
+import { miniMapHTML } from './board.js?v=20261022-2320';
+import { describe } from './describe.js?v=20261022-2320';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);

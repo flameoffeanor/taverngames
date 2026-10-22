@@ -1,9 +1,9 @@
 // Oyun kurulumu: Script → Oyuncular → Roller → Dağıtım → Hazırlık → Masa
 // Gece başlamadan seçilmesi gereken her şey burada seçilir (kırmızı ringa, ilk gece bilgileri, blöfler, gezginler).
-import { G, $, esc, rich, shuffle, role, rname, teamGroups, roleChip, icon } from './core.js?v=20261022-2247';
-import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261022-2247';
-import * as store from './store.js?v=20261022-2247';
-import { defaultSides } from './table.js?v=20261022-2247';
+import { G, $, esc, rich, shuffle, role, rname, teamGroups, roleChip, icon } from './core.js?v=20261022-2320';
+import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261022-2320';
+import * as store from './store.js?v=20261022-2320';
+import { defaultSides } from './table.js?v=20261022-2320';
 
 const SKEY = 'tg-grim-setup-v1';
 const W = { step: 1, script: null, names: [], picked: [], assign: {}, believed: {}, evil: {}, sides: null, rh: null, bluffs: null, prep: {}, gain: {}, amigo: {} };
