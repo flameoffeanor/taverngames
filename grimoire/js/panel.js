@@ -1,10 +1,9 @@
 // Panel ekranı: gece adımı ve gündüz akışı. Masa ekranındaki dokunmalar da buradan yönetilir.
-import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0042';
-import * as store from './store.js?v=20261023-0042';
-import * as rules from './rules.js?v=20261023-0042';
-import { miniMapHTML } from './board.js?v=20261023-0042';
-import { describe } from './describe.js?v=20261023-0042';
-import * as prep from './prep.js?v=20261023-0042';
+import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0135';
+import * as store from './store.js?v=20261023-0135';
+import * as rules from './rules.js?v=20261023-0135';
+import { describe } from './describe.js?v=20261023-0135';
+import * as prep from './prep.js?v=20261023-0135';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -26,13 +25,25 @@ export function curStep() {
   }
   return { steps, done, step };
 }
+// İlk gece öncesi adımı
+export function preCur() {
+  const S = G.S, NS = G.NS;
+  const steps = prep.steps(), done = S.pdone || {};
+  if (NS.cur === '__end' && steps.some(s => !done[s.key])) NS.cur = null;
+  if (!NS.cur || (NS.cur !== '__end' && !steps.some(s => s.key === NS.cur))) { NS.cur = (steps.find(s => !done[s.key]) || {}).key || '__end'; NS.pre = null; }
+  const step = steps.find(s => s.key === NS.cur) || null;
+  if (step && NS.pre !== step.key) { NS.pre = step.key; prep.prefill(step, NS); }
+  return { steps, done, step };
+}
 export function targeting() {
   if (G.edit || G.DS.mode) return null;
+  if (G.S.pre) { const st = preCur().step; return st?.n ? { step: st, cfg: { targets: [st.n, st.n] }, can: st.can || (() => true), pre: true } : null; }
   const c = curStep(); if (!c?.step || c.done[c.step.key] || c.step.special) return null;
   const cfg = rules.cfgFor(c.step, G.S, role);
   return cfg.targets[1] > 0 ? { step: c.step, cfg } : null;
 }
-export const actorId = () => (G.S.phase.kind === 'night' ? curStep()?.step?.pid : null) || null;
+export const actorId = () => (G.S.pre ? preCur().step?.pid : G.S.phase.kind === 'night' ? curStep()?.step?.pid : null) || null;
+export const canTap = (tg, p) => tg.can ? tg.can(p) : rules.canTarget(tg.cfg, G.S, role, tg.step, p);
 
 // Masa ve mini masadaki dokunma: hedef / seçim / oyuncu paneli
 export function tapSeat(pid, fromMini = false) {
@@ -49,10 +60,11 @@ export function tapSeat(pid, fromMini = false) {
   const tg = targeting();
   if (!tg) return fromMini ? null : hooks.openPlayer(pid);
   const p = P(pid);
-  if (!rules.canTarget(tg.cfg, G.S, role, tg.step, p)) { toast(`${p.name} seçilemez`); return; }
+  if (!canTap(tg, p)) { toast(`${p.name} seçilemez`); return; }
   const NS = G.NS, i = NS.targets.indexOf(pid);
   if (i >= 0) NS.targets.splice(i, 1);
   else { if (NS.targets.length >= tg.cfg.targets[1]) NS.targets.shift(); NS.targets.push(pid); }
+  if (tg.pre) prep.afterTap(tg.step, NS);
   hooks.renderAll();
 }
 export const selIndex = pid => (G.DS.mode?.pick ? G.DS.mode.sel.indexOf(pid) : G.NS.targets.indexOf(pid));
@@ -118,7 +130,6 @@ function stepHTML(step, done) {
     const need = cfg.targets[0], max = cfg.targets[1];
     const sel = NS.targets.map(id => P(id)?.name).filter(Boolean);
     h += `<div class="pick-h"><b>${max === 1 ? 'Hedef' : `Hedefler (${need === max ? max : `${need}–${max}`})`}</b><span>${sel.length ? sel.map((n, i) => `${i + 1}. ${esc(n)}`).join(' · ') : 'Dokunarak seç'}</span>${sel.length ? '<button class="link" data-c="clearT">Temizle</button>' : ''}</div>`;
-    h += mmBlock({ sel: NS.targets, can: q => rules.canTarget(cfg, S, role, step, q), actor: p.id });
   }
   // göster / seç
   const ex = [];
@@ -132,19 +143,6 @@ function stepHTML(step, done) {
   h += `<div class="extras">${ex.join('')}</div>` + textHTML;
   const ready = NS.targets.length >= cfg.targets[0] && (!cfg.three || NS.targets.length === 3);
   return { top, body: h, foot: `<div class="acts"><button class="btn" data-c="skip">Atla</button><button class="btn primary" data-c="ok" ${ready ? '' : 'disabled'}>✓ Onayla</button></div>` };
-}
-
-// Çekmecede küçük masa: isteğe bağlı (seçim normalde büyük masada yapılır)
-G.mm = (() => { try { return localStorage.getItem('tg-grim-mm') === '1'; } catch (_) { return false; } })();
-function mmBlock(opt) {
-  return `<button class="btn small mm-tg" data-c="mmTog">${G.mm ? '▦ Küçük masayı gizle' : '▦ Burada küçük masada seç'}</button>` + (G.mm ? miniMap(opt) : '');
-}
-function miniMap(opt) {
-  const pw = Math.min($('stage').clientWidth || 360, 640);
-  const w = Math.min(pw - 28, 640);
-  const ph = $('stage').clientHeight || 700;
-  const h = Math.round(Math.min(Math.max(w * 1.2, 260), 640, ph * 0.62));
-  return `<div class="mm-wrap">${miniMapHTML(w, h, opt)}</div>`;
 }
 
 function confirmStep(skip) {
@@ -300,6 +298,38 @@ function dayHTML() {
   return h;
 }
 
+// ======================= İLK GECE ÖNCESİ =======================
+function preHTML() {
+  const { steps, done, step } = preCur(), NS = G.NS;
+  const idx = step ? steps.indexOf(step) : steps.length;
+  const nav = steps.length ? `<div class="cc-nav"><button class="nb" data-c="prev" ${idx <= 0 ? 'disabled' : ''}>‹</button>
+    <button class="prog" data-c="list">${Math.min(idx + 1, steps.length)} / ${steps.length} · hazırlık</button>
+    <button class="nb" data-c="next" ${idx >= steps.length ? 'disabled' : ''}>›</button></div>` : '';
+  if (!step) return `<div class="cc">${nav}<h3>Hazırlık tamam</h3><p class="muted center">Her adımı sonra da ‹ › ile açıp değiştirebilirsin. Oyuncu ekleyip çıkarmak için Menü.</p>
+    <button class="btn primary big" data-c="ready">☾ İlk geceyi başlat</button></div>`;
+  const p = step.pid ? P(step.pid) : null, r = step.role ? role(step.role) : null;
+  const who = `<div class="who${r ? ' t-' + r.team : ''}">${step.role ? icon(step.role) : '<span class="sp">🎭</span>'}<div><h3>${esc(step.title)}</h3><div class="pl">${esc(step.sub)}${p ? ' · ' + esc(p.name) : ''}${done[step.key] ? ' <em>· ✓</em>' : ''}</div></div></div>`;
+  return `<div class="cc fixed"><div class="cc-top">${nav}${who}</div><div class="cc-body">${prep.bodyHTML(step, NS)}</div>
+    <div class="cc-foot"><div class="acts"><button class="btn" data-c="skip">Atla</button><button class="btn primary" data-c="ok" ${prep.ready(step, NS) ? '' : 'disabled'}>✓ ${done[step.key] ? 'Güncelle' : 'Onayla'}</button></div></div></div>`;
+}
+function preClick(a, b) {
+  const S = G.S, NS = G.NS, { steps, done, step } = preCur();
+  const go = k => { resetNS({ cur: k }); hooks.renderAll(); };
+  switch (a) {
+    case 'prev': case 'next': { const i = (step ? steps.indexOf(step) : steps.length) + (a === 'prev' ? -1 : 1); if (i < 0) return true; return go(steps[i]?.key || '__end'), true; }
+    case 'list': return openSteps(), true;
+    case 'skip': if (step) { resetNS(); act('pre', { key: step.key, ops: [] }); } return true;
+    case 'ok': if (step && prep.ready(step, NS)) { const o = prep.ops(step, NS); resetNS(); act('pre', { key: step.key, ops: o }, `${step.title}: ${step.sub} ✓`); } return true;
+    case 'clearT': NS.targets = []; hooks.renderAll(); return true;
+    case 'preAln': NS.pick = b.dataset.v; hooks.renderAll(); return true;
+    case 'preBluff': prep.toggleBluff(NS, b.dataset.r); hooks.renderAll(); return true;
+    case 'preRand': prep.randomize(step, NS); hooks.renderAll(); return true;
+    case 'prePick': { const o = prep.pickOptions(step); return hooks.pickRole(step.title + ': rol seç', id => { NS.pick = id; closeSheet(); hooks.renderAll(); }, closeSheet, o), true; }
+    case 'ready': act('ready', {}, 'Gece 1 başladı'); return true;
+  }
+  return false;
+}
+
 // ---------- genel seçim ekranı (gündüz) ----------
 // opt: {k, title, hint, min, max, can(p), ok(sel), okLabel, info(sel)→html, auto}
 export function startPick(opt) {
@@ -310,7 +340,7 @@ function pickHTML(m) {
   const info = m.info ? m.info(m.sel) : '';
   const ready = m.sel.length >= (m.min ?? 1);
   return `<div class="cc fixed"><div class="cc-top"><h3>${esc(m.title)}</h3>${m.hint ? `<p class="muted center small">${esc(m.hint)}</p>` : ''}</div>
-    <div class="cc-body">${info}<p class="muted small">${m.sel.length ? 'Seçili: ' + m.sel.map(id => esc(P(id)?.name || '')).join(', ') : 'Masada dokunarak seç.'}</p>${mmBlock({ sel: m.sel, can: m.can || (() => true) })}</div>
+    <div class="cc-body">${info}<p class="muted small">${m.sel.length ? 'Seçili: ' + m.sel.map(id => esc(P(id)?.name || '')).join(', ') : 'Masada dokunarak seç.'}</p></div>
     <div class="cc-foot"><div class="acts"><button class="btn" data-c="pickCancel">Vazgeç</button><button class="btn primary" data-c="pickOk" ${ready ? '' : 'disabled'}>${esc(m.okLabel)}</button></div></div></div>`;
 }
 function finishPick() {
@@ -472,7 +502,7 @@ export function renderPanel() {
   let html;
   if (G.edit) html = `<div class="cc"><h3>Yerleri düzenle</h3><p class="muted center">Masa ekranında jetonu sürükleyip başka koltuğa bırak; ikisi yer değiştirir. Yan yana oturanlar komşu sayılır.</p>
     <button class="btn primary big" data-c="editDone">✓ Bitti</button></div>`;
-  else if (S.pre) html = prep.preHTML();
+  else if (S.pre) html = preHTML();
   else if (S.phase.kind === 'day') html = dayHTML();
   else html = nightHTML(curStep());
   const key = [store.phaseKey(S.phase), S.pre, G.NS.cur, G.DS.mode?.k, G.edit].join('|');
@@ -488,7 +518,7 @@ export function summary() {
   const S = G.S;
   if (G.edit) return { title: 'Yerleri düzenle', sub: 'Sürükle-bırak' };
   if (G.DS.mode?.pick) return { title: G.DS.mode.title, sub: G.DS.mode.sel.map(id => P(id)?.name).join(', ') || 'Seç' };
-  if (S.pre) { const un = seated().filter(p => p.unnamed).length; return { title: 'İlk gece öncesi', sub: un ? `${un} isim eksik` : 'Hazırlık' }; }
+  if (S.pre) { const st = preCur().step; return { title: 'İlk gece öncesi', sub: st ? `${st.title} · ${st.sub}` : 'Hazırlık tamam', role: st?.role }; }
   if (S.phase.kind === 'day') {
     const atd = aboutToDie();
     return { title: '☀ ' + store.phaseLabel(S.phase), sub: atd.leader ? `Ölmek üzere: ${P(atd.leader).name}` : `${aliveAll().length} yaşıyor` };
@@ -511,8 +541,13 @@ export function stripHTML() {
   }
   if (S.result) return row('🏁', `Oyun bitti: ${S.result.winner === 'good' ? 'İyiler' : 'Kötüler'} kazandı`, esc(S.result.reason || ''));
   if (S.pre) {
-    const un = seated().filter(p => p.unnamed).length;
-    return row('📋', 'İlk gece öncesi', un ? `${un} isim eksik · tokena basılı tut` : 'Hazırlık: Sarhoş, ringa, blöfler…', `<button class="st-btn primary" data-c="ready">☾ Başlat</button>`, !!un);
+    const { steps, done, step: st } = preCur();
+    if (!st) return row('☾', 'Hazırlık tamam', 'İlk gece başlayabilir', `<button class="st-btn primary" data-c="ready">☾ Başlat</button>`);
+    const i = steps.indexOf(st) + 1, NS = G.NS, w = prep.warn(st, NS);
+    const val = st.n ? NS.targets.map(id => P(id)?.name).filter(Boolean).join(', ') : st.kind === 'bluffs' ? (NS.bl || []).map(rname).join(', ') : st.kind === 'aln' ? (NS.pick === 'evil' ? 'Kötü' : 'İyi') : NS.pick ? rname(NS.pick) : '';
+    const sub = w || (val ? '→ ' + val : st.n ? 'Masada seç' : 'Seç');
+    return row(st.role ? icon(st.role) : '🎭', `${i}/${steps.length} · ${esc(st.title)}${st.pid ? ' · ' + esc(P(st.pid)?.name || '') : ''}`, esc(sub),
+      `<button class="st-btn primary" data-c="ok" ${prep.ready(st, NS) ? '' : 'disabled'}>✓</button>`, !!w);
   }
   if (S.phase.kind === 'day') {
     const atd = aboutToDie(), it = rules.dayItems(S, role).find(i => i.strong);
@@ -545,13 +580,12 @@ function onClick(e) {
   const b = e.target.closest('[data-c]');
   if (!b || b.tagName === 'INPUT') return;
   const a = b.dataset.c;
-  if (S.pre && prep.preClick(b)) return;
+  if (S.pre && !G.DS.mode && preClick(a, b)) return;
   const c = S.phase.kind === 'night' ? curStep() : null;
   const go = k => { resetNS({ cur: k }); hooks.renderAll(); };
   switch (a) {
     case 'tgt': return tapSeat(b.dataset.pid, true);
     case 'topanel': return hooks.openDrawer?.();
-    case 'mmTog': G.mm = !G.mm; try { localStorage.setItem('tg-grim-mm', G.mm ? '1' : '0'); } catch (_) {} return hooks.renderAll();
     case 'editDone': G.edit = false; return hooks.renderAll();
     case 'prev': case 'next': { const i = c.steps.indexOf(c.step) + (a === 'prev' ? -1 : 1); if (i < 0) return; return go(c.steps[Math.min(i, c.steps.length - 1)]?.key || null); }
     case 'list': return openSteps();
@@ -611,7 +645,15 @@ function markerCard(k) {
 
 function openSteps() {
   const S = G.S;
-  if (S.phase.kind !== 'night' || S.pre) return hooks.openLog();
+  if (S.pre) {
+    const { steps, done } = preCur();
+    sheet(`<div class="sh-head"><h3>İlk gece öncesi</h3><button class="ib" data-act="close">✕</button></div>
+      <div class="list">${steps.map((s, i) => `<button class="row-btn st-row${s.key === G.NS.cur ? ' cur' : ''}${done[s.key] ? ' done' : ''}" data-k="${s.key}">
+        <span class="sti">${s.role ? icon(s.role) : '🎭'}</span><b>${i + 1}. ${esc(s.title)}</b><small>${esc(s.sub)}${s.pid ? ' · ' + esc(P(s.pid).name) : ''}${done[s.key] ? ' ✓' : ''}</small></button>`).join('') || '<p class="muted">Hazırlık gerekmiyor.</p>'}</div>`);
+    $('sheetBody').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; resetNS({ cur: b.dataset.k }); closeSheet(); hooks.renderAll(); hooks.openDrawer?.(); };
+    return;
+  }
+  if (S.phase.kind !== 'night') return hooks.openLog();
   const render = () => {
     const { steps, done } = curStep();
     sheet(`<div class="sh-head"><h3>☾ ${store.phaseLabel(S.phase)} sırası</h3><button class="ib" data-act="close">✕</button></div>

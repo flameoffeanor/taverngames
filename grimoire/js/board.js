@@ -1,9 +1,9 @@
 // Masa (Masa ekranı) ve paneldeki küçük masa.
 // Koltuk = [disk + altında oyuncu adı] [rol adı + hatırlatıcılar]
-import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0042';
-import * as store from './store.js?v=20261023-0042';
-import { layout, nearestSeat } from './table.js?v=20261023-0042';
-import * as rules from './rules.js?v=20261023-0042';
+import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0135';
+import * as store from './store.js?v=20261023-0135';
+import { layout, nearestSeat } from './table.js?v=20261023-0135';
+import * as rules from './rules.js?v=20261023-0135';
 
 let L = null;   // son masa yerleşimi
 export const lastLayout = () => L;
@@ -105,7 +105,7 @@ export function renderBoard(centerHTML) {
     const p = P(pid), seat = L.seats[i]; if (!seat || !p) return;
     const ti = hooks.selIndex(pid);
     let dim = false;
-    if (tg) dim = !rules.canTarget(tg.cfg, S, role, tg.step, p);
+    if (tg) dim = !(tg.can ? tg.can(p) : rules.canTarget(tg.cfg, S, role, tg.step, p));
     if (pickMode && pickMode.can && !pickMode.can(p)) dim = true;
     html += seatHTML(p, i, seat, L, { c: cx, actor: pid === actor, ti, dim, pick: !!tg || !!pickMode });
   });
@@ -134,7 +134,8 @@ const blockClick = () => { noClick = true; setTimeout(() => { noClick = false; }
 export const clickBlocked = () => noClick;
 board.addEventListener('contextmenu', e => e.preventDefault());
 board.addEventListener('pointerdown', e => {
-  const el = e.target.closest('.seat'); if (!el || e.target.closest('[data-c]')) return;
+  // sadece tokenın kendisi (disk) dokunmaya açık
+  const el = e.target.closest('.seat'); if (!el || !e.target.closest('.disc') || e.target.closest('[data-c]')) return;
   drag = { el, pid: el.dataset.pid, seat: +el.dataset.seat, x: e.clientX, y: e.clientY, moved: false, long: false };
   if (canDrag()) { try { el.setPointerCapture(e.pointerId); } catch (_) {} }
   drag.timer = setTimeout(() => {

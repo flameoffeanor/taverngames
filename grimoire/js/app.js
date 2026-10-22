@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261023-0042';
-import * as store from './store.js?v=20261023-0042';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0042';
-import { describe } from './describe.js?v=20261023-0042';
-import { startSetup } from './setup.js?v=20261023-0042';
-import { renderBoard, clickBlocked } from './board.js?v=20261023-0042';
-import * as panel from './panel.js?v=20261023-0042';
-import * as sheets from './sheets.js?v=20261023-0042';
+import { loadData } from './data.js?v=20261023-0135';
+import * as store from './store.js?v=20261023-0135';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0135';
+import { describe } from './describe.js?v=20261023-0135';
+import { startSetup } from './setup.js?v=20261023-0135';
+import { renderBoard, clickBlocked } from './board.js?v=20261023-0135';
+import * as panel from './panel.js?v=20261023-0135';
+import * as sheets from './sheets.js?v=20261023-0135';
 
-export const VERSION = '20261023-0042';
+export const VERSION = '20261023-0135';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------
@@ -55,7 +55,7 @@ function renderAll() {
   const S = G.S; if (!S || rendering) return;
   rendering = true;
   try {
-    const pk = store.phaseKey(S.phase);
+    const pk = store.phaseKey(S.phase) + (S.pre ? ':pre' : '');
     if (lastPhase !== pk) { lastPhase = pk; resetNS(); G.DS.mode = null; }
     mergeCustom();
     const sm = panel.summary();
@@ -74,7 +74,7 @@ function renderAll() {
 
 // Masadaki koltuğa dokunma
 $('board').addEventListener('click', e => {
-  const seat = e.target.closest('.seat'); if (!seat || e.target.closest('[data-c]')) return;
+  const seat = e.target.closest('.seat'); if (!seat || !e.target.closest('.disc') || e.target.closest('[data-c]')) return;
   if (clickBlocked()) return;
   if (G.edit || G.S.pre) return sheets.openPlayer(seat.dataset.pid);
   panel.tapSeat(seat.dataset.pid);

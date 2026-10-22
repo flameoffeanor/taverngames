@@ -155,7 +155,7 @@ function one(s, ev) {
       break;
     }
     case 'addPlayer': {
-      s.players.push({ id: ev.p.id, name: ev.p.name, role: ev.p.role, believed: null, dead: false, ghost: true, reminders: [], evil: ev.p.evil ?? null, traveller: true, gain: null, joined: { ...s.phase } });
+      s.players.push({ id: ev.p.id, name: ev.p.name, unnamed: !!ev.p.unnamed, role: ev.p.role, believed: null, dead: false, ghost: true, reminders: [], evil: ev.p.evil ?? null, traveller: ev.p.traveller ?? true, gain: null, joined: { ...s.phase } });
       const i = s.seats.indexOf(ev.after);
       s.seats.splice(i >= 0 ? i + 1 : s.seats.length, 0, ev.p.id);
       s.sides = { ...s.sides, [ev.side]: (s.sides[ev.side] || 0) + 1 };
@@ -169,6 +169,8 @@ function one(s, ev) {
       break;
     }
     case 'note': break;
+    // İlk gece öncesi adımı: içindeki işlemler tek olay (tek geri alma)
+    case 'pre': (ev.ops || []).forEach(op => one(s, { ...op, id: ev.id + (op.type || '') })); (s.pdone = s.pdone || {})[ev.key] = true; break;
   }
 }
 

@@ -1,12 +1,12 @@
 // Alt sayfalar: oyuncu paneli, rol seçici, hatırlatıcı ekleme, menü, gezgin ekleme, masa düzeni, blöfler, kayıt,
 // oyuncuya gösterilen tam ekran kartlar.
-import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0042';
-import { TEAMS, TEAM_TR } from './data.js?v=20261023-0042';
-import * as store from './store.js?v=20261023-0042';
-import * as rules from './rules.js?v=20261023-0042';
-import { sideOfSeat } from './table.js?v=20261023-0042';
-import { sidesEditor } from './setup.js?v=20261023-0042';
-import { describe } from './describe.js?v=20261023-0042';
+import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0135';
+import { TEAMS, TEAM_TR } from './data.js?v=20261023-0135';
+import * as store from './store.js?v=20261023-0135';
+import * as rules from './rules.js?v=20261023-0135';
+import { sideOfSeat } from './table.js?v=20261023-0135';
+import { sidesEditor } from './setup.js?v=20261023-0135';
+import { describe } from './describe.js?v=20261023-0135';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -36,6 +36,7 @@ export function pickRole(title, cb, back, opts = {}) {
     let ids = all ? Object.keys(D.roles).filter(id => D.roles[id].team !== 'reminder') : (S?.scriptRoles || Object.keys(D.roles));
     if (opts.only) ids = (all ? Object.keys(D.roles) : [...new Set([...(S?.scriptRoles || []), ...seated().map(p => p.role)])]).filter(id => role(id).team === opts.only);
     ids = ids.filter(id => !q || role(id).name.toLocaleLowerCase('tr').includes(q));
+    if (opts.exclude) ids = ids.filter(id => !opts.exclude.has(id));
     const g = teamGroups(ids);
     const inPlay = new Set(S ? seated().map(p => p.role) : []);
     sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>${esc(title)}</h3></div>
@@ -95,17 +96,20 @@ function saveName(pid, v) {
   return true;
 }
 export function openPlayer(pid, opt = {}) {
-  let focusOnce = !!opt.name || !!P(pid)?.unnamed;
+  let editing = !!opt.name;
   const render = () => {
     const S = G.S, p = P(pid); if (!p) return closeSheet();
     const seatNo = S.seats.indexOf(pid) + 1;
     const old = $('pName'), keep = old && old.dataset.pid === pid && document.activeElement === old ? old.value : null;
     const c = ctx(), r = role(p.role), day = S.phase.kind === 'day', trav = r.team === 'traveller' || p.traveller;
     const br = c.broken(p), evil = c.isEvil(p);
-    sheet(`<div class="name-row"><input id="pName" data-pid="${pid}" value="${p.unnamed ? '' : esc(p.name)}" placeholder="${seatNo}. oyuncunun ismi" enterkeyhint="next" autocomplete="off" autocapitalize="words" spellcheck="false"><button class="btn primary" data-p="nameNext">✓ Sıradaki</button></div>
-      <div class="pp-head t-${r.team}">${icon(p.role)}
+    const nameHTML = editing
+      ? `<span class="name-row"><input id="pName" data-pid="${pid}" value="${p.unnamed ? '' : esc(p.name)}" placeholder="${seatNo}. oyuncunun ismi" enterkeyhint="done" autocomplete="off" autocapitalize="words" spellcheck="false"><button class="btn primary small" data-p="nameOk">✓</button></span>`
+      : `<span class="pname${p.unnamed ? ' unnamed' : ''}">${p.unnamed ? `${seatNo}. koltuk` : esc(p.name)}</span><button class="pen" data-p="nameEdit" aria-label="İsmi değiştir">✎</button>`;
+    sheet(`<div class="pp-head t-${r.team}">${icon(p.role)}
         <div><h3>${esc(r.name)}</h3>
-        <div class="team">${p.unnamed ? `${seatNo}. koltuk` : esc(p.name)} · ${TEAM_TR[r.team] || r.team} · ${evil ? 'Kötü' : 'İyi'}${p.dead ? ' · <b>Ölü</b>' : ''}${p.dead && p.ghost ? ' · ölü oyu var' : ''}</div>
+        <div class="nm-line">${nameHTML}</div>
+        <div class="team">${TEAM_TR[r.team] || r.team} · ${evil ? 'Kötü' : 'İyi'}${p.dead ? ' · <b>Ölü</b>' : ''}${p.dead && p.ghost ? ' · ölü oyu var' : ''}</div>
         ${p.believed ? `<div class="bel-line">Kendini <b>${esc(RN(p.believed))}</b> sanıyor</div>` : ''}
         ${p.gain ? `<div class="bel-line">Yeteneği: <b>${esc(RN(p.gain))}</b></div>` : ''}
         ${br.map(b => `<div class="note">⚠ ${esc(b.kind)}${b.by ? ` (${esc(P(b.by)?.name || '')})` : ''}</div>`).join('')}</div>
@@ -125,22 +129,28 @@ export function openPlayer(pid, opt = {}) {
         <button class="btn" data-p="role">Rolü değiştir</button>
         <button class="btn" data-p="believed">Sandığı rol${p.believed ? ' ✓' : ''}</button>
         <button class="btn" data-p="align">${evil ? 'İyi yap' : 'Kötü yap'}</button>
-        ${trav ? '<button class="btn" data-p="leave">Masadan çıkar</button>' : ''}
+        ${trav || S.pre ? '<button class="btn" data-p="leave">Masadan çıkar</button>' : ''}
       </div>`, render);
     const inp = $('pName');
-    const next = () => {
+    // ✓: kaydet; ismi girilmemiş oyuncu kaldıysa saat yönünde sıradakine geç
+    const nameOk = () => {
       if (!saveName(pid, inp.value)) { inp.focus(); inp.select(); return; }
-      const seats = G.S.seats, nx = seats[(seats.indexOf(pid) + 1) % seats.length];
-      openPlayer(nx, { name: true });
+      if (G.S.players.some(q => !q.gone && q.unnamed)) {
+        const seats = G.S.seats, nx = seats[(seats.indexOf(pid) + 1) % seats.length];
+        return openPlayer(nx, { name: true });
+      }
+      editing = false; render();
     };
-    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); next(); } };
-    inp.onblur = () => setTimeout(() => saveName(pid, inp.value), 0);
-    if (keep != null) { inp.value = keep; inp.focus(); }
-    else if (focusOnce) { focusOnce = false; inp.focus(); }
+    if (inp) {
+      inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); nameOk(); } };
+      if (keep != null) inp.value = keep;
+      inp.focus();
+    }
     $('sheetBody').onclick = e => {
       const b = e.target.closest('[data-p],[data-rdel]'); if (!b) return;
       const k = b.dataset.p;
-      if (k === 'nameNext') return next();
+      if (k === 'nameOk') return nameOk();
+      if (k === 'nameEdit') { editing = true; return render(); }
       if (b.dataset.rdel) { const x = p.reminders.find(r => r.id === b.dataset.rdel); if (x) act('remDel', { p: pid, rid: x.id, text: x.text }, `${p.name}: ${remTr(x.text)} kaldırıldı`); return; }
       if (k === 'showown') { closeSheet(); return showToken(p.believed || p.role); }
       if (k === 'showany') return pickRole('Hangi token gösterilsin?', id => { closeSheet(); showToken(id); }, render);
@@ -177,7 +187,7 @@ export function openMenu() {
     <div class="list">
       <button class="row-btn" id="mLog"><b>Kayıt</b><small>Olay geçmişi, geri alma</small></button>
       <button class="row-btn" id="mSteps"><b>Gece sırası</b><small>Bu gecenin adımları</small></button>
-      <button class="row-btn" id="mTrav"><b>Gezgin ekle</b><small>Sonradan gelen oyuncu</small></button>
+      <button class="row-btn" id="mTrav"><b>${G.S.pre ? 'Oyuncu ekle' : 'Gezgin ekle'}</b><small>${G.S.pre ? 'Son dakika gelen: rolünü seç, masaya eklenir. Çıkarmak için tokena basılı tut → Masadan çıkar' : 'Sonradan gelen oyuncu'}</small></button>
       <button class="row-btn" id="mShow"><b>Oyuncuya göster</b><small>Token ya da bilgi kartı</small></button>
       <button class="row-btn" id="mBluffs"><b>Blöfler</b><small>${S.bluffs.length ? S.bluffs.map(rname).join(', ') : 'İblis\'e gösterilen 3 rol'}</small></button>
       <button class="row-btn" id="mEdit"><b>Yerleri düzenle</b><small>Oyuncuları sürükleyerek yerleştir</small></button>
@@ -190,7 +200,7 @@ export function openMenu() {
   $('mLog').onclick = openLog;
   $('mSteps').onclick = () => hooks.openSteps();
   $('mEdit').onclick = () => { G.edit = true; closeSheet(); hooks.closeDrawer?.(); hooks.renderAll(); };
-  $('mTrav').onclick = addTraveller;
+  $('mTrav').onclick = () => (G.S.pre ? addPrePlayer() : addTraveller());
   $('mShow').onclick = openShowMenu;
   $('mSides').onclick = openSides;
   $('mBluffs').onclick = openBluffs;
@@ -222,6 +232,23 @@ function openShowMenu() {
 }
 
 // ---------------- gezgin ekle ----------------
+// İlk gece öncesi: herhangi bir rolle oyuncu ekle (isim sonra tokena basılı tutarak)
+function addPrePlayer() {
+  pickRole('Yeni oyuncunun rolü', id => {
+    sheet(`<div class="sh-head"><button class="ib" id="bk">‹</button><h3>${esc(RN(id))} · kimin solunda oturuyor?</h3></div>
+      <p class="muted small">Saat yönünde ondan sonra eklenir. Sonra sürükleyerek de yerini değiştirebilirsin.</p>
+      <div class="list">${seated().map(p => `<button class="row-btn" data-af="${p.id}"><b>${esc(p.name)}</b><small>${esc(RN(p.role))}</small></button>`).join('')}</div>`);
+    $('bk').onclick = () => addPrePlayer();
+    $('sheetBody').onclick = e => {
+      const b = e.target.closest('[data-af]'); if (!b) return;
+      const side = sideOfSeat(G.S.seats.indexOf(b.dataset.af), G.S.sides), nid = 'n' + store.newId();
+      const trav = role(id).team === 'traveller';
+      act('addPlayer', { p: { id: nid, name: String(G.S.players.length + 1), unnamed: true, role: id, evil: trav ? false : null, traveller: trav }, after: b.dataset.af, side }, `${RN(id)} masaya eklendi`);
+      closeSheet();
+    };
+  }, openMenu);
+}
+
 export function addTraveller() {
   pickRole('Gezgin rolü', id => {
     askText('Oyuncunun adı', '', name => {

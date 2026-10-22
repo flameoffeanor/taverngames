@@ -46,12 +46,12 @@ export function dims(S, mini, rows) {
  *   x,y,w,h: hücre kutusu; cx,cy: disk merkezi
  */
 export function layout(W, H, sides, opt = {}) {
-  // Önce 3 hatırlatıcı satırı ayır; disk çok küçülüyorsa 2'ye, 1'e düş.
-  const mini = !!opt.mini, minS = mini ? 40 : 54;
-  const tries = opt.rows != null ? [opt.rows] : mini ? [2, 1, 0] : [3, 2, 1, 0];
+  // Önce 3 hatırlatıcı satırı ayır; disk çok küçülüyorsa 2'ye, 1'e düş. Masada en az 1 satır hap hep görünür.
+  const mini = !!opt.mini;
+  if (opt.rows != null || mini) return layoutOnce(W, H, sides, { rows: opt.rows ?? 0, mini });
   let best = null;
-  for (const rows of tries) {
-    const r = layoutOnce(W, H, sides, { rows, mini });
+  for (const [rows, minS] of [[3, 58], [2, 50], [1, 0]]) {
+    const r = layoutOnce(W, H, sides, { rows });
     if (!r.forced && r.S >= minS) return r;
     if (!best || (!r.forced && (best.forced || r.S > best.S))) best = r;
   }

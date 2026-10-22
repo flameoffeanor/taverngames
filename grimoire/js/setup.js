@@ -1,9 +1,9 @@
 // Oyun kurulumu: Script → Roller → Masa. Tokenlar masaya gelir; isimler masada, hazırlık "İlk gece öncesi" ekranında.
-import { G, $, esc, shuffle, role, rname, teamGroups, roleChip } from './core.js?v=20261023-0042';
-import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261023-0042';
-import * as store from './store.js?v=20261023-0042';
-import { defaultSides } from './table.js?v=20261023-0042';
-import * as prep from './prep.js?v=20261023-0042';
+import { G, $, esc, rich, icon, shuffle, role, rname, teamGroups, roleChip } from './core.js?v=20261023-0135';
+import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261023-0135';
+import * as store from './store.js?v=20261023-0135';
+import { defaultSides } from './table.js?v=20261023-0135';
+import * as prep from './prep.js?v=20261023-0135';
 
 const SKEY = 'tg-grim-setup-v2';
 const W = { step: 1, script: null, n: 10, picked: [], sides: null };
@@ -68,7 +68,9 @@ export function renderSetup() {
         return `<span class="t-${t}${want != null && have !== want ? ' off' : ''}">${TEAM_TR[t]} <b>${have}${want != null ? '/' + want : ''}</b></span>`; }).join('')}</div>
       ${notes.length ? `<p class="warn">⚙ ${notes.join(' · ')}</p>` : ''}
       <p class="muted small">Gezgin de bir oyuncudur; sayılar gezginler hariç hesaplanır. Sarhoş seçersen torbaya onun yerine bir Kasabalı tokenı koy: hangisi olduğunu "İlk gece öncesi"nde seçeceksin.</p>`;
-    html += TEAMS.filter(t => g[t].length).map(t => `<h3 class="t-${t}">${TEAM_TR[t]}</h3><div class="chips">${g[t].map(id => roleChip(id, { on: W.picked.includes(id), attr: `data-pick="${id}"` })).join('')}</div>`).join('');
+    // Rol + yetenek metni (Sheet'ten): seçerken okunabilsin
+    const row = id => { const r = role(id), on = W.picked.includes(id); return `<button class="rl t-${r.team}${on ? ' on' : ''}" data-pick="${id}">${icon(id)}<span><b>${esc(r.name)}${r.setup ? ' <i title="Kurulumu değiştirir">⚙</i>' : ''}</b><small>${rich(r.ability) || ''}</small></span><em>${on ? '✓' : ''}</em></button>`; };
+    html += TEAMS.filter(t => g[t].length).map(t => `<h3 class="t-${t}">${TEAM_TR[t]} <small class="muted">${pickedT[t].length}${target[t] != null ? '/' + target[t] : ''}</small></h3><div class="rlist">${g[t].map(row).join('')}</div>`).join('');
     html += `<div class="nav-row"><button class="btn" data-go="1">Geri</button><button class="btn" data-act="randRoles">🎲 Rastgele öner</button>
       <button class="btn primary" data-go="3" ${ok ? '' : 'disabled'}>Devam</button></div>`;
   }
