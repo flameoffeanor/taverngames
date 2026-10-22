@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="grim.css?v=20261023-0019">
+<link rel="stylesheet" href="grim.css?v=20261023-0042">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
@@ -35,15 +35,17 @@
 
 <section id="game" class="screen" hidden>
   <header class="bar">
-    <button class="ib" data-act="menu" aria-label="Menü">☰</button>
-    <button class="phase-btn" data-act="steps"><span id="phaseTxt"></span><small id="phaseSub"></small></button>
-    <button class="btn primary small" id="editDoneBtn" data-act="editDone" hidden>✓ Yerleşim bitti</button>
-    <div class="seg" id="seg"><button data-pg="0" class="on">Masa</button><button data-pg="1">Panel</button></div>
-    <button class="ib" data-act="undo" aria-label="Geri al" id="undoBtn">↶</button>
+    <div class="bar1">
+      <button class="ib" data-act="menu" aria-label="Menü">☰</button>
+      <button class="phase-btn" data-act="steps"><span id="phaseTxt"></span><small id="phaseSub"></small></button>
+      <button class="btn primary small" id="editDoneBtn" data-act="editDone" hidden>✓ Yerleşim bitti</button>
+      <button class="ib" data-act="undo" aria-label="Geri al" id="undoBtn">↶</button>
+    </div>
+    <div class="strip" id="strip"></div>
   </header>
-  <div id="pager" class="pager">
-    <section class="pane" id="pane1"><div id="board" class="board"></div></section>
-    <section class="pane" id="pane2"><div id="panel" class="panel"></div></section>
+  <div class="stage" id="stage">
+    <div id="board" class="board"></div>
+    <div id="drawer" class="drawer" hidden><div id="panel" class="panel"></div><button class="drawer-grip" data-act="drawer" aria-label="Kapat"><i></i></button></div>
   </div>
 </section>
 
@@ -55,6 +57,6 @@
 <script>
 firebase.initializeApp({apiKey:"AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",authDomain:"tavern-quiz.firebaseapp.com",databaseURL:"https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tavern-quiz",appId:"1:280835700622:web:043d61c02d689de87056df"});
 </script>
-<script type="module" src="js/app.js?v=20261023-0019"></script>
+<script type="module" src="js/app.js?v=20261023-0042"></script>
 </body>
 </html>

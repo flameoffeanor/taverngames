@@ -1,8 +1,8 @@
 // "İlk gece öncesi" hazırlık ekranı (oyun kurulduktan sonra, Gece 1 başlamadan).
 // Sarhoş'un sandığı rol, gezgin takımları, kırmızı ringa, ilk gece bilgileri (Almanac: "while preparing the first night"),
 // Çırak / Cüce, İblis blöfleri. Her seçim bir olaydır: geri alınabilir.
-import { G, hooks, $, esc, role, rname, icon, roleChip, shuffle, P, seated, act, confirmBox, closeSheet } from './core.js?v=20261023-0019';
-import { TEAM_TR } from './data.js?v=20261023-0019';
+import { G, hooks, $, esc, role, rname, icon, roleChip, shuffle, P, seated, act, confirmBox, closeSheet } from './core.js?v=20261023-0042';
+import { TEAM_TR } from './data.js?v=20261023-0042';
 
 // Kendini başka rol sanan roller ve sandıkları rolün takımı
 export const BELIEVES = { drunk: 'townsfolk', lunatic: 'demon', marionette: 'townsfolk' };

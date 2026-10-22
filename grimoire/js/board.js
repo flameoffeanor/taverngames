@@ -1,9 +1,9 @@
 // Masa (Masa ekranı) ve paneldeki küçük masa.
 // Koltuk = [disk + altında oyuncu adı] [rol adı + hatırlatıcılar]
-import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0019';
-import * as store from './store.js?v=20261023-0019';
-import { layout, nearestSeat } from './table.js?v=20261023-0019';
-import * as rules from './rules.js?v=20261023-0019';
+import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0042';
+import * as store from './store.js?v=20261023-0042';
+import { layout, nearestSeat } from './table.js?v=20261023-0042';
+import * as rules from './rules.js?v=20261023-0042';
 
 let L = null;   // son masa yerleşimi
 export const lastLayout = () => L;

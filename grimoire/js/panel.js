@@ -1,10 +1,10 @@
 // Panel ekranı: gece adımı ve gündüz akışı. Masa ekranındaki dokunmalar da buradan yönetilir.
-import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0019';
-import * as store from './store.js?v=20261023-0019';
-import * as rules from './rules.js?v=20261023-0019';
-import { miniMapHTML } from './board.js?v=20261023-0019';
-import { describe } from './describe.js?v=20261023-0019';
-import * as prep from './prep.js?v=20261023-0019';
+import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0042';
+import * as store from './store.js?v=20261023-0042';
+import * as rules from './rules.js?v=20261023-0042';
+import { miniMapHTML } from './board.js?v=20261023-0042';
+import { describe } from './describe.js?v=20261023-0042';
+import * as prep from './prep.js?v=20261023-0042';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -118,7 +118,7 @@ function stepHTML(step, done) {
     const need = cfg.targets[0], max = cfg.targets[1];
     const sel = NS.targets.map(id => P(id)?.name).filter(Boolean);
     h += `<div class="pick-h"><b>${max === 1 ? 'Hedef' : `Hedefler (${need === max ? max : `${need}–${max}`})`}</b><span>${sel.length ? sel.map((n, i) => `${i + 1}. ${esc(n)}`).join(' · ') : 'Dokunarak seç'}</span>${sel.length ? '<button class="link" data-c="clearT">Temizle</button>' : ''}</div>`;
-    h += miniMap({ sel: NS.targets, can: q => rules.canTarget(cfg, S, role, step, q), actor: p.id });
+    h += mmBlock({ sel: NS.targets, can: q => rules.canTarget(cfg, S, role, step, q), actor: p.id });
   }
   // göster / seç
   const ex = [];
@@ -134,12 +134,16 @@ function stepHTML(step, done) {
   return { top, body: h, foot: `<div class="acts"><button class="btn" data-c="skip">Atla</button><button class="btn primary" data-c="ok" ${ready ? '' : 'disabled'}>✓ Onayla</button></div>` };
 }
 
-// Panelin genişliğine göre küçük masa
+// Çekmecede küçük masa: isteğe bağlı (seçim normalde büyük masada yapılır)
+G.mm = (() => { try { return localStorage.getItem('tg-grim-mm') === '1'; } catch (_) { return false; } })();
+function mmBlock(opt) {
+  return `<button class="btn small mm-tg" data-c="mmTog">${G.mm ? '▦ Küçük masayı gizle' : '▦ Burada küçük masada seç'}</button>` + (G.mm ? miniMap(opt) : '');
+}
 function miniMap(opt) {
-  const pw = $('panel').clientWidth || 360;
+  const pw = Math.min($('stage').clientWidth || 360, 640);
   const w = Math.min(pw - 28, 640);
-  const ph = $('panel').clientHeight || 700;
-  const h = Math.round(Math.min(Math.max(w * 1.45, 300), 760, ph * 0.85));
+  const ph = $('stage').clientHeight || 700;
+  const h = Math.round(Math.min(Math.max(w * 1.2, 260), 640, ph * 0.62));
   return `<div class="mm-wrap">${miniMapHTML(w, h, opt)}</div>`;
 }
 
@@ -300,13 +304,13 @@ function dayHTML() {
 // opt: {k, title, hint, min, max, can(p), ok(sel), okLabel, info(sel)→html, auto}
 export function startPick(opt) {
   G.DS.mode = { pick: true, sel: [], min: 1, max: 1, okLabel: 'Tamam', ...opt };
-  hooks.renderAll(); hooks.goPanel?.();
+  hooks.renderAll();
 }
 function pickHTML(m) {
   const info = m.info ? m.info(m.sel) : '';
   const ready = m.sel.length >= (m.min ?? 1);
   return `<div class="cc fixed"><div class="cc-top"><h3>${esc(m.title)}</h3>${m.hint ? `<p class="muted center small">${esc(m.hint)}</p>` : ''}</div>
-    <div class="cc-body">${info}${miniMap({ sel: m.sel, can: m.can || (() => true) })}</div>
+    <div class="cc-body">${info}<p class="muted small">${m.sel.length ? 'Seçili: ' + m.sel.map(id => esc(P(id)?.name || '')).join(', ') : 'Masada dokunarak seç.'}</p>${mmBlock({ sel: m.sel, can: m.can || (() => true) })}</div>
     <div class="cc-foot"><div class="acts"><button class="btn" data-c="pickCancel">Vazgeç</button><button class="btn primary" data-c="pickOk" ${ready ? '' : 'disabled'}>${esc(m.okLabel)}</button></div></div></div>`;
 }
 function finishPick() {
@@ -494,6 +498,40 @@ export function summary() {
   const i = c.steps.indexOf(st) + 1;
   return { title: '☾ ' + store.phaseLabel(S.phase), sub: `${i}/${c.steps.length} · ${st.role ? RN(st.role) : st.title}${st.pid ? ' · ' + P(st.pid).name : ''}`, role: st.role };
 }
+// Üst şerit: çekmece kapalıyken de sıradaki iş + önemli uyarı + onay düğmesi
+export function stripHTML() {
+  const S = G.S, car = '<span class="st-car">▾</span>';
+  const row = (ic, t, sub, btns = '', warn = false) => `<span class="st-ic">${ic}</span><span class="st-t"><b>${t}</b>${sub ? `<small${warn ? ' class="warn"' : ''}>${sub}</small>` : ''}</span>${btns}${car}`;
+  if (G.edit) return row('✥', 'Yerleri düzenle', 'Tokenı sürükle, başka koltuğa bırak');
+  const m = G.DS.mode;
+  if (m?.pick) {
+    const ready = m.sel.length >= (m.min ?? 1);
+    return row('☝', esc(m.title), m.sel.length ? esc(m.sel.map(id => P(id)?.name).join(', ')) : 'Masada dokunarak seç',
+      `<button class="st-btn" data-c="pickCancel">✕</button>${m.auto ? '' : `<button class="st-btn primary" data-c="pickOk" ${ready ? '' : 'disabled'}>${esc(m.okLabel)}</button>`}`);
+  }
+  if (S.result) return row('🏁', `Oyun bitti: ${S.result.winner === 'good' ? 'İyiler' : 'Kötüler'} kazandı`, esc(S.result.reason || ''));
+  if (S.pre) {
+    const un = seated().filter(p => p.unnamed).length;
+    return row('📋', 'İlk gece öncesi', un ? `${un} isim eksik · tokena basılı tut` : 'Hazırlık: Sarhoş, ringa, blöfler…', `<button class="st-btn primary" data-c="ready">☾ Başlat</button>`, !!un);
+  }
+  if (S.phase.kind === 'day') {
+    const atd = aboutToDie(), it = rules.dayItems(S, role).find(i => i.strong);
+    const sub = it ? it.text : atd.leader ? `Ölmek üzere: ${P(atd.leader).name} (${atd.max} oy)` : `${aliveAll().length} yaşıyor · idam için ${needVotes()} oy`;
+    return row('☀', `${store.phaseLabel(S.phase)}`, esc(sub), `<button class="st-btn" data-c="nominate">⚖ Aday</button>`, !!it);
+  }
+  const c = curStep(), st = c?.step;
+  if (!st) return row('☾', 'Şafak', 'Gece sırası bitti', `<button class="st-btn primary" data-c="toDay">☀ Güne geç</button>`);
+  const i = c.steps.indexOf(st) + 1, done = !!c.done[st.key];
+  const { notes } = rules.stepInfo(st, S, role, G.NS);
+  if (st.special) return row(st.special === 'minioninfo' ? 'M' : st.special === 'demoninfo' ? 'İ' : 'G', `${i}/${c.steps.length} · ${esc(st.title)}`, notes[0] ? esc(notes[0]) : '', done ? '<span class="ok">✓</span>' : `<button class="st-btn primary" data-c="ok">✓</button>`, !!notes[0]);
+  const p = P(st.pid), cfg = rules.cfgFor(st, S, role);
+  const tg = G.NS.targets.map(id => P(id)?.name).filter(Boolean);
+  const ready = G.NS.targets.length >= cfg.targets[0] && (!cfg.three || G.NS.targets.length === 3);
+  const sub = notes[0] ? esc(notes[0]) : tg.length ? '→ ' + esc(tg.join(', ')) : cfg.targets[1] > 0 ? 'Masada hedef seç' : '';
+  return row(icon(st.role), `${i}/${c.steps.length} · ${esc(RN(st.role))} · ${esc(p?.name || '')}`, sub,
+    done ? '<span class="ok">✓</span>' : `<button class="st-btn primary" data-c="ok" ${ready ? '' : 'disabled'}>✓</button>`, !!notes[0]);
+}
+
 export function centerHTML() {
   const s = summary();
   return `<button class="mini" data-c="topanel">${s.role ? icon(s.role) : ''}<b>${esc(s.title)}</b><small>${esc(s.sub)}</small><small class="go">Panel ▸</small></button>`;
@@ -512,8 +550,9 @@ function onClick(e) {
   const go = k => { resetNS({ cur: k }); hooks.renderAll(); };
   switch (a) {
     case 'tgt': return tapSeat(b.dataset.pid, true);
-    case 'topanel': return hooks.goPanel?.();
-    case 'editDone': G.edit = false; hooks.renderAll(); return hooks.goPanel?.();
+    case 'topanel': return hooks.openDrawer?.();
+    case 'mmTog': G.mm = !G.mm; try { localStorage.setItem('tg-grim-mm', G.mm ? '1' : '0'); } catch (_) {} return hooks.renderAll();
+    case 'editDone': G.edit = false; return hooks.renderAll();
     case 'prev': case 'next': { const i = c.steps.indexOf(c.step) + (a === 'prev' ? -1 : 1); if (i < 0) return; return go(c.steps[Math.min(i, c.steps.length - 1)]?.key || null); }
     case 'list': return openSteps();
     case 'toDay': case 'toNight': return nextPhase();
@@ -547,6 +586,7 @@ function onClick(e) {
   }
 }
 $('panel').addEventListener('click', onClick);
+$('strip').addEventListener('click', e => { if (e.target.closest('[data-c]')) onClick(e); });
 $('board').addEventListener('click', e => {
   if (e.target.closest('.seat')) return;   // koltuk dokunmaları app.js'de
   onClick(e);
@@ -578,7 +618,7 @@ function openSteps() {
       <div class="list">${steps.map((s, i) => `<button class="row-btn st-row${s.key === G.NS.cur ? ' cur' : ''}${done[s.key] ? ' done' : ''}" data-k="${s.key}">
         <span class="sti">${s.role ? icon(s.role) : (s.special === 'minioninfo' ? 'M' : 'İ')}</span>
         <b>${i + 1}. ${esc(s.role ? RN(s.role) : s.title)}</b><small>${s.pid ? esc(P(s.pid).name) : ''}${done[s.key] ? ' ✓' : ''}</small></button>`).join('') || '<p class="muted">Bu gece uyanan yok.</p>'}</div>`, render);
-    $('sheetBody').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; resetNS({ cur: b.dataset.k }); closeSheet(); hooks.renderAll(); hooks.goPanel?.(); };
+    $('sheetBody').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; resetNS({ cur: b.dataset.k }); closeSheet(); hooks.renderAll(); hooks.openDrawer?.(); };
   };
   render();
 }

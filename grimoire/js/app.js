@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261023-0019';
-import * as store from './store.js?v=20261023-0019';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0019';
-import { describe } from './describe.js?v=20261023-0019';
-import { startSetup } from './setup.js?v=20261023-0019';
-import { renderBoard, clickBlocked } from './board.js?v=20261023-0019';
-import * as panel from './panel.js?v=20261023-0019';
-import * as sheets from './sheets.js?v=20261023-0019';
+import { loadData } from './data.js?v=20261023-0042';
+import * as store from './store.js?v=20261023-0042';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0042';
+import { describe } from './describe.js?v=20261023-0042';
+import { startSetup } from './setup.js?v=20261023-0042';
+import { renderBoard, clickBlocked } from './board.js?v=20261023-0042';
+import * as panel from './panel.js?v=20261023-0042';
+import * as sheets from './sheets.js?v=20261023-0042';
 
-export const VERSION = '20261023-0019';
+export const VERSION = '20261023-0042';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------
@@ -39,27 +39,15 @@ function onState(st) {
 function mergeCustom() { const S = G.S; if (S?.customRoles) for (const [k, v] of Object.entries(S.customRoles)) if (!G.D.roles[k]) G.D.roles[k] = v; }
 function startGame() {
   mergeCustom(); show('game'); closeSheet();
-  curPane = 0; pager.scrollTop = 0;
+  setDrawer(true);
   renderAll();
 }
 
-// ---------------- Masa / Panel ----------------
-const pager = $('pager');
-const splitPref = () => { try { return localStorage.getItem('tg-grim-split'); } catch (e) { return null; } };
-const splitOn = () => { const p = splitPref(); return p === 'on' || (p !== 'off' && innerWidth > innerHeight && innerWidth >= 900); };
-let curPane = 0;
-function applyLayout() {
-  const sp = splitOn();
-  if (pager.classList.contains('split') !== sp) pager.classList.toggle('split', sp);
-  pager.classList.toggle('editing', !!G.edit);
-  updSeg();
-}
-function updSeg() { document.querySelectorAll('#seg [data-pg]').forEach(b => b.classList.toggle('on', +b.dataset.pg === curPane)); }
-function goPane(i) { if (splitOn()) return; curPane = i; updSeg(); pager.scrollTo({ top: i * pager.clientHeight, behavior: 'smooth' }); }
-pager.addEventListener('scroll', () => { if (splitOn()) return; const i = pager.scrollTop > pager.clientHeight / 2 ? 1 : 0; if (i !== curPane) { curPane = i; updSeg(); } }, { passive: true });
-addEventListener('resize', () => { if (!G.S || $('game').hidden) return; applyLayout(); if (!splitOn()) pager.scrollTop = curPane * pager.clientHeight; });
+// ---------------- çekmece (panel üstten açılır) ----------------
+const drawer = $('drawer');
+function setDrawer(open) { G.drawer = !!open; drawer.hidden = !G.drawer; $('strip').classList.toggle('open', G.drawer); if (G.drawer) drawer.scrollTop = 0; }
+G.drawer = true;
 new ResizeObserver(() => { if (!$('game').hidden && G.S) renderAll(); }).observe($('board'));
-$('seg').addEventListener('click', e => { const b = e.target.closest('[data-pg]'); if (b) goPane(+b.dataset.pg); });
 
 // ---------------- çizim ----------------
 let rendering = false;
@@ -72,11 +60,12 @@ function renderAll() {
     mergeCustom();
     const sm = panel.summary();
     $('phaseTxt').textContent = S.pre ? 'İlk gece öncesi' : (S.phase.kind === 'night' ? '☾ ' : '☀ ') + store.phaseLabel(S.phase);
-    $('phaseSub').textContent = S.pre ? sm.sub : S.phase.kind === 'night' ? sm.sub : (S.result ? 'Oyun bitti' : S.script);
+    $('phaseSub').textContent = S.result ? 'Oyun bitti' : S.script;
     $('undoBtn').disabled = store.getEvents().length <= 1;
-    $('editDoneBtn').hidden = !G.edit; $('seg').hidden = !!G.edit;
+    $('editDoneBtn').hidden = !G.edit;
     if (G.edit) $('phaseSub').textContent = 'Yerleri düzenle: sürükle-bırak';
-    applyLayout();
+    $('strip').innerHTML = panel.stripHTML();
+    drawer.hidden = !G.drawer;
     renderBoard(panel.centerHTML());
     panel.renderPanel();
     refreshSheet();
@@ -92,13 +81,16 @@ $('board').addEventListener('click', e => {
 });
 
 // ---------------- üst bar ----------------
+// Şerit: düğmeleri panel işler, geri kalanı çekmeceyi aç/kapat
+$('strip').addEventListener('click', e => { if (e.target.closest('[data-c]')) return; setDrawer(!G.drawer); });
+drawer.addEventListener('click', e => { if (e.target.closest('.drawer-grip')) setDrawer(false); });
 $('game').querySelector('.bar').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;
   if (a === 'undo') doUndo();
   if (a === 'menu') sheets.openMenu();
   if (a === 'steps') panel.openSteps();
-  if (a === 'editDone') { G.edit = false; renderAll(); goPane(1); }
+  if (a === 'editDone') { G.edit = false; renderAll(); }
 });
 function doUndo() {
   const evs = store.getEvents(); if (evs.length <= 1) return;
@@ -129,7 +121,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 
 // ---------------- kancalar ----------------
 Object.assign(hooks, {
-  renderAll, goPanel: () => goPane(1), goTable: () => goPane(0), splitPref, version: () => VERSION,
+  renderAll, openDrawer: () => setDrawer(true), closeDrawer: () => setDrawer(false), version: () => VERSION,
   targeting: panel.targeting, actor: panel.actorId, selIndex: panel.selIndex, pickMode: () => (G.DS.mode?.pick ? G.DS.mode : null),
   openPlayer: sheets.openPlayer, pickRole: sheets.pickRole, pickReminder: sheets.pickReminder, showToken: sheets.showToken, showCard: sheets.showCard,
   openLog: sheets.openLog, openSteps: panel.openSteps, execute: panel.execute, afterEffects: panel.afterEffects, marks: () => panel.MARKS,

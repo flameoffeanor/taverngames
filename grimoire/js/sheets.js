@@ -1,12 +1,12 @@
 // Alt sayfalar: oyuncu paneli, rol seçici, hatırlatıcı ekleme, menü, gezgin ekleme, masa düzeni, blöfler, kayıt,
 // oyuncuya gösterilen tam ekran kartlar.
-import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0019';
-import { TEAMS, TEAM_TR } from './data.js?v=20261023-0019';
-import * as store from './store.js?v=20261023-0019';
-import * as rules from './rules.js?v=20261023-0019';
-import { sideOfSeat } from './table.js?v=20261023-0019';
-import { sidesEditor } from './setup.js?v=20261023-0019';
-import { describe } from './describe.js?v=20261023-0019';
+import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0042';
+import { TEAMS, TEAM_TR } from './data.js?v=20261023-0042';
+import * as store from './store.js?v=20261023-0042';
+import * as rules from './rules.js?v=20261023-0042';
+import { sideOfSeat } from './table.js?v=20261023-0042';
+import { sidesEditor } from './setup.js?v=20261023-0042';
+import { describe } from './describe.js?v=20261023-0042';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -84,9 +84,15 @@ export function pickReminder(pid, back) {
 
 // ---------------- oyuncu paneli (uzun basma) ----------------
 // İsim: yaz, ✓ ile saat yönünde sıradaki oyuncuya geç (kurulumda isimler masada girilir)
+// Aynı isim başka oyuncuda varsa kaydetmez, o oyuncuyu döndürür
+function dupOf(pid, v) { const k = v.toLocaleLowerCase('tr'); return G.S.players.find(q => q.id !== pid && !q.unnamed && !q.gone && q.name.trim().toLocaleLowerCase('tr') === k); }
 function saveName(pid, v) {
   const q = P(pid); v = (v || '').trim();
-  if (q && v && (v !== q.name || q.unnamed)) act('rename', { p: pid, name: v, old: q.unnamed ? '' : q.name });
+  if (!q || !v || (v === q.name && !q.unnamed)) return true;
+  const d = dupOf(pid, v);
+  if (d) { toast(`"${v}" ismi zaten var (${G.S.seats.indexOf(d.id) + 1}. koltuk). Farklı yaz.`); return false; }
+  act('rename', { p: pid, name: v, old: q.unnamed ? '' : q.name });
+  return true;
 }
 export function openPlayer(pid, opt = {}) {
   let focusOnce = !!opt.name || !!P(pid)?.unnamed;
@@ -123,7 +129,7 @@ export function openPlayer(pid, opt = {}) {
       </div>`, render);
     const inp = $('pName');
     const next = () => {
-      saveName(pid, inp.value);
+      if (!saveName(pid, inp.value)) { inp.focus(); inp.select(); return; }
       const seats = G.S.seats, nx = seats[(seats.indexOf(pid) + 1) % seats.length];
       openPlayer(nx, { name: true });
     };
@@ -176,7 +182,6 @@ export function openMenu() {
       <button class="row-btn" id="mBluffs"><b>Blöfler</b><small>${S.bluffs.length ? S.bluffs.map(rname).join(', ') : 'İblis\'e gösterilen 3 rol'}</small></button>
       <button class="row-btn" id="mEdit"><b>Yerleri düzenle</b><small>Oyuncuları sürükleyerek yerleştir</small></button>
       <button class="row-btn" id="mSides"><b>Masa düzeni</b><small>Kenar başına koltuk sayısı</small></button>
-      <button class="row-btn" id="mSplit"><b>Yatay ekranda ikiye böl</b><small>${{ on: 'Açık', off: 'Kapalı' }[hooks.splitPref()] || 'Otomatik (tablet yatayda açık)'}</small></button>
       <button class="row-btn" id="mEnd"><b>Oyunu bitir</b><small>${S.result ? 'Bitti: ' + (S.result.winner === 'good' ? 'İyiler' : 'Kötüler') : 'Kazananı işaretle'}</small></button>
       <button class="row-btn" id="mNew"><b>Yeni oyun</b><small>Bu oyun arşive alınır</small></button>
       <button class="row-btn" id="mOut"><b>Çıkış yap</b><small>${esc(firebase.auth().currentUser?.email || '')}</small></button>
@@ -184,8 +189,7 @@ export function openMenu() {
   render();
   $('mLog').onclick = openLog;
   $('mSteps').onclick = () => hooks.openSteps();
-  $('mEdit').onclick = () => { G.edit = true; closeSheet(); hooks.renderAll(); hooks.goTable?.(); };
-  $('mSplit').onclick = () => { const nx = { null: 'on', on: 'off', off: null }[hooks.splitPref()]; try { nx ? localStorage.setItem('tg-grim-split', nx) : localStorage.removeItem('tg-grim-split'); } catch (e) {} hooks.renderAll(); render(); };
+  $('mEdit').onclick = () => { G.edit = true; closeSheet(); hooks.closeDrawer?.(); hooks.renderAll(); };
   $('mTrav').onclick = addTraveller;
   $('mShow').onclick = openShowMenu;
   $('mSides').onclick = openSides;
