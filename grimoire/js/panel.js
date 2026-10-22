@@ -1,9 +1,10 @@
 // Panel ekranı: gece adımı ve gündüz akışı. Masa ekranındaki dokunmalar da buradan yönetilir.
-import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261022-2347';
-import * as store from './store.js?v=20261022-2347';
-import * as rules from './rules.js?v=20261022-2347';
-import { miniMapHTML } from './board.js?v=20261022-2347';
-import { describe } from './describe.js?v=20261022-2347';
+import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0019';
+import * as store from './store.js?v=20261023-0019';
+import * as rules from './rules.js?v=20261023-0019';
+import { miniMapHTML } from './board.js?v=20261023-0019';
+import { describe } from './describe.js?v=20261023-0019';
+import * as prep from './prep.js?v=20261023-0019';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -12,7 +13,7 @@ const dayKey = () => store.phaseKey(G.S.phase);
 // ======================= GECE =======================
 export function curStep() {
   const S = G.S, NS = G.NS;
-  if (S.phase.kind !== 'night') return null;
+  if (S.phase.kind !== 'night' || S.pre) return null;
   const steps = rules.nightSteps(S, G.D, role);
   const done = S.done[store.phaseKey(S.phase)] || {};
   if (!NS.cur || !steps.some(s => s.key === NS.cur)) { NS.cur = (steps.find(s => !done[s.key]) || {}).key || null; NS.pre = null; }
@@ -467,9 +468,10 @@ export function renderPanel() {
   let html;
   if (G.edit) html = `<div class="cc"><h3>Yerleri düzenle</h3><p class="muted center">Masa ekranında jetonu sürükleyip başka koltuğa bırak; ikisi yer değiştirir. Yan yana oturanlar komşu sayılır.</p>
     <button class="btn primary big" data-c="editDone">✓ Bitti</button></div>`;
+  else if (S.pre) html = prep.preHTML();
   else if (S.phase.kind === 'day') html = dayHTML();
   else html = nightHTML(curStep());
-  const key = [store.phaseKey(S.phase), G.NS.cur, G.DS.mode?.k, G.edit].join('|');
+  const key = [store.phaseKey(S.phase), S.pre, G.NS.cur, G.DS.mode?.k, G.edit].join('|');
   const old = panel.querySelector('.cc-body') || panel.querySelector('.cc');
   const keep = old && key === panelKey ? old.scrollTop : 0;
   panel.innerHTML = html;
@@ -482,6 +484,7 @@ export function summary() {
   const S = G.S;
   if (G.edit) return { title: 'Yerleri düzenle', sub: 'Sürükle-bırak' };
   if (G.DS.mode?.pick) return { title: G.DS.mode.title, sub: G.DS.mode.sel.map(id => P(id)?.name).join(', ') || 'Seç' };
+  if (S.pre) { const un = seated().filter(p => p.unnamed).length; return { title: 'İlk gece öncesi', sub: un ? `${un} isim eksik` : 'Hazırlık' }; }
   if (S.phase.kind === 'day') {
     const atd = aboutToDie();
     return { title: '☀ ' + store.phaseLabel(S.phase), sub: atd.leader ? `Ölmek üzere: ${P(atd.leader).name}` : `${aliveAll().length} yaşıyor` };
@@ -504,6 +507,7 @@ function onClick(e) {
   const b = e.target.closest('[data-c]');
   if (!b || b.tagName === 'INPUT') return;
   const a = b.dataset.c;
+  if (S.pre && prep.preClick(b)) return;
   const c = S.phase.kind === 'night' ? curStep() : null;
   const go = k => { resetNS({ cur: k }); hooks.renderAll(); };
   switch (a) {
@@ -567,7 +571,7 @@ function markerCard(k) {
 
 function openSteps() {
   const S = G.S;
-  if (S.phase.kind !== 'night') return hooks.openLog();
+  if (S.phase.kind !== 'night' || S.pre) return hooks.openLog();
   const render = () => {
     const { steps, done } = curStep();
     sheet(`<div class="sh-head"><h3>☾ ${store.phaseLabel(S.phase)} sırası</h3><button class="ib" data-act="close">✕</button></div>

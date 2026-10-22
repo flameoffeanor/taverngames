@@ -117,11 +117,12 @@ function layoutOnce(W, H, sides, opt) {
     for (let i = 0; i < n; i++) {
       const cxSlot = pad + r.slot * (i + 0.5);
       if (r.orient === 'h') {
-        // disk yuva ortasında; sıranın sağ yarısında hatırlatıcılar diskin solunda (aynalı, simetrik)
-        const w = S + gap + r.infoW;
-        const flip = (i + 0.5) > n / 2 + 0.01;
-        const x = r.center ? (flip ? cxSlot + S / 2 - w : cxSlot - S / 2) : cxSlot - w / 2;
-        const cx = r.center ? cxSlot : flip ? x + w - S / 2 : x + S / 2;
+        // Ortalı: disk yuvanın ortasında, sağ yarıda hatırlatıcılar diskin solunda (aynalı).
+        // Ortalı sığmazsa: diskler sıranın ortasına yakın, hatırlatıcılar kenara doğru — böylece sıra yan sütunlarla karışmaz.
+        const w = S + gap + r.infoW, right = (i + 0.5) > n / 2 + 0.01;
+        let x, cx, flip;
+        if (r.center) { flip = right; x = flip ? cxSlot + S / 2 - w : cxSlot - S / 2; cx = cxSlot; }
+        else { flip = !right; x = cxSlot - w / 2; cx = flip ? x + w - S / 2 : x + S / 2; }
         out.push({ x, y, w, h: r.h, cx, cy: discY(y, r.h), orient: 'h', flip, side, infoW: r.infoW, infoH: r.h });
       } else {
         const w = Math.max(S, r.infoW), x = cxSlot - w / 2;

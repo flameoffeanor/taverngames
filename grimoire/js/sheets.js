@@ -1,12 +1,12 @@
 // Alt sayfalar: oyuncu paneli, rol seçici, hatırlatıcı ekleme, menü, gezgin ekleme, masa düzeni, blöfler, kayıt,
 // oyuncuya gösterilen tam ekran kartlar.
-import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261022-2347';
-import { TEAMS, TEAM_TR } from './data.js?v=20261022-2347';
-import * as store from './store.js?v=20261022-2347';
-import * as rules from './rules.js?v=20261022-2347';
-import { sideOfSeat } from './table.js?v=20261022-2347';
-import { sidesEditor } from './setup.js?v=20261022-2347';
-import { describe } from './describe.js?v=20261022-2347';
+import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0019';
+import { TEAMS, TEAM_TR } from './data.js?v=20261023-0019';
+import * as store from './store.js?v=20261023-0019';
+import * as rules from './rules.js?v=20261023-0019';
+import { sideOfSeat } from './table.js?v=20261023-0019';
+import { sidesEditor } from './setup.js?v=20261023-0019';
+import { describe } from './describe.js?v=20261023-0019';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -83,14 +83,23 @@ export function pickReminder(pid, back) {
 }
 
 // ---------------- oyuncu paneli (uzun basma) ----------------
-export function openPlayer(pid) {
+// İsim: yaz, ✓ ile saat yönünde sıradaki oyuncuya geç (kurulumda isimler masada girilir)
+function saveName(pid, v) {
+  const q = P(pid); v = (v || '').trim();
+  if (q && v && (v !== q.name || q.unnamed)) act('rename', { p: pid, name: v, old: q.unnamed ? '' : q.name });
+}
+export function openPlayer(pid, opt = {}) {
+  let focusOnce = !!opt.name || !!P(pid)?.unnamed;
   const render = () => {
     const S = G.S, p = P(pid); if (!p) return closeSheet();
+    const seatNo = S.seats.indexOf(pid) + 1;
+    const old = $('pName'), keep = old && old.dataset.pid === pid && document.activeElement === old ? old.value : null;
     const c = ctx(), r = role(p.role), day = S.phase.kind === 'day', trav = r.team === 'traveller' || p.traveller;
     const br = c.broken(p), evil = c.isEvil(p);
-    sheet(`<div class="pp-head t-${r.team}">${icon(p.role)}
+    sheet(`<div class="name-row"><input id="pName" data-pid="${pid}" value="${p.unnamed ? '' : esc(p.name)}" placeholder="${seatNo}. oyuncunun ismi" enterkeyhint="next" autocomplete="off" autocapitalize="words" spellcheck="false"><button class="btn primary" data-p="nameNext">✓ Sıradaki</button></div>
+      <div class="pp-head t-${r.team}">${icon(p.role)}
         <div><h3>${esc(r.name)}</h3>
-        <div class="team">${esc(p.name)} <button class="link" data-p="rename">✎</button> · ${TEAM_TR[r.team] || r.team} · ${evil ? 'Kötü' : 'İyi'}${p.dead ? ' · <b>Ölü</b>' : ''}${p.dead && p.ghost ? ' · ölü oyu var' : ''}</div>
+        <div class="team">${p.unnamed ? `${seatNo}. koltuk` : esc(p.name)} · ${TEAM_TR[r.team] || r.team} · ${evil ? 'Kötü' : 'İyi'}${p.dead ? ' · <b>Ölü</b>' : ''}${p.dead && p.ghost ? ' · ölü oyu var' : ''}</div>
         ${p.believed ? `<div class="bel-line">Kendini <b>${esc(RN(p.believed))}</b> sanıyor</div>` : ''}
         ${p.gain ? `<div class="bel-line">Yeteneği: <b>${esc(RN(p.gain))}</b></div>` : ''}
         ${br.map(b => `<div class="note">⚠ ${esc(b.kind)}${b.by ? ` (${esc(P(b.by)?.name || '')})` : ''}</div>`).join('')}</div>
@@ -112,9 +121,20 @@ export function openPlayer(pid) {
         <button class="btn" data-p="align">${evil ? 'İyi yap' : 'Kötü yap'}</button>
         ${trav ? '<button class="btn" data-p="leave">Masadan çıkar</button>' : ''}
       </div>`, render);
+    const inp = $('pName');
+    const next = () => {
+      saveName(pid, inp.value);
+      const seats = G.S.seats, nx = seats[(seats.indexOf(pid) + 1) % seats.length];
+      openPlayer(nx, { name: true });
+    };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); next(); } };
+    inp.onblur = () => setTimeout(() => saveName(pid, inp.value), 0);
+    if (keep != null) { inp.value = keep; inp.focus(); }
+    else if (focusOnce) { focusOnce = false; inp.focus(); }
     $('sheetBody').onclick = e => {
       const b = e.target.closest('[data-p],[data-rdel]'); if (!b) return;
       const k = b.dataset.p;
+      if (k === 'nameNext') return next();
       if (b.dataset.rdel) { const x = p.reminders.find(r => r.id === b.dataset.rdel); if (x) act('remDel', { p: pid, rid: x.id, text: x.text }, `${p.name}: ${remTr(x.text)} kaldırıldı`); return; }
       if (k === 'showown') { closeSheet(); return showToken(p.believed || p.role); }
       if (k === 'showany') return pickRole('Hangi token gösterilsin?', id => { closeSheet(); showToken(id); }, render);

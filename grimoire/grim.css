@@ -321,3 +321,9 @@ h3.t-townsfolk,h3.t-outsider,h3.t-minion,h3.t-demon,h3.t-traveller,h4[class^=t-]
 .toast button{pointer-events:auto;color:var(--gold);font-weight:700;padding:4px 8px;white-space:nowrap}
 
 @media (min-width:900px){.sheet{align-items:center}.sheet-body{border-radius:20px;border-bottom:1px solid var(--line)}}
+
+.pn.unnamed{color:var(--muted);font-style:italic}
+.name-row{display:flex;gap:8px;margin:2px 0 10px}
+.name-row input{flex:1;min-width:0;font-size:1.1rem;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--s1);color:#fff}
+.name-row .btn{white-space:nowrap}
+.cnt-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 10px;font-weight:600}

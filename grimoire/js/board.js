@@ -1,9 +1,9 @@
 // Masa (Masa ekranı) ve paneldeki küçük masa.
 // Koltuk = [disk + altında oyuncu adı] [rol adı + hatırlatıcılar]
-import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261022-2347';
-import * as store from './store.js?v=20261022-2347';
-import { layout, nearestSeat } from './table.js?v=20261022-2347';
-import * as rules from './rules.js?v=20261022-2347';
+import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0019';
+import * as store from './store.js?v=20261023-0019';
+import { layout, nearestSeat } from './table.js?v=20261023-0019';
+import * as rules from './rules.js?v=20261023-0019';
 
 let L = null;   // son masa yerleşimi
 export const lastLayout = () => L;
@@ -84,7 +84,7 @@ export function seatHTML(p, i, seat, Lx, o = {}) {
   const pnPx = fitPx(p.name, nameW - 4, Lx.f, 600, 0.7);
   const tag = o.mini ? 'button' : 'div';
   return `<${tag} class="${cls}" data-pid="${p.id}" data-seat="${i}"${o.mini ? ' data-c="tgt"' : ''} style="left:${seat.x}px;top:${seat.y}px;width:${seat.w}px;height:${seat.h}px;--s:${S}px;--f:${Lx.f}px;--pf:${Lx.pf}px;--lab:${Lx.lab}px">
-    <span class="dcol"><span class="disc arc">${icon(p.role, 'ic')}${arcText(r.name, S)}${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}${o.ti >= 0 ? `<i class="tnum">${o.ti + 1}</i>` : ''}${trav ? '<i class="trv" title="Gezgin"></i>' : ''}</span><span class="pn" style="font-size:${pnPx}px">${esc(p.name)}</span></span>
+    <span class="dcol"><span class="disc arc">${icon(p.role, 'ic')}${arcText(r.name, S)}${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}${o.ti >= 0 ? `<i class="tnum">${o.ti + 1}</i>` : ''}${trav ? '<i class="trv" title="Gezgin"></i>' : ''}</span><span class="pn${p.unnamed ? ' unnamed' : ''}" style="font-size:${pnPx}px">${esc(p.name)}</span></span>
     <span class="sinfo" style="width:${iw}px">${pillsHTML(p, seat, Lx, c)}</span></${tag}>`;
 }
 
@@ -110,7 +110,7 @@ export function renderBoard(centerHTML) {
     html += seatHTML(p, i, seat, L, { c: cx, actor: pid === actor, ti, dim, pick: !!tg || !!pickMode });
   });
   board.innerHTML = html;
-  board.classList.toggle('editing', !!G.edit);
+  board.classList.toggle('editing', canDrag());
 }
 
 // ---------------- paneldeki küçük masa ----------------
@@ -128,6 +128,7 @@ export function miniMapHTML(width, height, { sel = [], can = () => true, actor =
 
 // ---------------- dokunma / sürükleme (Masa ekranı) ----------------
 const board = $('board');
+const canDrag = () => G.edit || !!G.S?.pre;   // ilk gece öncesinde yerler sürüklenebilir
 let drag = null, noClick = false;
 const blockClick = () => { noClick = true; setTimeout(() => { noClick = false; }, 450); };
 export const clickBlocked = () => noClick;
@@ -135,7 +136,7 @@ board.addEventListener('contextmenu', e => e.preventDefault());
 board.addEventListener('pointerdown', e => {
   const el = e.target.closest('.seat'); if (!el || e.target.closest('[data-c]')) return;
   drag = { el, pid: el.dataset.pid, seat: +el.dataset.seat, x: e.clientX, y: e.clientY, moved: false, long: false };
-  if (G.edit) { try { el.setPointerCapture(e.pointerId); } catch (_) {} }
+  if (canDrag()) { try { el.setPointerCapture(e.pointerId); } catch (_) {} }
   drag.timer = setTimeout(() => {
     if (drag && !drag.moved) {
       drag.long = true; blockClick(); guardSheet(); navigator.vibrate?.(15);
@@ -148,7 +149,7 @@ board.addEventListener('pointermove', e => {
   if (!drag) return;
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y, d = Math.hypot(dx, dy);
   if (d > 10) clearTimeout(drag.timer);
-  if (!drag.moved && G.edit && d > 12) { drag.moved = true; drag.el.classList.add('dragging'); }
+  if (!drag.moved && canDrag() && d > 12) { drag.moved = true; drag.el.classList.add('dragging'); }
   if (drag.moved) drag.el.style.transform = `translate(${dx}px, ${dy}px)`;
 });
 board.addEventListener('pointerup', e => {

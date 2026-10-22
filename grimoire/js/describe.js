@@ -1,6 +1,6 @@
 // Olay kaydının okunur metinleri
-import { esc, role, rname, remTr } from './core.js?v=20261022-2347';
-import * as store from './store.js?v=20261022-2347';
+import { esc, role, rname, remTr } from './core.js?v=20261023-0019';
+import * as store from './store.js?v=20261023-0019';
 
 const RN = id => role(id).name;
 const CAUSES = {
@@ -23,7 +23,7 @@ export function describe(ev, st) {
     case 'execSurvive': return `${pr(ev.p)} idam edildi ama ölmedi`;
     case 'revive': return `${n(ev.p)} dirildi`;
     case 'ghost': return ev.value ? `${n(ev.p)} ölü oyunu geri aldı` : `${n(ev.p)} ölü oyunu kullandı`;
-    case 'rename': return `${esc(ev.old)} → ${esc(ev.name)} (isim)`;
+    case 'rename': return ev.old ? `${esc(ev.old)} → ${esc(ev.name)} (isim)` : `İsim: ${esc(ev.name)}`;
     case 'role': return `${n(ev.p)}: ${rname(ev.old)} → <b>${rname(ev.role)}</b>`;
     case 'align': return `${n(ev.p)} artık ${ev.evil ? 'kötü' : 'iyi'}`;
     case 'believed': return ev.role ? `${n(ev.p)} kendini ${rname(ev.role)} sanıyor` : `${n(ev.p)}: sandığı rol kaldırıldı`;
@@ -32,6 +32,10 @@ export function describe(ev, st) {
     case 'remDel': return `${n(ev.p)}: <i>${esc(remTr(ev.text))}</i> kaldırıldı`;
     case 'swap': return `${n(ev.a)} ↔ ${n(ev.b)} yer değiştirdi`;
     case 'sides': return 'Masa düzeni değişti';
+    case 'ready': return '<b>İlk gece öncesi hazırlık bitti</b>';
+    case 'prep': { const [rid, pid] = ev.key.split(':'); return `Hazırlık: ${rname(rid)} ${n(pid)}${ev.value?.targets?.length ? ' → ' + ev.value.targets.filter(Boolean).map(n).join(', ') : ''}${ev.value?.pick ? ` · ${rname(ev.value.pick)}` : ''}`; }
+    case 'redherring': return ev.p ? `Kırmızı ringa: ${n(ev.p)}` : 'Kırmızı ringa kaldırıldı';
+    case 'amigo': return ev.p ? `${rname('gnome')} amigosu: ${n(ev.p)}` : `${rname('gnome')} amigosu kaldırıldı`;
     case 'bluffs': return `Blöfler: ${ev.bluffs.map(rname).join(', ') || '—'}`;
     case 'addPlayer': return `${esc(ev.p.name)} (${rname(ev.p.role)}, ${ev.p.evil ? 'kötü' : 'iyi'}) masaya katıldı`;
     case 'removePlayer': return `${n(ev.p)} masadan çıktı`;

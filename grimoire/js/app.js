@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261022-2347';
-import * as store from './store.js?v=20261022-2347';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261022-2347';
-import { describe } from './describe.js?v=20261022-2347';
-import { startSetup } from './setup.js?v=20261022-2347';
-import { renderBoard, clickBlocked } from './board.js?v=20261022-2347';
-import * as panel from './panel.js?v=20261022-2347';
-import * as sheets from './sheets.js?v=20261022-2347';
+import { loadData } from './data.js?v=20261023-0019';
+import * as store from './store.js?v=20261023-0019';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0019';
+import { describe } from './describe.js?v=20261023-0019';
+import { startSetup } from './setup.js?v=20261023-0019';
+import { renderBoard, clickBlocked } from './board.js?v=20261023-0019';
+import * as panel from './panel.js?v=20261023-0019';
+import * as sheets from './sheets.js?v=20261023-0019';
 
-export const VERSION = '20261022-2347';
+export const VERSION = '20261023-0019';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------
@@ -71,8 +71,8 @@ function renderAll() {
     if (lastPhase !== pk) { lastPhase = pk; resetNS(); G.DS.mode = null; }
     mergeCustom();
     const sm = panel.summary();
-    $('phaseTxt').textContent = (S.phase.kind === 'night' ? '☾ ' : '☀ ') + store.phaseLabel(S.phase);
-    $('phaseSub').textContent = S.phase.kind === 'night' ? sm.sub : (S.result ? 'Oyun bitti' : S.script);
+    $('phaseTxt').textContent = S.pre ? 'İlk gece öncesi' : (S.phase.kind === 'night' ? '☾ ' : '☀ ') + store.phaseLabel(S.phase);
+    $('phaseSub').textContent = S.pre ? sm.sub : S.phase.kind === 'night' ? sm.sub : (S.result ? 'Oyun bitti' : S.script);
     $('undoBtn').disabled = store.getEvents().length <= 1;
     $('editDoneBtn').hidden = !G.edit; $('seg').hidden = !!G.edit;
     if (G.edit) $('phaseSub').textContent = 'Yerleri düzenle: sürükle-bırak';
@@ -87,7 +87,7 @@ function renderAll() {
 $('board').addEventListener('click', e => {
   const seat = e.target.closest('.seat'); if (!seat || e.target.closest('[data-c]')) return;
   if (clickBlocked()) return;
-  if (G.edit) return sheets.openPlayer(seat.dataset.pid);
+  if (G.edit || G.S.pre) return sheets.openPlayer(seat.dataset.pid);
   panel.tapSeat(seat.dataset.pid);
 });
 

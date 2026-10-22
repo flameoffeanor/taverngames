@@ -79,7 +79,8 @@ function apply(s, ev) {
   if (ev.type === 'start') {
     return {
       script: ev.script, scriptRoles: ev.scriptRoles, customRoles: ev.customRoles || {},
-      players: ev.players.map(p => ({ id: p.id, name: p.name, role: p.role, believed: p.believed || null,
+      pre: !!ev.pre,  // "İlk gece öncesi" hazırlığı sürüyor
+      players: ev.players.map(p => ({ id: p.id, name: p.name, unnamed: !!p.unnamed, role: p.role, believed: p.believed || null,
         dead: false, ghost: true, evil: p.evil ?? null, gain: p.gain || null,
         reminders: (p.rem || []).map((r, i) => ({ id: 's' + p.id + i, role: r.role || null, text: r.text, tag: r.tag || null, src: r.src || null, exp: null, at: { kind: 'night', n: 1 } })) })),
       seats: ev.players.map(p => p.id),
@@ -128,7 +129,17 @@ function one(s, ev) {
     case 'end': s.result = { winner: ev.winner, reason: ev.reason || '' }; break;
     case 'revive': { const p = P(ev.p); if (p) p.dead = false; break; }
     case 'ghost': { const p = P(ev.p); if (p) p.ghost = ev.value; break; }
-    case 'rename': P(ev.p).name = ev.name; break;
+    case 'rename': { const p = P(ev.p); p.name = ev.name; p.unnamed = false; break; }
+    case 'ready': s.pre = false; break;
+    case 'prep': if (ev.value) s.prep[ev.key] = ev.value; else delete s.prep[ev.key]; break;
+    case 'redherring':
+      s.players.forEach(p => { p.reminders = p.reminders.filter(r => r.tag !== 'redherring'); });
+      if (ev.p) P(ev.p)?.reminders.push({ id: ev.id, role: 'fortuneteller', text: 'Kırmızı ringa', tag: 'redherring', src: null, exp: null, at: { ...s.phase } });
+      break;
+    case 'amigo':
+      s.players.forEach(p => { p.reminders = p.reminders.filter(r => !(r.tag === 'amigo' && r.src === ev.g)); });
+      if (ev.p) P(ev.p)?.reminders.push({ id: ev.id, role: 'gnome', text: 'Amigo', tag: 'amigo', src: ev.g, exp: null, at: { ...s.phase } });
+      break;
     case 'role': { const p = P(ev.p); p.role = ev.role; if (ev.evil != null) p.evil = ev.evil; if (!['drunk', 'lunatic', 'marionette'].includes(ev.role)) p.believed = null; break; }
     case 'align': P(ev.p).evil = ev.evil; break;
     case 'believed': P(ev.p).believed = ev.role || null; break;
