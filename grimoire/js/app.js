@@ -597,7 +597,7 @@ function dayHTML() {
     return `<div class="cc fixed"><div class="cc-top"><h3>İdam / sürgün</h3><p class="muted">Masadan dokun ya da listeden seç</p></div><div class="cc-body"><div class="list">${list}</div></div><div class="cc-foot"><button class="btn" data-c="cancel">Vazgeç</button></div></div>`;
   }
   const moons = S.players.filter(p => p.role === 'moonchild' && p.dead && !S.used[p.id + ':moonchild']);
-  const moonH = moons.map(p => { const br = night.ctx(S, role).broken(p); return `<div class="note">☾ ${esc(role('moonchild').name)} ${esc(p.name)} öldü. Ölümü açıklandıktan sonra herkesin önünde bir oyuncu seçer.${br.length ? ' ⚠ ' + esc(br.map(b => b.kind).join(', ')) + ': yeteneği çalışmaz.' : ''}</div><button class="btn" data-c="moonpick" data-pid="${p.id}">☾ Hedefi seç</button>`; }).join('');
+  const moonH = moons.map(p => { return `<div class="note">☾ ${esc(role('moonchild').name)} ${esc(p.name)} öldü. Ölümü açıklandıktan hemen sonra (1-2 dk içinde) herkesin önünde bir oyuncu seçer.</div><button class="btn" data-c="moonpick" data-pid="${p.id}">☾ Hedefi seç</button>`; }).join('');
   return `<div class="cc"><h3>☀ ${store.phaseLabel(S.phase)}</h3>${moonH}
     <div class="stats"><div><b>${alive}</b><small>yaşıyor</small></div><div><b>${votes}</b><small>oy</small></div><div><b>${Math.ceil(alive / 2)}</b><small>idam için</small></div></div>
     ${ex ? `<p class="ok">⚖ İdam edildi: ${esc(P(ex).name)}</p>` : `<button class="btn big danger" data-c="exec">⚖ İdam / sürgün</button>`}
@@ -687,11 +687,10 @@ function moonPick(mid) {
     <div class="list">${seated().filter(q => !q.dead && q.id !== mid).map(q => `<button class="row-btn" data-k="${q.id}"><b>${esc(q.name)}</b><small>${esc(role(q.role).name)}</small></button>`).join('')}</div>`);
   $('sheetBody').onclick = e => {
     const b = e.target.closest('[data-k]'); if (!b) return;
-    const tid = b.dataset.k, t = P(tid), br = night.ctx(S, role).broken(m);
+    const tid = b.dataset.k;
     const effects = [{ type: 'remAdd', p: tid, rid: store.newId(), role: 'moonchild', text: role('moonchild').name + ' hedefi', tag: 'moonkill', src: mid, exp: null }, { type: 'use', key: mid + ':moonchild' }];
-    const go = () => { const ev = store.dispatch('act', { step: 'moon:' + mid, role: 'moonchild', actor: mid, targets: [tid], broken: br.map(x => x.kind), applied: !br.length, effects }); closeSheet(); toast(describe(ev, S).replace(/<[^>]+>/g, ''), ev.id); };
-    if (br.length) confirmBox('Yeteneği çalışmıyor', `${esc(m.name)} ${esc(br.map(x => x.kind).join(', ').toLocaleLowerCase('tr'))}. Yine de ${esc(t.name)} hedef olarak işaretlensin mi? Gece adımında yine sen karar verirsin.`, 'İşaretle', go);
-    else go();
+    const go = () => { const ev = store.dispatch('act', { step: 'moon:' + mid, role: 'moonchild', actor: mid, targets: [tid], effects }); closeSheet(); toast(describe(ev, S).replace(/<[^>]+>/g, ''), ev.id); };
+    go();
   };
 }
 

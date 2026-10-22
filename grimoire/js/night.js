@@ -220,6 +220,7 @@ export function stepNotes(step, S, role, targets, pick) {
     }
     case 'moonchild': {
       S.players.forEach(q => q.reminders.filter(x => x.tag === 'moonkill' && x.src === p.id).forEach(() => {
+        if (br.length) notes.push(`⚠ ${p.name} şu an ${br[0].kind.toLocaleLowerCase('tr')}: kurala göre durum GECE bakılır, hedef ölmez.`);
         info.push(c.isEvil(q) ? `Hedef: ${q.name} kötü: ölmez.` : q.dead ? `Hedef: ${q.name} zaten ölü.` : `Hedef: ${q.name} iyi: bu gece ölür. Onayla → ölür.`);
       }));
       break;
@@ -270,7 +271,11 @@ export function buildEffects(step, S, role, targets, opts, newId) {
   const c = ctx(S, role), p = c.P(step.pid), cfg = cfgFor(step.role, S), effs = [];
   const n = S.phase.n, nextNight = phaseIdx({ kind: 'night', n: n + 1 }), thisDay = phaseIdx({ kind: 'day', n });
   const rem = (pid, text, tag, exp) => effs.push({ type: 'remAdd', p: pid, rid: newId(), role: step.role, text, tag, src: p.id, exp });
-  if (opts.apply === false) return effs;
+  if (opts.apply === false) {
+    // Ay Çocuğu: yetenek gece zehirli/sarhoşsa hedef ölmez, ama işaret kalkar (kural: durum GECE bakılır)
+    if (step.role === 'moonchild') S.players.forEach(q => q.reminders.filter(x => x.tag === 'moonkill' && x.src === p.id).forEach(x => effs.push({ type: 'remDel', p: q.id, rid: x.id, text: x.text })));
+    return effs;
+  }
   switch (cfg.effect) {
     case 'poison': targets.forEach(t => rem(t, 'Zehirli', 'poison', nextNight)); break;
     case 'protect': targets.forEach(t => rem(t, 'Korunuyor', 'protect', thisDay)); break;
