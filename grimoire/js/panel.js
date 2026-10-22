@@ -1,9 +1,9 @@
 // Panel ekranı: gece adımı ve gündüz akışı. Masa ekranındaki dokunmalar da buradan yönetilir.
-import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS } from './core.js?v=20261022-2320';
-import * as store from './store.js?v=20261022-2320';
-import * as rules from './rules.js?v=20261022-2320';
-import { miniMapHTML } from './board.js?v=20261022-2320';
-import { describe } from './describe.js?v=20261022-2320';
+import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261022-2347';
+import * as store from './store.js?v=20261022-2347';
+import * as rules from './rules.js?v=20261022-2347';
+import { miniMapHTML } from './board.js?v=20261022-2347';
+import { describe } from './describe.js?v=20261022-2347';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -138,7 +138,7 @@ function miniMap(opt) {
   const pw = $('panel').clientWidth || 360;
   const w = Math.min(pw - 28, 640);
   const ph = $('panel').clientHeight || 700;
-  const h = Math.round(Math.min(Math.max(w * 1.1, 260), 600, ph * 0.72));
+  const h = Math.round(Math.min(Math.max(w * 1.45, 300), 760, ph * 0.85));
   return `<div class="mm-wrap">${miniMapHTML(w, h, opt)}</div>`;
 }
 
@@ -168,7 +168,7 @@ function confirmStep(skip) {
   if (cfg.kill && NS.apply !== false && targets.length) return resolveKills(p, targets, [], [], finish);
   finish();
 }
-const plainDesc = (ev, st) => describe(ev, st).replace(/<[^>]+>/g, '');
+const plainDesc = (ev, st) => unhtml(describe(ev, st));
 
 // İblis saldırısı: her hedef için seçenekler (öl / atlama / devir / ölmedi)
 function resolveKills(demon, targets, acc, shows, done) {

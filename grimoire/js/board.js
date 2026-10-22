@@ -1,9 +1,9 @@
 // Masa (Masa ekranı) ve paneldeki küçük masa.
 // Koltuk = [disk + altında oyuncu adı] [rol adı + hatırlatıcılar]
-import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261022-2320';
-import * as store from './store.js?v=20261022-2320';
-import { layout, nearestSeat } from './table.js?v=20261022-2320';
-import * as rules from './rules.js?v=20261022-2320';
+import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261022-2347';
+import * as store from './store.js?v=20261022-2347';
+import { layout, nearestSeat } from './table.js?v=20261022-2347';
+import * as rules from './rules.js?v=20261022-2347';
 
 let L = null;   // son masa yerleşimi
 export const lastLayout = () => L;
@@ -64,9 +64,10 @@ function pillsHTML(p, seat, Lx, c) {
 }
 
 // Rol adı tokenın içinde, altta yay şeklinde (gerçek BotC tokenları gibi). Yol index.html'deki #tokArc.
-function arcText(name) {
-  const w = textW(name, 15, 800);                 // 100 birimlik disk içinde
-  const fs = Math.max(8.5, Math.min(15, 15 * 116 / Math.max(w, 1)));
+function arcText(name, S) {
+  const base = Math.min(21, Math.max(15, 900 / S)); // küçük diskte en az ~9px
+  const w = textW(name, base, 800);                 // 100 birimlik disk içinde
+  const fs = Math.max(base * 0.6, Math.min(base, base * 116 / Math.max(w, 1)));
   return `<svg class="arct" viewBox="0 0 100 100" aria-hidden="true"><text style="font-size:${fs.toFixed(1)}px"><textPath href="#tokArc" startOffset="50%" text-anchor="middle">${esc(name)}</textPath></text></svg>`;
 }
 
@@ -78,15 +79,13 @@ export function seatHTML(p, i, seat, Lx, o = {}) {
   const trav = p.traveller || r.team === 'traveller';
   const cls = ['seat', 'o-' + seat.orient, seat.flip ? 'flip' : '', 't-' + r.team, p.dead ? 'dead' : '', o.actor ? 'actor' : '',
     o.ti >= 0 ? 'target' : '', o.dim ? 'dim' : '', o.mini ? 'mini' : '', o.pick ? 'pickable' : '', evilGood ? 'turned' : '', goodEvil ? 'turned-g' : ''].filter(Boolean).join(' ');
-  const rn = r.name + (evilGood ? ' (kötü)' : goodEvil ? ' (iyi)' : '');
   const iw = seat.infoW, S = Lx.S;
   const nameW = seat.orient === 'v' ? seat.w : Math.max(S + Lx.gap, S * 1.15);
   const pnPx = fitPx(p.name, nameW - 4, Lx.f, 600, 0.7);
-  const rnPx = fitPx(rn, iw - 4, Lx.f * (o.mini ? 0.9 : 1), 800, o.mini ? 0.75 : 0.7);
   const tag = o.mini ? 'button' : 'div';
   return `<${tag} class="${cls}" data-pid="${p.id}" data-seat="${i}"${o.mini ? ' data-c="tgt"' : ''} style="left:${seat.x}px;top:${seat.y}px;width:${seat.w}px;height:${seat.h}px;--s:${S}px;--f:${Lx.f}px;--pf:${Lx.pf}px;--lab:${Lx.lab}px">
-    <span class="dcol"><span class="disc${o.mini ? '' : ' arc'}">${icon(p.role, 'ic')}${o.mini ? '' : arcText(r.name)}${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}${o.ti >= 0 ? `<i class="tnum">${o.ti + 1}</i>` : ''}${trav ? '<i class="trv" title="Gezgin"></i>' : ''}</span><span class="pn" style="font-size:${pnPx}px">${esc(p.name)}</span></span>
-    <span class="sinfo" style="width:${iw}px">${o.mini ? `<span class="rn" style="font-size:${rnPx}px">${esc(rn)}</span>` : pillsHTML(p, seat, Lx, c)}</span></${tag}>`;
+    <span class="dcol"><span class="disc arc">${icon(p.role, 'ic')}${arcText(r.name, S)}${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}${o.ti >= 0 ? `<i class="tnum">${o.ti + 1}</i>` : ''}${trav ? '<i class="trv" title="Gezgin"></i>' : ''}</span><span class="pn" style="font-size:${pnPx}px">${esc(p.name)}</span></span>
+    <span class="sinfo" style="width:${iw}px">${pillsHTML(p, seat, Lx, c)}</span></${tag}>`;
 }
 
 // ---------------- Masa ekranı ----------------

@@ -2,7 +2,7 @@
 // İlke: sistem hatırlatır, uyarır, hesaplar ve kaydeder; son karar her zaman Hikaye Anlatıcısınındır.
 // Kaynak: BotC kural kitabı + Almanac'lar + wiki (bkz. her rolün yanındaki not).
 
-import { phaseIdx, phaseKey } from './store.js?v=20261022-2320';
+import { phaseIdx, phaseKey } from './store.js?v=20261022-2347';
 
 // ---------------- hatırlatıcı etiketleri ----------------
 // Metinler masada ve oyuncu panelinde görünür.
@@ -542,7 +542,8 @@ export function execInfo(S, role, pid) {
 // Gündüz panelinde gösterilecek bekleyen işler ve yetenekler
 export function dayItems(S, role) {
   const c = ctx(S, role), items = [], dk = phaseKey(S.phase);
-  const inScript = id => S.scriptRoles.includes(id) || c.seated().some(p => p.role === id);
+  // Gündüz yeteneği sadece oyunda (yaşayan) biri o rolse, o rolü sanıyorsa (Sarhoş vb.) ya da kazandıysa görünür
+  const inGame = id => c.seated().some(p => !p.dead && (p.role === id || p.believed === id || p.gain === id));
   // Ay Çocuğu / Sakar: ölümü öğrenince seçer
   c.seated().filter(p => p.dead && p.role === 'moonchild' && !S.used[p.id + ':moonchild'])
     .forEach(p => items.push({ k: 'moonchild', pid: p.id, strong: 1, text: `☾ ${p.name} (${RN(role, 'moonchild')}) öldü: herkesin önünde yaşayan bir oyuncu seçer. İyiyse bu gece ölür.`, btn: 'Seçimi gir' }));
@@ -556,10 +557,10 @@ export function dayItems(S, role) {
   // oy etkileri
   const neg = c.seated().filter(q => q.reminders.some(r => tagOf(r) === 'negvote' && c.active(r, q)));
   if (neg.length) items.push({ k: 'info', text: `➖ Eksi oy (${RN(role, 'thief')}): ${neg.map(q => q.name).join(', ')}` });
-  // yetenekler (blöf eden de kullanabilir: hikaye anlatıcısı oynar)
-  if (inScript('slayer')) items.push({ k: 'slayer', btn: `🏹 ${RN(role, 'slayer')}` });
-  if (inScript('artist')) items.push({ k: 'artist', btn: `🎨 ${RN(role, 'artist')}` });
-  if (inScript('alsaahir')) items.push({ k: 'alsaahir', btn: `🔮 ${RN(role, 'alsaahir')}`, used: !!S.used['alsaahir:' + dk] });
+  // yetenekler
+  if (inGame('slayer')) items.push({ k: 'slayer', btn: `🏹 ${RN(role, 'slayer')}` });
+  if (inGame('artist')) items.push({ k: 'artist', btn: `🎨 ${RN(role, 'artist')}` });
+  if (inGame('alsaahir')) items.push({ k: 'alsaahir', btn: `🔮 ${RN(role, 'alsaahir')}`, used: !!S.used['alsaahir:' + dk] });
   if (c.seated().some(p => p.role === 'gunslinger' && !p.dead)) items.push({ k: 'gunslinger', btn: `🔫 ${RN(role, 'gunslinger')}`, used: !!S.used['gunslinger:' + dk] });
   if (c.seated().some(p => p.role === 'gnome' && !p.dead)) items.push({ k: 'gnome', btn: `🍄 ${RN(role, 'gnome')}` });
   return items;

@@ -114,10 +114,10 @@ h3.t-townsfolk,h3.t-outsider,h3.t-minion,h3.t-demon,h3.t-traveller,h4[class^=t-]
 /* masa ortası (yer varsa) */
 .tbl{position:absolute;border-radius:16px;background:radial-gradient(ellipse at 50% 30%,#2e1c13,#180f0a 80%);border:1px solid #3e2a1e;overflow:hidden}
 .tbl.editing{border:2px dashed var(--gold)}
-.mini{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:4px;padding:8px;text-align:center;font-size:14px;color:var(--cream);width:100%}
-.mini img{width:40px;height:40px;border-radius:50%;background:#efe1c6;object-fit:contain}
-.mini b{font-family:Cinzel,serif;color:#fff}
-.mini small{color:var(--muted)}.mini .go{color:var(--gold)}
+.mini:not(.seat){position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:4px;padding:8px;text-align:center;font-size:14px;color:var(--cream);width:100%}
+.mini:not(.seat) img{width:40px;height:40px;border-radius:50%;background:#efe1c6;object-fit:contain}
+.mini:not(.seat) b{font-family:Cinzel,serif;color:#fff}
+.mini:not(.seat) small{color:var(--muted)}.mini .go{color:var(--gold)}
 .edit-bar{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;display:flex;gap:10px;align-items:center;background:#2a1d14;border:2px dashed var(--gold);border-radius:14px;padding:10px 12px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.6);white-space:nowrap}
 
 /* ===== koltuk ===== */
@@ -129,6 +129,7 @@ h3.t-townsfolk,h3.t-outsider,h3.t-minion,h3.t-demon,h3.t-traveller,h4[class^=t-]
 .disc{position:relative;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle at 50% 35%,#f5e9d3,#d6c19c);border:3px solid var(--c);box-shadow:0 3px 10px rgba(0,0,0,.6);flex:none;display:block}
 .disc .ic{position:absolute;inset:6%;width:88%;height:88%;object-fit:contain;pointer-events:none}
 .disc.arc .ic{left:16%;top:5%;width:68%;height:68%}
+.seat.mini .disc.arc .ic{left:20%;top:4%;width:60%;height:60%}
 .arct{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .arct text{font-family:Inter,system-ui,sans-serif;font-weight:800;fill:#2a1a10;letter-spacing:.02em}
 .seat.dead .arct text{fill:#555}

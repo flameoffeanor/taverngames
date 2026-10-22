@@ -27,14 +27,14 @@ export function sideOfSeat(i, sides) {
 
 // Boyutlar. S = disk çapı.
 export function dims(S, mini, rows) {
-  const f = mini ? clamp(S * 0.3, 10.5, 14) : clamp(S * 0.2, 11, 16);   // yazı boyu
+  const f = mini ? clamp(S * 0.24, 10, 13) : clamp(S * 0.2, 11, 16);  // yazı boyu
   const lab = Math.round(f * 1.3);                                     // tek satır yazı yüksekliği
-  const pf = mini ? f : clamp(f * 0.88, 10.5, 14);                     // hatırlatıcı yazı boyu
+  const pf = mini ? clamp(f * 0.92, 10, 12) : clamp(f * 0.88, 10.5, 14); // hatırlatıcı yazı boyu
   const pill = Math.round(pf * 1.5 + 4);                               // bir hatırlatıcı satırı (boşluk dahil)
-  const minInfo = mini ? f * 4.4 : f * 5.6;   // mini: rol adı; masa: hatırlatıcılar                            // rol adını okutacak en dar kutu
-  const maxInfo = mini ? f * 8.5 : f * 12;
+  const minInfo = pf * 6.2;                                            // en dar hatırlatıcı kutusu
+  const maxInfo = f * 12;
   const discCol = S + lab;                                             // disk + altındaki isim
-  const infoH = mini ? lab : rows * pill + (rows ? 2 : 0);             // mini: rol adı; masa: hatırlatıcılar (rol adı diskin içinde)
+  const infoH = rows * pill + (rows ? 2 : 0);                          // hatırlatıcı satırları (rol adı diskin içinde)
   return { f, lab, pf, pill, rows, minInfo, maxInfo, discCol, infoH };
 }
 
@@ -46,13 +46,13 @@ export function dims(S, mini, rows) {
  *   x,y,w,h: hücre kutusu; cx,cy: disk merkezi
  */
 export function layout(W, H, sides, opt = {}) {
-  if (opt.mini) return layoutOnce(W, H, sides, { mini: true, rows: 0 });
   // Önce 3 hatırlatıcı satırı ayır; disk çok küçülüyorsa 2'ye, 1'e düş.
-  const tries = opt.rows != null ? [opt.rows] : [3, 2, 1, 0];
+  const mini = !!opt.mini, minS = mini ? 40 : 54;
+  const tries = opt.rows != null ? [opt.rows] : mini ? [2, 1, 0] : [3, 2, 1, 0];
   let best = null;
   for (const rows of tries) {
-    const r = layoutOnce(W, H, sides, { rows });
-    if (!r.forced && r.S >= 54) return r;
+    const r = layoutOnce(W, H, sides, { rows, mini });
+    if (!r.forced && r.S >= minS) return r;
     if (!best || (!r.forced && (best.forced || r.S > best.S))) best = r;
   }
   return best;
@@ -79,8 +79,10 @@ function layoutOnce(W, H, sides, opt) {
     const row = n => {
       if (!n) return { h: 0 };
       const slot = (W - 2 * pad) / n;
-      const hInfo = slot - S - gap - 6;
-      if (hInfo >= d.minInfo) return { orient: 'h', slot, h: Math.max(d.discCol, d.infoH), infoW: Math.min(hInfo, d.maxInfo) };
+      // tercihen disk yuvanın tam ortasında, bilgi kutusu bir yanında; sığmazsa hücre (disk+bilgi) ortalanır
+      const hC = slot / 2 - S / 2 - gap - 3, hInfo = slot - S - gap - 6;
+      if (hC >= d.minInfo) return { orient: 'h', center: true, slot, h: Math.max(d.discCol, d.infoH), infoW: Math.min(hC, d.maxInfo) };
+      if (hInfo >= d.minInfo) return { orient: 'h', center: false, slot, h: Math.max(d.discCol, d.infoH), infoW: Math.min(hInfo, d.maxInfo) };
       // dikey hücre: disk + isim üstte, rol ve hatırlatıcılar altta
       const vW = slot - 4;
       if (vW < Math.max(S, d.minInfo * 0.85)) return null;
@@ -94,7 +96,7 @@ function layoutOnce(W, H, sides, opt) {
     return { S, d, sideH, sideInfo, top, bot };
   }
 
-  let lo = mini ? 16 : 30, hi = mini ? 60 : 124, best = null;
+  let lo = mini ? 20 : 30, hi = mini ? 96 : 124, best = null;
   for (let it = 0; it < 22; it++) {
     const mid = (lo + hi) / 2, r = attempt(mid);
     if (r) { best = r; lo = mid; } else hi = mid;
@@ -115,16 +117,17 @@ function layoutOnce(W, H, sides, opt) {
     for (let i = 0; i < n; i++) {
       const cxSlot = pad + r.slot * (i + 0.5);
       if (r.orient === 'h') {
-        const w = S + gap + r.infoW, x = cxSlot - w / 2;
-        // sıranın sağ yarısı aynalanır (disk dışta, hatırlatıcılar içte): simetrik görünüm
-        const flip = !mini && (i + 0.5) > n / 2 + 0.01;
-        const xx = flip ? cxSlot + w / 2 - w : x;
-        out.push({ x: xx, y, w, h: r.h, cx: flip ? xx + w - S / 2 : x + S / 2, cy: discY(y, r.h), orient: 'h', flip, side, infoW: r.infoW, infoH: r.h });
+        // disk yuva ortasında; sıranın sağ yarısında hatırlatıcılar diskin solunda (aynalı, simetrik)
+        const w = S + gap + r.infoW;
+        const flip = (i + 0.5) > n / 2 + 0.01;
+        const x = r.center ? (flip ? cxSlot + S / 2 - w : cxSlot - S / 2) : cxSlot - w / 2;
+        const cx = r.center ? cxSlot : flip ? x + w - S / 2 : x + S / 2;
+        out.push({ x, y, w, h: r.h, cx, cy: discY(y, r.h), orient: 'h', flip, side, infoW: r.infoW, infoH: r.h });
       } else {
         const w = Math.max(S, r.infoW), x = cxSlot - w / 2;
         // alt sırada hatırlatıcılar diskin üstünde (masanın ortasına doğru): simetri
-        const cy = side === 'bottom' && !mini ? y + r.h - d.discCol + S / 2 : y + S / 2;
-        out.push({ x, y, w, h: r.h, cx: cxSlot, cy, orient: 'v', flip: side === 'bottom' && !mini, side, infoW: w, infoH: d.infoH });
+        const cy = side === 'bottom' ? y + r.h - d.discCol + S / 2 : y + S / 2;
+        out.push({ x, y, w, h: r.h, cx: cxSlot, cy, orient: 'v', flip: side === 'bottom', side, infoW: w, infoH: d.infoH });
       }
     }
     return out;

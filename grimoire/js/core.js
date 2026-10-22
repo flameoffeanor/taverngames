@@ -1,6 +1,6 @@
 // Ortak durum ve yardımcılar. Modüller birbirini doğrudan çağırmak yerine `hooks` üzerinden çağırır.
-import * as store from './store.js?v=20261022-2320';
-import { iconUrl, TEAMS } from './data.js?v=20261022-2320';
+import * as store from './store.js?v=20261022-2347';
+import { iconUrl, TEAMS } from './data.js?v=20261022-2347';
 
 export const G = {
   D: null,          // karakter + script verisi
@@ -18,6 +18,8 @@ export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;'
 // Sheet'teki <b>, <i>, <u>, <br> etiketlerine izin ver; geri kalanı kaçışlı
 export const rich = s => esc(s).replace(/&lt;(\/?)(b|i|u|em|strong)&gt;/gi, '<$1$2>').replace(/&lt;br\s*\/?&gt;/gi, '<br>');
 export const plain = s => String(s ?? '').replace(/<[^>]+>/g, '');
+// HTML → düz metin (etiketleri at, &#39; gibi kaçışları çöz)
+export const unhtml = s => { const d = document.createElement('div'); d.innerHTML = String(s ?? ''); return d.textContent; };
 export const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 export const role = id => G.D.roles[id] || { id, name: id || '?', team: 'townsfolk', ability: '', reminders: [], first: '', other: '' };

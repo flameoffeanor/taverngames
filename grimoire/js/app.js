@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261022-2320';
-import * as store from './store.js?v=20261022-2320';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast } from './core.js?v=20261022-2320';
-import { describe } from './describe.js?v=20261022-2320';
-import { startSetup } from './setup.js?v=20261022-2320';
-import { renderBoard, clickBlocked } from './board.js?v=20261022-2320';
-import * as panel from './panel.js?v=20261022-2320';
-import * as sheets from './sheets.js?v=20261022-2320';
+import { loadData } from './data.js?v=20261022-2347';
+import * as store from './store.js?v=20261022-2347';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261022-2347';
+import { describe } from './describe.js?v=20261022-2347';
+import { startSetup } from './setup.js?v=20261022-2347';
+import { renderBoard, clickBlocked } from './board.js?v=20261022-2347';
+import * as panel from './panel.js?v=20261022-2347';
+import * as sheets from './sheets.js?v=20261022-2347';
 
-export const VERSION = '20261022-2320';
+export const VERSION = '20261022-2347';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------
@@ -104,7 +104,7 @@ function doUndo() {
   const evs = store.getEvents(); if (evs.length <= 1) return;
   const before = G.S, last = evs[evs.length - 1];
   let txt = last.type;
-  try { txt = describe(last, before).replace(/<[^>]+>/g, ''); } catch (e) {}
+  try { txt = unhtml(describe(last, before)); } catch (e) {}
   store.undo();
   toast('Geri alındı: ' + txt);
 }
