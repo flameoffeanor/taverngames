@@ -80,8 +80,8 @@ function apply(s, ev) {
     return {
       script: ev.script, scriptRoles: ev.scriptRoles, customRoles: ev.customRoles || {},
       players: ev.players.map(p => ({ id: p.id, name: p.name, role: p.role, believed: p.believed || null,
-        dead: false, ghost: true, evil: null,
-        reminders: (p.rem || []).map((r, i) => ({ id: 's' + p.id + i, role: r.role || null, text: r.text, tag: null, src: null, exp: null, at: { kind: 'night', n: 1 } })) })),
+        dead: false, ghost: true, evil: p.evil ?? null, gain: p.gain || null,
+        reminders: (p.rem || []).map((r, i) => ({ id: 's' + p.id + i, role: r.role || null, text: r.text, tag: r.tag || null, src: r.src || null, exp: null, at: { kind: 'night', n: 1 } })) })),
       seats: ev.players.map(p => p.id),
       sides: ev.sides,
       bluffs: ev.bluffs || [],
@@ -90,7 +90,9 @@ function apply(s, ev) {
       done: {},      // faz anahtarı → { adımAnahtarı: olayId }
       used: {},      // "pid:etiket" → true (bir kez kullanılan yetenekler)
       deaths: [],    // { p, phase, cause, by }
-      executed: {},  // gün anahtarı → pid
+      executed: {},  // gün anahtarı → pid (idamla ölen; eski kayıtlar için)
+      executions: {},// gün anahtarı → { p, died }
+      result: null,  // { winner: 'good'|'evil', reason }
     };
   }
   s = clone(s);
@@ -115,19 +117,22 @@ function one(s, ev) {
       break;
     }
     case 'die': {
-      const p = P(ev.p); if (!p) break;
+      const p = P(ev.p); if (!p || p.dead) break;
       p.dead = true;
       s.deaths.push({ p: ev.p, phase: { ...s.phase }, cause: ev.cause || 'manual', by: ev.by || null });
-      if (ev.cause === 'execution') s.executed[phaseKey(s.phase)] = ev.p;
+      if (ev.cause === 'execution') { s.executed[phaseKey(s.phase)] = ev.p; (s.executions = s.executions || {})[phaseKey(s.phase)] = { p: ev.p, died: true }; }
       break;
     }
-    case 'revive': P(ev.p).dead = false; break;
-    case 'ghost': P(ev.p).ghost = ev.value; break;
+    case 'execSurvive': (s.executions = s.executions || {})[phaseKey(s.phase)] = { p: ev.p, died: false }; break;
+    case 'gain': { const p = P(ev.p); if (p) p.gain = ev.role || null; break; }
+    case 'end': s.result = { winner: ev.winner, reason: ev.reason || '' }; break;
+    case 'revive': { const p = P(ev.p); if (p) p.dead = false; break; }
+    case 'ghost': { const p = P(ev.p); if (p) p.ghost = ev.value; break; }
     case 'rename': P(ev.p).name = ev.name; break;
     case 'role': { const p = P(ev.p); p.role = ev.role; if (ev.evil != null) p.evil = ev.evil; if (!['drunk', 'lunatic', 'marionette'].includes(ev.role)) p.believed = null; break; }
     case 'align': P(ev.p).evil = ev.evil; break;
     case 'believed': P(ev.p).believed = ev.role || null; break;
-    case 'remAdd': P(ev.p).reminders.push({ id: ev.rid, role: ev.role || null, text: ev.text, tag: ev.tag || null, src: ev.src || null, exp: ev.exp || null, at: { ...s.phase } }); break;
+    case 'remAdd': P(ev.p)?.reminders.push({ id: ev.rid, role: ev.role || null, text: ev.text, tag: ev.tag || null, src: ev.src || null, exp: ev.exp || null, at: { ...s.phase } }); break;
     case 'remDel': { const p = P(ev.p); p.reminders = p.reminders.filter(r => r.id !== ev.rid); break; }
     case 'bluffs': s.bluffs = ev.bluffs; break;
     case 'use': s.used[ev.key] = true; break;
@@ -139,7 +144,7 @@ function one(s, ev) {
       break;
     }
     case 'addPlayer': {
-      s.players.push({ id: ev.p.id, name: ev.p.name, role: ev.p.role, believed: null, dead: false, ghost: true, reminders: [], evil: ev.p.evil ?? null, traveller: true });
+      s.players.push({ id: ev.p.id, name: ev.p.name, role: ev.p.role, believed: null, dead: false, ghost: true, reminders: [], evil: ev.p.evil ?? null, traveller: true, gain: null, joined: { ...s.phase } });
       const i = s.seats.indexOf(ev.after);
       s.seats.splice(i >= 0 ? i + 1 : s.seats.length, 0, ev.p.id);
       s.sides = { ...s.sides, [ev.side]: (s.sides[ev.side] || 0) + 1 };
