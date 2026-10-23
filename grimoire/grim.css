@@ -353,3 +353,5 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .board-wrap:not(.full) { display: flex; flex-direction: column; }
 .board-wrap:not(.full) .board-tools { position: static; order: -1; justify-content: flex-end; margin: 0 0 6px; }
 .board-wrap:not(.full) .veil { inset: 44px 0 22px; }
+
+.rw.fg { white-space: normal; border-radius: 12px; border-color: #e7a65f; background: #3a2a14; }

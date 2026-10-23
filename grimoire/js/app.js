@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261024-0005';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261024-0006';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261024-0005';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261024-0005';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261024-0006';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261024-0006';
 
-export const VERSION = '20261024-0005';
+export const VERSION = '20261024-0006';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -179,7 +179,7 @@ function placeChosen() {
     commit(S => {
       const gone = new Set(existing.map(t => t.id));
       S.tokens = S.tokens.filter(t => !gone.has(t.id) && !(t.kind === 'rem' && gone.has(t.owner)));
-      ovalSpots(list.length).forEach((xy, i) => addRoleToken(list[i], xy));
+      ovalSpots(list.length).forEach((xy, i) => addRoleToken(list[i], xy)); S.fangguDone = false;
     });
     goBoard();
   };
@@ -200,7 +200,7 @@ function startDeal() {
     commit(S => {
       const gone = new Set(existing.map(t => t.id));
       S.tokens = S.tokens.filter(t => !gone.has(t.id) && !(t.kind === 'rem' && gone.has(t.owner)));
-      S.deal = { pool: list, taken: {} };
+      S.deal = { pool: list, taken: {} }; S.fangguDone = false;
     });
     dealGrid();
   };
@@ -326,7 +326,19 @@ function openToken(id) {
       if (del) { commit(S => { S.tokens = S.tokens.filter(x => x.id !== del.dataset.rdel); }); return openToken(id); }
       const a = e.target.closest('[data-a]')?.dataset.a; if (!a) return;
       if (a === 'show') { closeModal(); showFull(bigTok(t.role)); }
-      if (a === 'dead') { commit(S => { const q = tokById(id); q.dead = !q.dead; if (!q.dead) q.voteUsed = false; }); closeModal(); }
+      if (a === 'dead') {
+        const kill = () => commit(S => { const q = tokById(id); q.dead = !q.dead; if (!q.dead) q.voteUsed = false; });
+        const fg = boardRoles().find(x => x.role === 'fanggu' && !x.dead && x.id !== id);
+        // Fang Gu uyarısı: ilk Yabancı ölümü onu Fang Gu'ya çevirir (Fang Gu ölür)
+        if (!t.dead && r.team === 'outsider' && fg && !G.S.fangguDone) {
+          return confirmBox(`FANG GU var ve bu bir YABANCI (${r.name}). Fang Gu'nun öldürdüğü İLK Yabancı ölmez: Fang Gu ölür, bu oyuncu kötü takımdan yeni Fang Gu olur. Ne yapılsın?`,
+            'Fang Gu\'ya dönüşsün', () => {
+              commit(S => { tokById(id).role = 'fanggu'; tokById(fg.id).dead = true; S.fangguDone = true; });
+              closeModal(); toast('Dönüştü: eski Fang Gu öldü. Yeni Fang Gu\'ya "SEN" + Fang Gu tokenı göster, başparmağı aşağı.', 6000);
+            }, { danger: false, alt: { text: 'Normal öldür (dönüşüm daha önce oldu)', cb: () => { commit(S => { S.fangguDone = true; }, true); kill(); closeModal(); } } });
+        }
+        kill(); closeModal();
+      }
       if (a === 'flip') { commit(S => { const q = tokById(id); q.flip = !q.flip; }); openToken(id); }
       if (a === 'vote') { commit(S => { const q = tokById(id); q.voteUsed = !q.voteUsed; }); openToken(id); }
       if (a === 'rem') pickReminder(id, () => openToken(id));
@@ -492,6 +504,12 @@ function renderNight() {
       const nm = x.role ? `${RN(x.role)} – ${remTr(x.text)}` : remTr(x.text);
       warn.push(`<span class="rw" style="--gc:${colorOf(t.id)}">⚠ ${esc(nm)}${mine.length > 1 && t.name ? ` <small>(${esc(t.name)})</small>` : ''}</span>`);
     }));
+    if (id === 'fanggu' && playing && !allDead) {
+      const outs = toks.filter(t => role(t.role).team === 'outsider' && !t.dead).map(t => `${esc(RN(t.role))}${t.name ? ` (${esc(t.name)})` : ''}`);
+      warn.push(S.fangguDone
+        ? '<span class="rw fg">✔ Dönüşüm yapıldı: Yabancılar artık normal ölür</span>'
+        : `<span class="rw fg">⚠ Yabancı seçerse (ilk kez): Fang Gu ölür, o oyuncu Fang Gu olur!${outs.length ? ' Yabancılar: <b>' + outs.join(', ') + '</b>' : ''}</span>`);
+    }
     const who = mine.map(t => `${t.name ? esc(t.name) : '—'}${t.dead ? ' †' : ''}`).join(', ');
     rows.push(`<div class="ne t-${role(id).team}${done.has(id) ? ' done' : ''}${playing ? '' : ' out'}${allDead ? ' dead' : ''}" data-k="${id}">
       ${icon(id, 'ic')}<div><b class="ne-t">${num ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${rich(txt)}</p>${warn.length ? `<div class="rws">${warn.join('')}</div>` : ''}</div></div>`);
@@ -575,7 +593,7 @@ function wire() {
   $('bHide').onclick = () => commit(S => { S.board.hidden = !S.board.hidden; }, true);
   $('bHeight').onclick = () => commit(S => { S.board.ratio = 0; }, true);
   $('bClear').onclick = () => confirmBox('Tabladaki tüm simgeler, hatırlatıcılar, isimler ve blöfler silinsin mi? (Senaryo ve ayarlar kalır.)', 'Temizle', () => {
-    commit(S => { S.tokens = []; S.bluffs = [null, null, null]; S.night.done = { first: [], other: [] }; });
+    commit(S => { S.tokens = []; S.fangguDone = false; S.bluffs = [null, null, null]; S.night.done = { first: [], other: [] }; });
   });
   $('bAddTok').onclick = () => pickRole({ title: 'Simge ekle' }, rid => { commit(() => { addRoleToken(rid); }); closeModal(); });
   $('bAddTrav').onclick = () => pickRole({ title: 'Gezgin ekle', team: 'traveller' }, rid => { commit(() => { addRoleToken(rid); }); closeModal(); });
