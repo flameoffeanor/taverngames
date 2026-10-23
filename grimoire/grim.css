@@ -330,3 +330,16 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .thumb.up { fill: var(--good); } .thumb.down { fill: var(--evil); }
 .rpk svg.thumb, .tok .disc svg.thumb { position: static; inset: auto; overflow: visible; }
 .tok.rem .rtxt .thumb { width: 1.1em; height: 1.1em; }
+
+/* oyunculara dağıtım */
+.foot-btns { display: flex; gap: 8px; }
+.deal-help { margin: 0 0 12px; font-size: .92rem; color: var(--muted); }
+.deal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+.dnum { aspect-ratio: 1; border-radius: 50%; border: 3px solid #b79d68; background: radial-gradient(circle at 50% 40%, #fbf5e6, var(--parch) 55%, var(--parch2)); color: #2b2116; font: 700 clamp(1.8rem, 9vw, 2.8rem) Cinzel, serif; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.5); padding: 0; }
+.dnum:active { transform: scale(.96); }
+.dnum.taken { background: #2a2f3a; border-color: #3b4252; color: transparent; box-shadow: none; cursor: default; }
+.deal-foot { margin-top: 4px; }
+.deal-ab { margin: 14px 0; font-size: 1rem; line-height: 1.5; }
+.deal-name { display: grid; gap: 6px; margin-bottom: 14px; font-size: .88rem; color: var(--muted); }
+.deal-name input { font-size: 1.15rem; padding: 12px; }
+.deal-name input { color: #111; background: #fff; }

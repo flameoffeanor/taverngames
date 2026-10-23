@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1626';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1631';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1626';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1626';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1631';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1631';
 
-export const VERSION = '20261023-1626';
+export const VERSION = '20261023-1631';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -134,13 +134,14 @@ function openChars() {
             return `<button class="cc${c ? ' on' : ''}" data-id="${id}">${icon(id, 'ic big')}<b>${esc(RN(id))}</b>${st.abilities ? `<small>${rich(role(id).ability)}</small>` : ''}${c > 1 ? `<span class="cnt">×${c}</span>` : ''}${c && st.dup ? `<span class="minus" data-minus="${id}">−</span>` : ''}</button>`;
           }).join('')}</div></div>`;
       }).join('')}
-      <div class="sticky-foot"><span>${total} seçili${total !== n ? ` · <span class="warn-t">${n} oyuncu</span>` : ''}</span><button class="btn primary" id="csPlace" ${total ? '' : 'disabled'}>Tablaya diz</button></div>`, body => {
+      <div class="sticky-foot"><span>${total} seçili${total !== n ? ` · <span class="warn-t">${n} oyuncu</span>` : ''}</span><span class="foot-btns"><button class="btn" id="csDeal" ${total ? '' : 'disabled'}>Oyunculara dağıt</button><button class="btn primary" id="csPlace" ${total ? '' : 'disabled'}>Tablaya diz</button></span></div>`, body => {
       $('csN').onclick = e => { const b = e.target.closest('[data-n]'); if (b) { commit(S => { S.setup.players = +b.dataset.n; }, true); render(); } };
       $('csAb').onchange = e => { commit(S => { S.setup.abilities = e.target.checked; }, true); render(); };
       $('csDup').onchange = e => { commit(S => { S.setup.dup = e.target.checked; if (!S.setup.dup) for (const k in S.setup.pick) S.setup.pick[k] = 1; }, true); render(); };
       $('csClear').onclick = () => { commit(S => { S.setup.pick = {}; }, true); render(); };
       $('csRand').onclick = () => { randomPick(); render(); };
       $('csPlace').onclick = placeChosen;
+      $('csDeal').onclick = () => startDeal();
       body.onclick = e => {
         const m = e.target.closest('[data-minus]');
         if (m) { e.stopPropagation(); commit(S => { const k = m.dataset.minus; if (--S.setup.pick[k] <= 0) delete S.setup.pick[k]; }, true); return render(); }
@@ -182,6 +183,60 @@ function placeChosen() {
   if (!existing.length) return replace();
   confirmBox(`Tablada ${existing.length} karakter simgesi var. Silinip yerine yenileri dizilsin mi?`, 'Sil ve diz', replace,
     { alt: { text: 'Mevcutlara ekle', cb: append } });
+}
+
+// ---- oyunculara rastgele dağıtım: numaralı jetonlar, oyuncu seçer, rolünü görür ----
+function startDeal() {
+  const list = [];
+  Object.entries(G.S.setup.pick).forEach(([id, c]) => { for (let i = 0; i < c; i++) list.push(id); });
+  if (!list.length) { toast('Önce karakterleri seç.'); return openChars(); }
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  const existing = boardRoles().filter(t => role(t.role).team !== 'fabled');
+  const go = () => {
+    commit(S => {
+      const gone = new Set(existing.map(t => t.id));
+      S.tokens = S.tokens.filter(t => !gone.has(t.id) && !(t.kind === 'rem' && gone.has(t.owner)));
+      S.deal = { pool: list, taken: {} };
+    });
+    dealGrid();
+  };
+  if (!existing.length) return go();
+  confirmBox(`Tablada ${existing.length} karakter simgesi var. Silinip dağıtım baştan başlasın mı?`, 'Sil ve başlat', go);
+}
+function openDeal() {
+  if (G.S.deal && G.S.deal.pool && G.S.deal.pool.length) return dealGrid();
+  startDeal();
+}
+function dealGrid() {
+  const d = G.S.deal; if (!d) return;
+  const n = d.pool.length, left = n - Object.keys(d.taken).length;
+  openModal('Karakterini Seç', `
+    <p class="deal-help">${left ? 'Karakterini seçmek için numaralı jetonlardan birine dokun. Daha koyu olanlar seçilmiştir.' : 'Tüm karakterler dağıtıldı.'}</p>
+    <div class="deal-grid">${d.pool.map((_, i) => `<button class="dnum${d.taken[i] ? ' taken' : ''}" data-i="${i}" ${d.taken[i] ? 'disabled' : ''}><span>${i + 1}</span></button>`).join('')}</div>
+    <div class="grid2 deal-foot">${left ? '<button class="btn ghost small" id="dealCancel">Dağıtımı bitir</button>' : ''}<button class="btn primary" id="dealDone">${left ? 'Kapat' : 'Tablaya git'}</button></div>`, body => {
+    body.querySelector('.deal-grid').onclick = e => { const b = e.target.closest('.dnum'); if (b && !b.disabled) dealReveal(+b.dataset.i); };
+    $('dealDone').onclick = () => { closeModal(); if (!left) { commit(S => { S.deal = null; }, true); goBoard(); } };
+    const c = $('dealCancel');
+    if (c) c.onclick = () => confirmBox(`${left} karakter henüz seçilmedi. Dağıtım bitirilsin mi? (Tablaya gelenler kalır.)`, 'Bitir', () => { commit(S => { S.deal = null; }, true); closeModal(); goBoard(); });
+  });
+}
+function dealReveal(i) {
+  const d = G.S.deal; if (!d || d.taken[i]) return dealGrid();
+  const rid = d.pool[i];
+  let tid;
+  commit(S => {
+    const spots = ovalSpots(S.deal.pool.length);
+    const t = addRoleToken(rid, spots[Object.keys(S.deal.taken).length]);
+    S.deal.taken[i] = t.id; tid = t.id;
+  });
+  const r = role(rid);
+  openModal('Karakterini Hatırla', `${bigTok(rid)}
+    <p class="deal-ab">${rich(r.ability) || ''}</p>
+    <label class="deal-name">İsmini gir (opsiyonel)<input id="dealName" autocomplete="off" maxlength="24"></label>
+    <button class="btn primary" id="dealBack">Karakter seçimine geri dön</button>`, body => {
+    $('dealName').oninput = e => commit(S => { const t = S.tokens.find(x => x.id === tid); if (t) t.name = e.target.value.trim(); }, true);
+    $('dealBack').onclick = dealGrid;
+  });
 }
 function goBoard() { if (G.S.open.board) commit(S => { S.open.board = false; }, true); $('secBoard').scrollIntoView({ behavior: 'smooth' }); }
 
@@ -503,6 +558,7 @@ function wire() {
   // kurulum
   $('bScript').onclick = openScripts;
   $('bChars').onclick = openChars;
+  $('bDeal').onclick = openDeal;
   $('bSheet').onclick = openSheet;
   $('bNames').onclick = () => nameFlow();
   $('bNames2').onclick = () => nameFlow();
