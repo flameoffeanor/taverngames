@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1537';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1550';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1537';
-import { arcText, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1537';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1550';
+import { arcText, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1550';
 
-export const VERSION = '20261023-1537';
+export const VERSION = '20261023-1550';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -458,7 +458,7 @@ function renderNight() {
     rem.push(`<div class="ne t-${role(t.role).team}${done.has(t.role) ? ' done' : ''}${allDead ? ' dead' : ''}" data-k="${t.role}">
       ${icon(t.role, 'ic')}<div><b class="ne-t">${esc(RN(t.role))}${who !== '—' ? ` <small>· ${who}</small>` : ''}</b><div class="rws">${chips}</div></div></div>`);
   });
-  if (rem.length) rows.unshift('<h4 class="ne-h">Hatırlatmalar</h4>', ...rem);
+  if (rem.length) rows.unshift(`<section class="ne-rems"><h4 class="ne-h">Hatırlatmalar <small>· gece sırası değil</small></h4>${rem.join('')}</section>`);
   $('nightList').innerHTML = rows.join('') || '<p class="muted pad">Bu gece uyanan karakter yok.</p>';
 }
 
