@@ -258,9 +258,10 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .big-in { font-size: 1.15rem; padding: 14px; }
 
 /* karakter seçimi */
-.dist-wrap { overflow-x: auto; }
-.dist { border-collapse: collapse; width: 100%; min-width: 440px; font-size: .82rem; text-align: center; }
-.dist th { text-align: right; padding: 3px 8px 3px 0; font-family: Inter, sans-serif; font-weight: 700; white-space: nowrap; }
+.dist-wrap { overflow: visible; }
+.dist { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: .8rem; text-align: center; }
+.dist th:first-child { width: 29%; }
+.dist th { text-align: right; padding: 3px 6px 3px 0; font-size: .74rem; overflow: hidden; font-family: Inter, sans-serif; font-weight: 700; white-space: nowrap; }
 .dist td { padding: 3px 0; border-left: 1px solid var(--line); color: var(--muted); }
 .dist tr.t-townsfolk td, .dist tr.t-townsfolk th { color: var(--good); }
 .dist tr.t-outsider td, .dist tr.t-outsider th { color: var(--out); }
@@ -345,3 +346,4 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .deal-name input { color: #111; background: #fff; }
 
 .modal.opaque .m-bg { background: #05070b; backdrop-filter: none; }
+.dist td { font-size: .76rem; padding-left: 0; padding-right: 0; }
