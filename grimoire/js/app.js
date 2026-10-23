@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1514';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1530';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1514';
-import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1514';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1530';
+import { arcText, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1530';
 
-export const VERSION = '20261023-1514';
+export const VERSION = '20261023-1530';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -335,9 +335,9 @@ function pickReminder(ownerId, back) {
     const owner = ownerId && tokById(ownerId);
     openModal(owner ? `Hatırlatıcı · ${esc(RN(owner.role))}` : 'Hatırlatıcı Seç', `
       <div class="rem-grid">
-        <button class="rpk good" data-t="İyi takım" data-g="👍" data-tone="good"><span class="rtxt">👍</span><small>İyi takım</small></button>
-        <button class="rpk evil" data-t="Kötü takım" data-g="👎" data-tone="evil"><span class="rtxt">👎</span><small>Kötü takım</small></button>
-        ${items.map(x => `<button class="rpk" data-t="${esc(x.text)}" data-r="${x.rid}"><em>${esc(RN(x.rid))}</em>${icon(x.rid, 'ic')}<small>${esc(remTr(x.text))}</small></button>`).join('')}
+        <button class="rpk good" data-t="İyi takım" data-g="👍" data-tone="good"><span class="rtxt">👍</span><svg viewBox="0 0 100 100" aria-hidden="true">${arcText('İyi takım', 'arcB', 13.5)}</svg></button>
+        <button class="rpk evil" data-t="Kötü takım" data-g="👎" data-tone="evil"><span class="rtxt">👎</span><svg viewBox="0 0 100 100" aria-hidden="true">${arcText('Kötü takım', 'arcB', 13.5)}</svg></button>
+        ${items.map(x => `<button class="rpk" data-t="${esc(x.text)}" data-r="${x.rid}">${icon(x.rid, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(RN(x.rid), 'arcT', 13)}${arcText(remTr(x.text), 'arcB', 13.5)}</svg></button>`).join('')}
       </div>
       ${items.length ? '' : '<p class="muted small">Tablada hatırlatıcısı olan karakter yok. "Tüm hatırlatıcıları göster"i aç.</p>'}
       <div class="row-in"><input id="rmCustom" placeholder="Kendi hatırlatıcını yaz"><button class="btn small" id="rmCustomOk">Ekle</button></div>

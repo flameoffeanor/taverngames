@@ -25,7 +25,7 @@ export const DIST = {
 const REM_TR = {
   Poisoned: 'Zehirli', Drunk: 'Sarhoş', Dead: 'Ölü', Protected: 'Korunuyor', Safe: 'Güvende', 'No Ability': 'Yeteneği yok',
   Mad: 'Takıntılı', '2nd': '2. oyuncu', Townsfolk: 'Kasabalı', Outsider: 'Yabancı', Minion: 'Minyon', Demon: 'İblis',
-  Wrong: 'Yanlış', Grandchild: 'Torun', 'Died Today': 'Bugün öldü', Once: 'Bir kez', 'Red Herring': 'Yanlış alarm',
+  Wrong: 'Yanlış', Grandchild: 'Torun', 'Died Today': 'Bugün öldü', Once: 'Bir kez', 'Red Herring': 'Yalancı İblis',
   'Survives Execution': 'İdamda ölmez', 'Is The Demon': 'İblis oldu', 'Is The Drunk': 'Sarhoş olan', '3 Attacks': '3 saldırı',
   'Negative Vote': 'Eksi oy', 'Is The Apprentice': 'Çırak', Alive: 'Dirildi', Know: 'Biliyor', 'Has Ability': 'Yeteneği var',
   Master: 'Efendi', '3 Votes': '3 oy', Cursed: 'Lanetli', Lunch: 'Öğle yemeği', Visitor: 'Ziyaretçi', 'False Info': 'Yanlış bilgi',
@@ -67,7 +67,7 @@ async function fetchText(url) {
 }
 
 export async function loadData(force = false) {
-  const official = await (await fetch('data/official.json?v=20261023-1514')).json();
+  const official = await (await fetch('data/official.json?v=20261023-1530')).json();
   let sheet, offline = false;
   try {
     const [c, s] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL)]);

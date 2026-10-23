@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1514';
-import { remTr } from './data.js?v=20261023-1514';
+import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1530';
+import { remTr } from './data.js?v=20261023-1530';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -39,10 +39,10 @@ export function nightNumbers() {
   return out;
 }
 
-function arcText(txt, path, base) {
+export function arcText(txt, path, base) {
   const s = String(txt || '');
   const long = s.length > 11;
-  return `<text class="arc" font-size="${long ? Math.max(8.5, base * 11 / s.length) : base}"><textPath href="#${path}" startOffset="50%" text-anchor="middle">${esc(s)}</textPath></text>`;
+  return `<text class="arc" font-size="${long ? Math.max(6.5, base * 11 / s.length) : base}"><textPath href="#${path}" startOffset="50%" text-anchor="middle">${esc(s)}</textPath></text>`;
 }
 
 function roleHTML(t, nums) {
