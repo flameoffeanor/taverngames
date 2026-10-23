@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1631';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1637';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1631';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1631';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1637';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1637';
 
-export const VERSION = '20261023-1631';
+export const VERSION = '20261023-1637';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -218,7 +218,7 @@ function dealGrid() {
     $('dealDone').onclick = () => { closeModal(); if (!left) { commit(S => { S.deal = null; }, true); goBoard(); } };
     const c = $('dealCancel');
     if (c) c.onclick = () => confirmBox(`${left} karakter henüz seçilmedi. Dağıtım bitirilsin mi? (Tablaya gelenler kalır.)`, 'Bitir', () => { commit(S => { S.deal = null; }, true); closeModal(); goBoard(); });
-  });
+  }, { opaque: true });
 }
 function dealReveal(i) {
   const d = G.S.deal; if (!d || d.taken[i]) return dealGrid();
@@ -236,7 +236,7 @@ function dealReveal(i) {
     <button class="btn primary" id="dealBack">Karakter seçimine geri dön</button>`, body => {
     $('dealName').oninput = e => commit(S => { const t = S.tokens.find(x => x.id === tid); if (t) t.name = e.target.value.trim(); }, true);
     $('dealBack').onclick = dealGrid;
-  });
+  }, { opaque: true });
 }
 function goBoard() { if (G.S.open.board) commit(S => { S.open.board = false; }, true); $('secBoard').scrollIntoView({ behavior: 'smooth' }); }
 

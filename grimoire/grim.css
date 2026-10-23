@@ -343,3 +343,5 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .deal-name { display: grid; gap: 6px; margin-bottom: 14px; font-size: .88rem; color: var(--muted); }
 .deal-name input { font-size: 1.15rem; padding: 12px; }
 .deal-name input { color: #111; background: #fff; }
+
+.modal.opaque .m-bg { background: #05070b; backdrop-filter: none; }

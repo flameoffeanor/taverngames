@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261023-1631';
+import { normId } from './data.js?v=20261023-1637';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -77,9 +77,10 @@ export function toast(msg, ms = 2200) {
 
 // ---- modal ----
 let modalBack = null;
-export function openModal(title, html, mount, { wide = false, back = null } = {}) {
+export function openModal(title, html, mount, { wide = false, back = null, opaque = false } = {}) {
   const m = $('modal');
   m.querySelector('.m-card').classList.toggle('wide', wide);
+  m.classList.toggle('opaque', opaque);
   $('mTitle').innerHTML = title;
   $('mBack').hidden = !back;
   modalBack = back;
