@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261023-1637';
+import { normId } from './data.js?v=20261023-1713';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -126,7 +126,11 @@ export const bigTok = id => `<div class="bigtok t-${role(id).team}"><div class="
 // Script'teki roller (yoksa tüm Türkçe roller)
 export function scriptIds() {
   const S = G.S, D = G.D;
-  if (S.script.roles.length) return S.script.roles.filter(id => D.roles[id]);
+  // Sıra: sitedeki gibi Sheet'in Karakterler sekmesindeki satır sırası (script'teki sıra değil)
+  if (S.script.roles.length) {
+    const rank = Object.fromEntries(Object.keys(D.roles).map((id, i) => [id, i]));
+    return S.script.roles.filter(id => D.roles[id]).sort((x, y) => rank[x] - rank[y]);
+  }
   return Object.keys(D.roles).filter(id => !D.roles[id].english);
 }
 export const boardRoles = () => G.S.tokens.filter(t => t.kind === 'role');
