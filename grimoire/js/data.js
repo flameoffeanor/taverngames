@@ -26,7 +26,7 @@ const REM_TR = {
   Poisoned: 'Zehirli', Drunk: 'Sarhoş', Dead: 'Ölü', Protected: 'Korunuyor', Safe: 'Güvende', 'No Ability': 'Yeteneği yok',
   Mad: 'Takıntılı', '2nd': '2. oyuncu', Townsfolk: 'Kasabalı', Outsider: 'Yabancı', Minion: 'Minyon', Demon: 'İblis',
   Wrong: 'Yanlış', Grandchild: 'Torun', 'Died Today': 'Bugün öldü', Once: 'Bir kez', 'Red Herring': 'Yalancı İblis',
-  'Survives Execution': 'İdamda ölmez', 'Is The Demon': 'İblis oldu', 'Is The Drunk': 'Sarhoş olan', '3 Attacks': '3 saldırı',
+  'Survives Execution': 'İdamda ölmez', 'Is The Demon': 'İblis oldu', 'Is The Drunk': 'Sarhoş', '3 Attacks': '3 saldırı',
   'Negative Vote': 'Eksi oy', 'Is The Apprentice': 'Çırak', Alive: 'Dirildi', Know: 'Biliyor', 'Has Ability': 'Yeteneği var',
   Master: 'Efendi', '3 Votes': '3 oy', Cursed: 'Lanetli', Lunch: 'Öğle yemeği', Visitor: 'Ziyaretçi', 'False Info': 'Yanlış bilgi',
   Attack: 'Saldırı', 'Not Protected': 'Korunmuyor', Abnormal: 'Anormal', Correct: 'Doğru', Twin: 'İkiz', Executed: 'İdam edildi',
@@ -34,7 +34,7 @@ const REM_TR = {
   'May Not Nominate': 'Artık Aday Gösteremez', 'Demon Voted': 'İblis oy kullandı', 'Demon Not Voted': 'İblis oy kullanmadı',
   'Minions Not Nominated': 'Minyon aday göstermedi', 'Minion Nominated': 'Minyon aday gösterdi', 'Faux Paw': 'Kötü görünür',
   'Drunk 1': 'Sarhoş 1', 'Drunk 2': 'Sarhoş 2', 'Drunk 3': 'Sarhoş 3', "Doesn't Kill": 'Öldürmez', 'Is The Alchemist': 'Simyacı',
-  'Everyone Is Drunk': 'Herkes sarhoş', 'Cannot Die': 'Ölmez', 'Evil Wakes': 'Kötüler uyanır', Friend: 'Arkadaş', Amigo: 'Dost',
+  'Everyone Is Drunk': 'Herkes sarhoş', 'Cannot Die': 'Ölmez', 'Evil Wakes': 'Kötüler uyanır', Friend: 'Arkadaş',
   'Storyteller Ability': 'Yönetici yeteneği', 'Haircuts Tonight': 'Bu gece tıraş', 'Tea Party Tonight': 'Bu gece çay partisi',
   'Turns Evil': 'Kötü olacak', Fear: 'Korku', 'Night 1': '1. gece', 'Night 2': '2. gece', 'Night 3': '3. gece', Claimed: 'İlan etti',
   'About To Die': 'Ölmek üzere', 'Day 5': '5. gün', 'Good Player Executed': 'İyi oyuncu idam edildi', 'Sober & Healthy': 'Ayık ve sağlıklı',
@@ -77,7 +77,7 @@ async function fetchText(url) {
 }
 
 export async function loadData(force = false) {
-  const official = await (await fetch('data/official.json?v=20261023-1622')).json();
+  const official = await (await fetch('data/official.json?v=20261023-1625')).json();
   let sheet, offline = false;
   try {
     const [c, s] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL)]);
