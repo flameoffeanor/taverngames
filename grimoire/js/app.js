@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1530';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1537';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1530';
-import { arcText, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1530';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1537';
+import { arcText, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1537';
 
-export const VERSION = '20261023-1530';
+export const VERSION = '20261023-1537';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -437,6 +437,28 @@ function renderNight() {
     rows.push(`<div class="ne t-${role(id).team}${done.has(id) ? ' done' : ''}${playing ? '' : ' out'}${allDead ? ' dead' : ''}" data-k="${id}">
       ${icon(id, 'ic')}<div><b class="ne-t">${num ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${rich(txt)}</p>${warn.length ? `<div class="rws">${warn.join('')}</div>` : ''}</div></div>`);
   }
+  // Bu gece işi olmayan ama yanında hatırlatıcı olan roller: en üstte "Hatırlatmalar"
+  const listed = new Set(list.filter(id => !STRUCT[id] && (tab === 'first' ? role(id).first : role(id).other)));
+  const rem = [];
+  const seenR = new Set();
+  toks.forEach(t => {
+    if (listed.has(t.role) || seenR.has(t.role)) return;
+    const mine = toks.filter(x => x.role === t.role);
+    const rts = [];
+    mine.forEach(m => G.S.tokens.filter(x => x.kind === 'rem' && x.owner === m.id).forEach(x => rts.push({ m, x })));
+    if (!rts.length) return;
+    seenR.add(t.role);
+    const allDead = mine.every(m => m.dead);
+    if (allDead && !S.night.showDead) return;
+    const chips = rts.map(({ m, x }) => {
+      const nm = x.role ? `${RN(x.role)} – ${remTr(x.text)}` : remTr(x.text);
+      return `<span class="rw" style="--gc:${colorOf(m.id)}">⚠ ${esc(nm)}${mine.length > 1 && m.name ? ` <small>(${esc(m.name)})</small>` : ''}</span>`;
+    }).join('');
+    const who = mine.map(m => `${m.name ? esc(m.name) : '—'}${m.dead ? ' †' : ''}`).join(', ');
+    rem.push(`<div class="ne t-${role(t.role).team}${done.has(t.role) ? ' done' : ''}${allDead ? ' dead' : ''}" data-k="${t.role}">
+      ${icon(t.role, 'ic')}<div><b class="ne-t">${esc(RN(t.role))}${who !== '—' ? ` <small>· ${who}</small>` : ''}</b><div class="rws">${chips}</div></div></div>`);
+  });
+  if (rem.length) rows.unshift('<h4 class="ne-h">Hatırlatmalar</h4>', ...rem);
   $('nightList').innerHTML = rows.join('') || '<p class="muted pad">Bu gece uyanan karakter yok.</p>';
 }
 
