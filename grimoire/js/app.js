@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1303';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1332';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1303';
-import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, clockwise, applyHeight, W, H } from './board.js?v=20261023-1303';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1332';
+import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, clockwise, applyHeight, W, H } from './board.js?v=20261023-1332';
 
-export const VERSION = '20261023-1303';
+export const VERSION = '20261023-1332';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -119,7 +119,8 @@ function openChars() {
     openModal('Karakterleri Seç', `
       <div class="dist-wrap"><table class="dist"><tr><th>Oyuncular</th>${cols.map(c => `<td class="${c === col ? 'on' : ''}">${c === 15 ? '15+' : c}</td>`).join('')}</tr>
         ${['townsfolk', 'outsider', 'minion', 'demon'].map(rowT).join('')}</table></div>
-      <label class="sl">Oyuncu sayısı <output>${n}</output><input type="range" id="csN" min="5" max="20" value="${n}"></label>
+      <div class="lbl">Oyuncu sayısı</div>
+      <div class="pcount" id="csN">${Array.from({ length: 16 }, (_, i) => i + 5).map(c => `<button data-n="${c}" class="${c === n ? 'on' : ''}">${c}</button>`).join('')}</div>
       <label class="sw"><input type="checkbox" id="csAb" ${st.abilities ? 'checked' : ''}><i></i>Karakter özelliklerini göster</label>
       <label class="sw"><input type="checkbox" id="csDup" ${st.dup ? 'checked' : ''}><i></i>Aynı karakterden birden fazla</label>
       <div class="grid2"><button class="btn" id="csRand">Rastgele öner</button><button class="btn ghost" id="csClear">Seçimi temizle</button></div>
@@ -134,9 +135,7 @@ function openChars() {
           }).join('')}</div></div>`;
       }).join('')}
       <div class="sticky-foot"><span>${total} seçili${total !== n ? ` · <span class="warn-t">${n} oyuncu</span>` : ''}</span><button class="btn primary" id="csPlace" ${total ? '' : 'disabled'}>Tablaya diz</button></div>`, body => {
-      const csN = $('csN');
-      csN.oninput = () => { csN.previousElementSibling.textContent = csN.value; };
-      csN.onchange = () => { commit(S => { S.setup.players = +csN.value; }, true); render(); };
+      $('csN').onclick = e => { const b = e.target.closest('[data-n]'); if (b) { commit(S => { S.setup.players = +b.dataset.n; }, true); render(); } };
       $('csAb').onchange = e => { commit(S => { S.setup.abilities = e.target.checked; }, true); render(); };
       $('csDup').onchange = e => { commit(S => { S.setup.dup = e.target.checked; if (!S.setup.dup) for (const k in S.setup.pick) S.setup.pick[k] = 1; }, true); render(); };
       $('csClear').onclick = () => { commit(S => { S.setup.pick = {}; }, true); render(); };
@@ -380,6 +379,8 @@ function pickBluff(i) {
 // ---- tabla araçları ----
 function renderToolbar() {
   const b = G.S.board;
+  $('boardTools').hidden = !b.tools;
+  $('bTools').textContent = b.tools ? '▴ Blöfler ve araçları gizle' : '▾ Blöfler ve araçları göster';
   $('bHide').textContent = b.hidden ? "Grimoire'ı göster" : "Grimoire'ı gizle";
   $('optNums').checked = b.nums; $('optSnap').checked = b.snap;
   $('optRole').value = b.roleScale; $('oRole').textContent = (+b.roleScale).toFixed(2);
@@ -427,9 +428,14 @@ function renderNight() {
     const allDead = playing && mine.every(t => t.dead);
     if (allDead && !S.night.showDead) { n++; continue; }
     const num = playing ? ++n : '';
+    const warn = [];
+    mine.forEach(t => G.S.tokens.filter(x => x.kind === 'rem' && x.owner === t.id).forEach(x => {
+      const nm = x.role ? `${RN(x.role)} – ${remTr(x.text)}` : remTr(x.text);
+      warn.push(`<span class="rw">⚠ ${esc(nm)}${mine.length > 1 && t.name ? ` <small>(${esc(t.name)})</small>` : ''}</span>`);
+    }));
     const who = mine.map(t => `${t.name ? esc(t.name) : '—'}${t.dead ? ' †' : ''}`).join(', ');
     rows.push(`<div class="ne t-${role(id).team}${done.has(id) ? ' done' : ''}${playing ? '' : ' out'}${allDead ? ' dead' : ''}" data-k="${id}">
-      ${icon(id, 'ic')}<div><b class="ne-t">${num ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${rich(txt)}</p></div></div>`);
+      ${icon(id, 'ic')}<div><b class="ne-t">${num ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${rich(txt)}</p>${warn.length ? `<div class="rws">${warn.join('')}</div>` : ''}</div></div>`);
   }
   $('nightList').innerHTML = rows.join('') || '<p class="muted pad">Bu gece uyanan karakter yok.</p>';
 }
@@ -469,6 +475,7 @@ function wire() {
   $('wrapUndo').onclick = () => { if (!undo()) toast('Geri alınacak bir şey yok.'); };
   $('wrapFull').onclick = toggleFull;
   $('veil').onclick = () => commit(S => { S.board.hidden = false; }, true);
+  $('bTools').onclick = () => commit(S => { S.board.tools = !S.board.tools; }, true);
   $('bHide').onclick = () => commit(S => { S.board.hidden = !S.board.hidden; }, true);
   $('bHeight').onclick = () => commit(S => { S.board.ratio = 0; }, true);
   $('bClear').onclick = () => confirmBox('Tabladaki tüm simgeler, hatırlatıcılar, isimler ve blöfler silinsin mi? (Senaryo ve ayarlar kalır.)', 'Temizle', () => {

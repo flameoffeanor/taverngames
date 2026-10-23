@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261023-1303';
+import { normId } from './data.js?v=20261023-1332';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -11,7 +11,7 @@ export function fresh() {
     setup: { players: 8, pick: {}, abilities: true, dup: false },
     tokens: [],
     bluffs: [null, null, null],
-    board: { ratio: 0, locked: false, snap: true, nums: true, roleScale: 1, remScale: 1, hidden: false },
+    board: { ratio: 0, locked: false, snap: true, tools: true, nums: true, roleScale: 1, remScale: 1, hidden: false },
     night: { tab: 'first', showDead: true, showOut: false, done: { first: [], other: [] } },
     notes: '',
     customInfo: [],

@@ -1,9 +1,9 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1303';
-import { remTr } from './data.js?v=20261023-1303';
+import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1332';
+import { remTr } from './data.js?v=20261023-1332';
 
-const GRID = 48;
+const GRID = 14; // tabla genişliğinde 14 sütun: telefonda ≈25px, gözle görülür adım
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
 export const roleSize = () => Math.round(base() * G.S.board.roleScale);
@@ -66,13 +66,32 @@ function remHTML(t) {
   </div>`;
 }
 
+// Bir karaktere yapışık hatırlatıcılar: etraflarına çerçeve çiz
+function groupsHTML() {
+  const w = W(), out = [];
+  for (const o of G.S.tokens) {
+    if (o.kind !== 'role') continue;
+    const kids = G.S.tokens.filter(t => t.kind === 'rem' && t.owner === o.id);
+    if (!kids.length) continue;
+    const rs = roleSize(), ms = remSize();
+    let x1 = o.x * w - rs / 2, x2 = o.x * w + rs / 2, y1 = o.y * w - rs / 2, y2 = o.y * w + rs / 2;
+    for (const k of kids) {
+      x1 = Math.min(x1, k.x * w - ms / 2); x2 = Math.max(x2, k.x * w + ms / 2);
+      y1 = Math.min(y1, k.y * w - ms / 2); y2 = Math.max(y2, k.y * w + ms / 2);
+    }
+    const pad = 5;
+    out.push(`<div class="grp" data-g="${o.id}" style="left:${x1 - pad}px;top:${y1 - pad}px;width:${x2 - x1 + pad * 2}px;height:${y2 - y1 + pad * 2}px"></div>`);
+  }
+  return out.join('');
+}
+
 export function renderBoard() {
   const S = G.S, b = board();
   applyHeight();
   const nums = nightNumbers();
   const roles = S.tokens.filter(t => t.kind === 'role').map(t => roleHTML(t, nums)).join('');
-  const rems = S.tokens.filter(t => t.kind === 'rem').map(remHTML).join('');
-  $('tokens').innerHTML = roles + rems;
+  const rems = S.tokens.filter(t => t.kind === 'rem').map(t => remHTML(t)).join('');
+  $('tokens').innerHTML = groupsHTML() + roles + rems;
   b.classList.toggle('locked', !!S.board.locked);
   $('wrapLock').classList.toggle('on', !!S.board.locked);
   $('wrapLock').innerHTML = S.board.locked ? '🔒' : '🔓';
@@ -86,6 +105,19 @@ const clampXY = (x, y, s) => {
   return [Math.min(Math.max(x, m), 1 - m), Math.min(Math.max(y, m), h / w - m)];
 };
 const snapV = v => Math.round(v * GRID) / GRID;
+const snapXY = (x, y, s) => clampXY(snapV(x), snapV(y), s);
+
+// Hatırlatıcı bir karakter simgesine yeterince yakınsa onun hedefi olur
+function nearestRole(x, y, exceptId) {
+  const w = W(), lim = roleSize() / 2 + remSize() * 0.55;
+  let best = null, bd = Infinity;
+  for (const r of G.S.tokens) {
+    if (r.kind !== 'role') continue;
+    const d = Math.hypot((r.x - x) * w, (r.y - y) * w);
+    if (d < lim && d < bd) { best = r; bd = d; }
+  }
+  return best;
+}
 
 // Yeni simge için tablada boş yer bul (ortadan başlayıp spiral)
 export function freeSpot(kind = 'role') {
@@ -115,11 +147,11 @@ export function ovalSpots(n) {
 }
 
 // Bir karakter simgesine bağlı hatırlatıcı için konum: simgeden tabla merkezine doğru, sıraya göre yelpaze
-export function remSpot(owner) {
+export function remSpot(owner, exceptId) {
   const w = W(), h = H(), rs = roleSize(), ms = remSize();
   const cx = 0.5, cy = h / w / 2;
   const base = Math.atan2(cy - owner.y, cx - owner.x);
-  const k = G.S.tokens.filter(t => t.kind === 'rem' && t.owner === owner.id).length;
+  const k = G.S.tokens.filter(t => t.kind === 'rem' && t.owner === owner.id && t.id !== exceptId).length;
   const steps = [0, 1, -1, 2, -2, 3, -3, 4, -4];
   const a = base + (steps[k % steps.length] * Math.PI) / 4.2;
   const d = (rs / 2 + ms / 2 + 3 + Math.floor(k / steps.length) * ms) / w;
@@ -145,13 +177,25 @@ function down(e) {
     kids: t.kind === 'role' ? [...document.querySelectorAll('#tokens .tok.rem')].filter(r => G.S.tokens.find(x => x.id === r.dataset.id)?.owner === t.id) : [] };
   if (movable) { el.setPointerCapture(e.pointerId); e.preventDefault(); }
 }
+function clearTarget() { document.querySelectorAll('#tokens .tok.target').forEach(n => n.classList.remove('target')); }
 function move(e) {
   if (!drag || e.pointerId !== drag.pid || !drag.movable) return;
   const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
   if (!drag.moved && Math.hypot(dx, dy) < 6) return;
-  if (!drag.moved) { drag.moved = true; drag.el.classList.add('drag'); }
+  if (!drag.moved) {
+    drag.moved = true; drag.el.classList.add('drag'); board().classList.add('dragging');
+    // sürüklenen karakterin ya da hatırlatıcının çerçevesini geçici gizle
+    const gid = drag.t.kind === 'role' ? drag.t.id : drag.t.owner;
+    if (gid) document.querySelector(`#tokens .grp[data-g="${gid}"]`)?.classList.add('off');
+  }
   const w = W(), s = sizeOf(drag.t);
   let [x, y] = clampXY(drag.ox + dx / w, drag.oy + dy / w, s);
+  clearTarget(); drag.target = null;
+  if (drag.t.kind === 'role' && G.S.board.snap) [x, y] = snapXY(x, y, s);
+  else if (drag.t.kind === 'rem') {
+    const r = nearestRole(x, y);
+    if (r) { drag.target = r; [x, y] = remSpot(r, drag.t.id); document.querySelector(`#tokens .tok[data-id="${r.id}"]`)?.classList.add('target'); }
+  }
   drag.nx = x; drag.ny = y;
   drag.el.style.left = x * w - s / 2 + 'px';
   drag.el.style.top = y * w - s / 2 + 'px';
@@ -161,17 +205,18 @@ function move(e) {
 function up(e) {
   if (!drag || e.pointerId !== drag.pid) return;
   const d = drag; drag = null;
-  d.el.classList.remove('drag');
+  d.el.classList.remove('drag'); board().classList.remove('dragging'); clearTarget();
   if (!d.moved) {
     if (e.type === 'pointercancel') return;
     return d.t.kind === 'rem' ? handlers.tapRem(d.t) : handlers.tapRole(d.t);
   }
-  let x = d.nx, y = d.ny;
-  if (G.S.board.snap && d.t.kind === 'role') [x, y] = clampXY(snapV(x), snapV(y), sizeOf(d.t));
+  const x = d.nx, y = d.ny;
   commit(S => {
     const t = S.tokens.find(q => q.id === d.t.id); if (!t) return;
     const ddx = x - t.x, ddy = y - t.y;
     t.x = x; t.y = y;
+    // hatırlatıcı: yakına bırakıldıysa yapış, uzağa bırakıldıysa ayrıl
+    if (t.kind === 'rem') t.owner = d.target ? d.target.id : null;
     if (t.kind === 'role') S.tokens.forEach(r => {
       if (r.kind === 'rem' && r.owner === t.id) [r.x, r.y] = clampXY(r.x + ddx, r.y + ddy, remSize());
     });
