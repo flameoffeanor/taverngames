@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1717';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1722';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1717';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1717';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1722';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1722';
 
-export const VERSION = '20261023-1717';
+export const VERSION = '20261023-1722';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -128,7 +128,7 @@ function openChars() {
         const list = ids.filter(id => role(id).team === t);
         if (!list.length) return '';
         const want = exp[t];
-        return `<div class="cgroup t-${t}"><div class="cg-side"><span>${TEAM_PL[t]}</span><b class="${cnt[t] === want ? 'ok' : 'off'}">${cnt[t]} / ${want}</b></div>
+        return `<div class="cgroup t-${t}"><div class="cg-side"><div class="cg-stick"><span>${TEAM_PL[t]}</span><b class="${cnt[t] === want ? 'ok' : 'off'}">${cnt[t]} / ${want}</b></div></div>
           <div class="cg-list">${list.map(id => {
             const c = st.pick[id] || 0;
             return `<button class="cc${c ? ' on' : ''}" data-id="${id}">${icon(id, 'ic big')}<b>${esc(RN(id))}</b>${st.abilities ? `<small>${rich(role(id).ability)}</small>` : ''}${c > 1 ? `<span class="cnt">×${c}</span>` : ''}${c && st.dup ? `<span class="minus" data-minus="${id}">−</span>` : ''}</button>`;

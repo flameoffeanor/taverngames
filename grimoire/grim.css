@@ -267,8 +267,9 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .dist tr.t-outsider td, .dist tr.t-outsider th { color: var(--out); }
 .dist tr.t-minion td, .dist tr.t-minion th, .dist tr.t-demon td, .dist tr.t-demon th { color: var(--evil); }
 .dist td.on { background: rgba(212, 176, 106, .16); color: var(--text); font-weight: 800; }
-.cgroup { display: grid; grid-template-columns: 30px 1fr; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.cg-side { background: #10151f; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; padding: 10px 0; }
+.cgroup { display: grid; grid-template-columns: 30px 1fr; border: 1px solid var(--line); border-radius: 12px; overflow: clip; }
+.cg-side { background: #10151f; padding: 10px 0; }
+.cg-stick { position: sticky; top: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .cg-side span { writing-mode: vertical-rl; transform: rotate(180deg); font-family: Cinzel, serif; font-weight: 700; color: var(--tc); letter-spacing: .1em; font-size: .85rem; }
 .cg-side b { writing-mode: vertical-rl; transform: rotate(180deg); font-size: .8rem; }
 .cg-side b.ok { color: var(--teal); } .cg-side b.off { color: #e7a65f; }
