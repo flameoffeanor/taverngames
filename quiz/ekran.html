@@ -4,8 +4,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="quiz.css"><script src="common.js"></script></head>
 <body class="bg-slate-950 text-white min-h-screen p-6 font-sans overflow-hidden flex flex-col">
-<header class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" class="h-14" alt=""><div class="cz bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div><h1 id="ev" class="text-2xl font-bold text-slate-200"></h1></div>
-<div id="qnum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800">Lobi</div></header>
+<header class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" class="h-14" alt=""><div class="cz bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div></div>
+<div class="text-center"><h1 id="ev" class="cz text-2xl font-bold text-slate-200 leading-tight"></h1><h2 id="ev2" class="text-lg font-semibold text-slate-400 leading-tight"></h2></div>
+<div class="justify-self-end"><div id="qnum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800">Lobi</div></div></header>
 <main id="lobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full"><img src="/assets/logo_beyaz_kenar.webp" class="h-56 mx-auto" alt=""><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
 <div id="tt" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-lg"></div></main>
 <main id="quiz" class="hidden my-auto grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
@@ -16,11 +17,13 @@
 <main id="fin" class="hidden my-auto text-center space-y-6 max-w-3xl mx-auto w-full"><div class="text-9xl">🏆</div><h2 class="text-6xl font-black text-amber-400">QUIZ SONA ERDİ!</h2><div id="ff" class="bg-slate-900 p-8 rounded-3xl border-2 border-slate-800 text-left text-2xl"></div></main>
 <script>
 let teams={},sc={},st=null,ans={},res={},k=null,r1,r2;
-db.ref('config/public').on('value',s=>$('ev').textContent=(s.val()||{}).name||'Quiz Night');
+db.ref('config/public').on('value',s=>{const c=s.val()||{};$('ev').textContent=c.name||'Quiz Night';$('ev2').textContent=c.date||''});
 db.ref('teams').on('value',s=>{teams=s.val()||{};draw()});db.ref('scores').on('value',s=>{sc=s.val()||{};draw()});
 db.ref('state').on('value',s=>{st=s.val();const nk=st&&st.qKey;if(nk!==k){if(r1)r1.off();if(r2)r2.off();k=nk;ans={};res={};
  if(k){r1=db.ref('answered/'+k);r1.on('value',a=>{ans=a.val()||{};draw()});r2=db.ref('results/'+k);r2.on('value',a=>{res=a.val()||{};draw()})}}draw()});
 setInterval(()=>{const l=left(st);$('timer').textContent=st&&st.status=='question'?(l===null?'--':l>0?l+'s':'Süre Bitti'):st&&st.status=='revealed'?'Süre Bitti':''},250);
+const DOTS=['🔴','🟠','🟡','🟢','🔵','🟣','🟤','⚪','⚫'],dm={};
+function dots(){Object.keys(dm).forEach(u=>{if(!teams[u])delete dm[u]});Object.keys(teams).forEach(u=>{if(!dm[u]){const used=Object.values(dm);dm[u]=DOTS.find(d=>!used.includes(d))||DOTS[Object.keys(dm).length%DOTS.length]}})}
 function show(id){['lobby','quiz','fin'].forEach(x=>$(x).classList.toggle('hidden',x!=id));$('quiz').classList.toggle('grid',id=='quiz')}
 function draw(){const s=st||{},rev=s.status=='revealed';
  $('qnum').textContent=s.status=='question'||rev?'Soru '+s.currentQuestion+' / '+s.total:s.status=='finished'?'Sonuçlar':'Lobi';
@@ -33,5 +36,5 @@ function draw(){const s=st||{},rev=s.status=='revealed';
    else if(ans[u]){c='bg-amber-500/30 text-amber-300';t='🔒'}
    b.append(h('span','px-3 py-1.5 rounded-xl text-xs font-bold '+c,teams[u].name+' '+t))});
   board($('lb'),teams,sc,null,10)}
- else{show('lobby');$('tt').replaceChildren(...Object.values(teams).map(t=>h('div','bg-slate-800 p-4 rounded-2xl text-amber-300 font-bold','🛡️ '+t.name)))}}
+ else{show('lobby');$('tt').replaceChildren(...(dots(),Object.keys(teams).map(u=>h('div','bg-slate-800 p-4 rounded-2xl text-amber-300 font-bold',dm[u]+' '+teams[u].name))))}}
 </script><script>floaters(22,1.8)</script></body></html>
