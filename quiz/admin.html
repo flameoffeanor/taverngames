@@ -29,8 +29,9 @@ auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous;$('login').classList.togg
 function login(){auth.signInWithEmailAndPassword($('em').value.trim(),$('ps').value).catch(e=>{const m=$('lerr');m.textContent='Giriş başarısız: '+e.code;m.classList.remove('hidden')})}
 function init(){if(inited++)return;
  db.ref('private/questions').on('value',s=>{const v=s.val()||[];Q=Array.isArray(v)?v.filter(Boolean):Object.values(v);draw()});
- db.ref('config/public').once('value',s=>{const c=s.val()||{};$('cn').value=c.name||'';$('cd').value=c.date||''});
- db.ref('config/eventPassword').once('value',s=>$('cp').value=s.val()||'');
+ const sync=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=v};
+ db.ref('config/public').on('value',s=>{const c=s.val()||{};sync('cn',c.name||'');sync('cd',c.date||'')});
+ db.ref('config/eventPassword').on('value',s=>sync('cp',s.val()||''));
  db.ref('teams').on('value',s=>{teams=s.val()||{};drawTeams();draw()});db.ref('scores').on('value',s=>{sc=s.val()||{};drawTeams()});
  db.ref('state').on('value',s=>{st=s.val();if(!seeded&&st&&st.currentQuestion){cur=st.currentQuestion;seeded=1}
   if(st&&st.qKey!==ak){if(aR)aR.off();if(rR)rR.off();ak=st.qKey;ans={};res={};if(ak){aR=db.ref('answers/'+ak);aR.on('value',a=>{ans=a.val()||{};draw()});rR=db.ref('results/'+ak);rR.on('value',a=>{res=a.val()||{};drawTeams()})}}draw()});
