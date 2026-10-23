@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1722';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261024-0005';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1722';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1722';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261024-0005';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261024-0005';
 
-export const VERSION = '20261023-1722';
+export const VERSION = '20261024-0005';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -30,6 +30,10 @@ function start() {
   if (!started) {
     started = true;
     initBoard();
+    // Simgeye dokununca açılan pencerenin üstüne, aynı dokunuşun 'click'i düşüp yanlış düğmeye basmasın
+    document.addEventListener('click', e => {
+      if (Date.now() - (window.__tapAt || 0) < 450 && e.target.closest('#modal')) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
     onTap({ tapRole: t => openToken(t.id), tapRem: t => openRem(t.id) });
     subscribe(renderAll);
     wire();

@@ -348,3 +348,8 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 
 .modal.opaque .m-bg { background: #05070b; backdrop-filter: none; }
 .dist td { font-size: .76rem; padding-left: 0; padding-right: 0; }
+
+/* Araç düğmeleri tablanın üstünde ayrı satırda: altındaki simgelere dokunmayı engellemesin */
+.board-wrap:not(.full) { display: flex; flex-direction: column; }
+.board-wrap:not(.full) .board-tools { position: static; order: -1; justify-content: flex-end; margin: 0 0 6px; }
+.board-wrap:not(.full) .veil { inset: 44px 0 22px; }
