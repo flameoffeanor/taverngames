@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1625';
-import { remTr } from './data.js?v=20261023-1625';
+import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1626';
+import { remTr } from './data.js?v=20261023-1626';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -39,6 +39,12 @@ export function nightNumbers() {
   return out;
 }
 
+const THUMB = 'M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z';
+export function glyphHTML(g) {
+  if (g === '👍') return `<svg class="thumb up" viewBox="0 0 24 24"><path d="${THUMB}"/></svg>`;
+  if (g === '👎') return `<svg class="thumb down" viewBox="0 0 24 24"><path d="${THUMB}" transform="rotate(180 12 12)"/></svg>`;
+  return esc(g || '');
+}
 export function arcText(txt, path, base) {
   const s = String(txt || '');
   const long = s.length > 11;
@@ -62,7 +68,7 @@ function remHTML(t) {
   const top = t.role ? role(t.role).name : '';
   const gc = t.owner && colorOf(t.owner);
   return `<div class="tok rem${t.tone ? ' ' + t.tone : ''}${gc ? ' linked' : ''}" data-id="${t.id}" style="--s:${s}px;${gc ? `--gc:${gc};` : ''}left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
-    <div class="disc">${t.role ? icon(t.role, 'ic') : `<span class="rtxt">${esc(t.glyph || '')}</span>`}
+    <div class="disc">${t.role ? icon(t.role, 'ic') : `<span class="rtxt">${glyphHTML(t.glyph)}</span>`}
     <svg viewBox="0 0 100 100" aria-hidden="true">${top ? arcText(top, 'arcT', 13) : ''}${arcText(remTr(t.text), 'arcB', 13.5)}</svg></div>
   </div>`;
 }
