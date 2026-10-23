@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1332';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1349';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1332';
-import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, clockwise, applyHeight, W, H } from './board.js?v=20261023-1332';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1349';
+import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1349';
 
-export const VERSION = '20261023-1332';
+export const VERSION = '20261023-1349';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -382,7 +382,7 @@ function renderToolbar() {
   $('boardTools').hidden = !b.tools;
   $('bTools').textContent = b.tools ? '▴ Blöfler ve araçları gizle' : '▾ Blöfler ve araçları göster';
   $('bHide').textContent = b.hidden ? "Grimoire'ı göster" : "Grimoire'ı gizle";
-  $('optNums').checked = b.nums; $('optSnap').checked = b.snap;
+  $('optNums').checked = b.nums;
   $('optRole').value = b.roleScale; $('oRole').textContent = (+b.roleScale).toFixed(2);
   $('optRem').value = b.remScale; $('oRem').textContent = (+b.remScale).toFixed(2);
 }
@@ -431,7 +431,7 @@ function renderNight() {
     const warn = [];
     mine.forEach(t => G.S.tokens.filter(x => x.kind === 'rem' && x.owner === t.id).forEach(x => {
       const nm = x.role ? `${RN(x.role)} – ${remTr(x.text)}` : remTr(x.text);
-      warn.push(`<span class="rw">⚠ ${esc(nm)}${mine.length > 1 && t.name ? ` <small>(${esc(t.name)})</small>` : ''}</span>`);
+      warn.push(`<span class="rw" style="--gc:${colorOf(t.id)}">⚠ ${esc(nm)}${mine.length > 1 && t.name ? ` <small>(${esc(t.name)})</small>` : ''}</span>`);
     }));
     const who = mine.map(t => `${t.name ? esc(t.name) : '—'}${t.dead ? ' †' : ''}`).join(', ');
     rows.push(`<div class="ne t-${role(id).team}${done.has(id) ? ' done' : ''}${playing ? '' : ' out'}${allDead ? ' dead' : ''}" data-k="${id}">
@@ -489,7 +489,6 @@ function wire() {
   $('bBluffAdd').onclick = () => commit(S => { S.bluffs.push(null); });
   $('bBluffShow').onclick = () => showInfo('bluffs');
   $('optNums').onchange = e => commit(S => { S.board.nums = e.target.checked; }, true);
-  $('optSnap').onchange = e => commit(S => { S.board.snap = e.target.checked; }, true);
   $('optRole').oninput = e => commit(S => { S.board.roleScale = +e.target.value; }, true);
   $('optRem').oninput = e => commit(S => { S.board.remScale = +e.target.value; }, true);
   window.addEventListener('resize', () => { if ($('boardWrap').classList.contains('full')) renderBoard(); });

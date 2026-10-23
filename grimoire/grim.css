@@ -155,14 +155,11 @@ textarea { width: 100%; resize: vertical; }
 .ic.ini:not(:has(img))::before { content: attr(data-i); position: absolute; inset: 0; display: grid; place-items: center; font-family: Cinzel, serif; font-weight: 700; font-size: 1.1em; color: #6b5a3a; }
 .ic.big { width: 54px; height: 54px; flex: none; }
 
-/* hatırlatıcı yapışması: çerçeve + hedef vurgusu */
-.grp { position: absolute; border: 1.5px dashed rgba(212, 176, 106, .75); border-radius: 22px; background: rgba(212, 176, 106, .07); pointer-events: none; z-index: 1; transition: opacity .12s; }
-.grp.off { opacity: 0; }
-.tok.target::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 2px solid var(--gold); box-shadow: 0 0 14px rgba(212, 176, 106, .6); pointer-events: none; }
-.board.dragging { background-image: radial-gradient(circle, rgba(255,255,255,.10) 1.2px, transparent 1.6px), radial-gradient(ellipse at 50% 45%, rgba(60, 80, 110, .22), transparent 70%); background-size: calc(100% / 14) calc(100% / 14), auto; }
+/* bağlı simgeler: karakterin rengiyle yuvarlak çerçeve */
+.tok.linked .disc { border: 3px solid var(--gc) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--gc) 35%, transparent), 0 0 12px color-mix(in srgb, var(--gc) 55%, transparent), 0 3px 8px rgba(0,0,0,.55) !important; }
 .tools-toggle { width: 100%; }
 .board-tools-box { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.rw { display: inline-flex; align-items: center; gap: 4px; margin: 4px 6px 0 0; padding: 2px 9px; border-radius: 999px; background: #2a2516; border: 1px solid var(--gold2); color: #f0d9a0; font-size: .78rem; font-weight: 600; }
+.rw { display: inline-flex; align-items: center; gap: 4px; margin: 4px 6px 0 0; padding: 2px 9px; border-radius: 999px; background: #2a2516; border: 1.5px solid var(--gc, var(--gold2)); color: #f0d9a0; font-size: .78rem; font-weight: 600; }
 
 /* oyuncu sayısı düğmeleri */
 .pcount { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
