@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261023-0147';
-import * as store from './store.js?v=20261023-0147';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0147';
-import { describe } from './describe.js?v=20261023-0147';
-import { startSetup } from './setup.js?v=20261023-0147';
-import { renderBoard, clickBlocked } from './board.js?v=20261023-0147';
-import * as panel from './panel.js?v=20261023-0147';
-import * as sheets from './sheets.js?v=20261023-0147';
+import { loadData } from './data.js?v=20261023-0435';
+import * as store from './store.js?v=20261023-0435';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0435';
+import { describe } from './describe.js?v=20261023-0435';
+import { startSetup } from './setup.js?v=20261023-0435';
+import { renderBoard, clickBlocked } from './board.js?v=20261023-0435';
+import * as panel from './panel.js?v=20261023-0435';
+import * as sheets from './sheets.js?v=20261023-0435';
 
-export const VERSION = '20261023-0147';
+export const VERSION = '20261023-0435';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------
@@ -79,6 +79,24 @@ $('board').addEventListener('click', e => {
   if (G.edit) return sheets.openPlayer(seat.dataset.pid);
   panel.tapSeat(seat.dataset.pid);
 });
+
+// Uzun basınca resim menüsü (yeni sekmede aç / indir) açılmasın
+document.addEventListener('contextmenu', e => { if (e.target.closest('#game, .sheet, .show')) e.preventDefault(); });
+// Çekmece açıkken masada boş bir yere dokunmak kapatır
+$('board').addEventListener('click', e => { if (G.drawer && !e.target.closest('.disc') && !e.target.closest('[data-c]')) setDrawer(false); });
+// Çekmeceyi yukarı kaydırarak kapat (içerik en alttaysa ya da kaymıyorsa)
+{
+  let y0 = null, atEnd = false;
+  const start = e => { y0 = e.touches[0].clientY; atEnd = drawer.scrollTop + drawer.clientHeight >= drawer.scrollHeight - 2; };
+  const move = e => { if (y0 == null) return; const dy = e.touches[0].clientY - y0; if (dy < -45 && atEnd) { y0 = null; setDrawer(false); } };
+  drawer.addEventListener('touchstart', start, { passive: true });
+  drawer.addEventListener('touchmove', move, { passive: true });
+  drawer.addEventListener('touchend', () => { y0 = null; }, { passive: true });
+  // şeritte aşağı çek: aç, yukarı it: kapat
+  let s0 = null;
+  $('strip').addEventListener('touchstart', e => { s0 = e.touches[0].clientY; }, { passive: true });
+  $('strip').addEventListener('touchmove', e => { if (s0 == null) return; const dy = e.touches[0].clientY - s0; if (dy > 30) { s0 = null; setDrawer(true); } else if (dy < -30) { s0 = null; setDrawer(false); } }, { passive: true });
+}
 
 // ---------------- üst bar ----------------
 // Şerit: düğmeleri panel işler, geri kalanı çekmeceyi aç/kapat

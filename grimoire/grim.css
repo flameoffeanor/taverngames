@@ -355,3 +355,5 @@ h3.t-townsfolk,h3.t-outsider,h3.t-minion,h3.t-demon,h3.t-traveller,h4[class^=t-]
 .rl em{flex:none;font-style:normal;font-weight:800;color:#fff;width:22px;text-align:center}
 .rl.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 20%,var(--s1))}
 .rl.on small{color:var(--cream)}
+img{-webkit-touch-callout:none;-webkit-user-drag:none;user-select:none}
+#game img,.sheet img,.show img{pointer-events:none}

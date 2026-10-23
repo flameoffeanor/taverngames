@@ -1,9 +1,9 @@
 // Oyun kurulumu: Script → Roller → Masa. Tokenlar masaya gelir; isimler masada, hazırlık "İlk gece öncesi" ekranında.
-import { G, $, esc, rich, icon, shuffle, role, rname, teamGroups, roleChip } from './core.js?v=20261023-0147';
-import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261023-0147';
-import * as store from './store.js?v=20261023-0147';
-import { defaultSides } from './table.js?v=20261023-0147';
-import * as prep from './prep.js?v=20261023-0147';
+import { G, $, esc, rich, icon, shuffle, role, rname, teamGroups, roleChip } from './core.js?v=20261023-0435';
+import { TEAMS, TEAM_TR, DIST } from './data.js?v=20261023-0435';
+import * as store from './store.js?v=20261023-0435';
+import { defaultSides } from './table.js?v=20261023-0435';
+import * as prep from './prep.js?v=20261023-0435';
 
 const SKEY = 'tg-grim-setup-v2';
 const W = { step: 1, script: null, n: 10, picked: [], sides: null };

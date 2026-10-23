@@ -1,8 +1,10 @@
 // "İlk gece öncesi": gece sırası gibi adım adım akan hazırlık.
 // Sarhoş'un sandığı rol, gezgin takımı, kırmızı ringa, ilk gece bilgileri (Almanac: "while preparing the first night"),
 // Çırak / Cüce, İblis blöfleri. Oyuncular masada dokunarak seçilir. Her adım tek olay ('pre'): tek geri alma.
-import { G, esc, role, rname, icon, roleChip, shuffle, P, seated } from './core.js?v=20261023-0147';
-import { TEAM_TR } from './data.js?v=20261023-0147';
+import { G, esc, role, rname, icon, roleChip, shuffle, P, seated } from './core.js?v=20261023-0435';
+import { infoReminders } from './rules.js?v=20261023-0435';
+import { newId } from './store.js?v=20261023-0435';
+import { TEAM_TR } from './data.js?v=20261023-0435';
 
 // Kendini başka rol sanan roller ve sandıkları rolün takımı
 export const BELIEVES = { drunk: 'townsfolk', lunatic: 'demon', marionette: 'townsfolk' };
@@ -105,7 +107,8 @@ export function ops(st, NS) {
   if (st.kind === 'bel') return [{ type: 'believed', p: st.pid, role: NS.pick }];
   if (st.kind === 'aln') return [{ type: 'align', p: st.pid, evil: NS.pick === 'evil' }];
   if (st.kind === 'rh') return [{ type: 'redherring', p: NS.targets[0] }];
-  if (st.kind === 'prep') return [{ type: 'prep', key: st.o.key, value: { targets: [...NS.targets], pick: NS.pick || null } }];
+  if (st.kind === 'prep') return [{ type: 'prep', key: st.o.key, value: { targets: [...NS.targets], pick: NS.pick || null } },
+    ...infoReminders(G.S, role, st.o.id, st.pid, NS.targets, NS.pick, newId)];
   if (st.kind === 'gain') return [{ type: 'prep', key: 'apprentice:' + st.pid, value: NS.pick ? { targets: [], pick: NS.pick } : null }];
   if (st.kind === 'amigo') return [{ type: 'amigo', g: st.pid, p: NS.targets[0] }];
   if (st.kind === 'bluffs') return [{ type: 'bluffs', bluffs: [...NS.bl] }];

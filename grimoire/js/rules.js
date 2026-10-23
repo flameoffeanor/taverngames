@@ -2,7 +2,7 @@
 // İlke: sistem hatırlatır, uyarır, hesaplar ve kaydeder; son karar her zaman Hikaye Anlatıcısınındır.
 // Kaynak: BotC kural kitabı + Almanac'lar + wiki (bkz. her rolün yanındaki not).
 
-import { phaseIdx, phaseKey } from './store.js?v=20261023-0147';
+import { phaseIdx, phaseKey } from './store.js?v=20261023-0435';
 
 // ---------------- hatırlatıcı etiketleri ----------------
 // Metinler masada ve oyuncu panelinde görünür.
@@ -419,6 +419,8 @@ export function buildEffects(step, S, role, NS, newId) {
   if (step.role === 'harpy') { delTag('mad', r => r.src === p.id); delTag('harpy2', r => r.src === p.id); }
   if (step.gained && step.firstLike) effs.push({ type: 'use', key: p.id + ':gainfirst' });
   if (step.role === 'apprentice' && NS.pick) effs.push({ type: 'gain', p: p.id, role: NS.pick });
+  // İlk gece bilgisi: kime ne gösterildi (yanlış bilgi verilse de kayıt kalır)
+  if (['washerwoman', 'librarian', 'investigator', 'steward', 'knight', 'noble'].includes(step.role) && targets.length) effs.push(...infoReminders(S, role, step.role, p.id, targets, NS.pick, newId));
   if (!apply) return effs;
 
   switch (cfg.effect) {
@@ -429,7 +431,7 @@ export function buildEffects(step, S, role, NS, newId) {
     case 'bureaucrat': targets.forEach(t => rem(t, 'vote3', nextNight)); break;
     case 'sailor': { const who = NS.sailorSelf ? p.id : targets[0]; if (who) rem(who, 'drunk', nextNight); break; }
     case 'harpy': if (targets[0]) rem(targets[0], 'mad', null); if (targets[1]) rem(targets[1], 'harpy2', null); break;
-    case 'grandchild': targets.forEach(t => rem(t, 'grandchild', null)); break;
+    case 'grandchild': effs.push(...infoReminders(S, role, step.role, p.id, targets, null, newId)); break;
     case 'gmdie': effs.push({ type: 'die', p: p.id, cause: 'grandmother', by: p.id }); break;
     case 'master': targets.forEach(t => rem(t, 'master', nextNight)); break;
     case 'host': targets.forEach(t => rem(t, null, null, 'Konak')); break;
@@ -443,6 +445,25 @@ export function buildEffects(step, S, role, NS, newId) {
     })); break;
   }
   return effs;
+}
+
+// ---------------- ilk gece bilgisi hatırlatıcıları ----------------
+// Kime ne gösterildiği masada kalsın (resmi hatırlatıcılar: Townsfolk/Outsider/Minion + Wrong, Know, Seen, Grandchild).
+// Aynı kaynağın önceki bilgi hatırlatıcıları silinir. Dönüş: remDel/remAdd işlemleri.
+const INFO_LBL = { washerwoman: ['townsfolk', 'Kasabalı'], librarian: ['outsider', 'Yabancı'], investigator: ['minion', 'Minyon'] };
+const INFO_ONE = { steward: 'İyi', knight: 'Biliyor', noble: 'Görüldü' };
+export function infoReminders(S, role, rid, ownerId, targets, pick, newId) {
+  const ops = [], players = S.players;
+  const tagFor = rid === 'grandmother' ? 'grandchild' : 'info';
+  players.forEach(q => q.reminders.filter(r => r.src === ownerId && r.role === rid && (r.tag === 'info' || r.tag === tagFor)).forEach(r => ops.push({ type: 'remDel', p: q.id, rid: r.id, text: r.text })));
+  const ts = (targets || []).filter(Boolean);
+  if (rid === 'grandmother') ts.slice(0, 1).forEach(t => ops.push({ type: 'remAdd', p: t, rid: newId(), role: rid, text: TAG_TEXT.grandchild, tag: 'grandchild', src: ownerId }));
+  else if (INFO_LBL[rid]) {
+    const [tm, lbl] = INFO_LBL[rid], P = id => players.find(q => q.id === id);
+    const right = ts.find(id => pick && P(id)?.role === pick) || ts.find(id => P(id) && role(P(id).role).team === tm) || ts[0];
+    ts.forEach(t => ops.push({ type: 'remAdd', p: t, rid: newId(), role: rid, text: t === right ? lbl : 'Yanlış', tag: 'info', src: ownerId }));
+  } else if (INFO_ONE[rid]) ts.forEach(t => ops.push({ type: 'remAdd', p: t, rid: newId(), role: rid, text: INFO_ONE[rid], tag: 'info', src: ownerId }));
+  return ops;
 }
 
 // ---------------- İblis saldırısı ----------------
