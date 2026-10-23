@@ -1,12 +1,12 @@
 // Alt sayfalar: oyuncu paneli, rol seçici, hatırlatıcı ekleme, menü, gezgin ekleme, masa düzeni, blöfler, kayıt,
 // oyuncuya gösterilen tam ekran kartlar.
-import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0435';
-import { TEAMS, TEAM_TR } from './data.js?v=20261023-0435';
-import * as store from './store.js?v=20261023-0435';
-import * as rules from './rules.js?v=20261023-0435';
-import { sideOfSeat } from './table.js?v=20261023-0435';
-import { sidesEditor } from './setup.js?v=20261023-0435';
-import { describe } from './describe.js?v=20261023-0435';
+import { G, hooks, $, esc, rich, role, P, seated, rname, icon, remTr, teamGroups, roleChip, sheet, closeSheet, confirmBox, toast, act } from './core.js?v=20261023-0506';
+import { TEAMS, TEAM_TR } from './data.js?v=20261023-0506';
+import * as store from './store.js?v=20261023-0506';
+import * as rules from './rules.js?v=20261023-0506';
+import { sideOfSeat } from './table.js?v=20261023-0506';
+import { sidesEditor } from './setup.js?v=20261023-0506';
+import { describe } from './describe.js?v=20261023-0506';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);

@@ -1,14 +1,14 @@
 // Giriş noktası: oturum, veri, ekranlar, Masa/Panel sayfalama, üst bar.
-import { loadData } from './data.js?v=20261023-0435';
-import * as store from './store.js?v=20261023-0435';
-import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0435';
-import { describe } from './describe.js?v=20261023-0435';
-import { startSetup } from './setup.js?v=20261023-0435';
-import { renderBoard, clickBlocked } from './board.js?v=20261023-0435';
-import * as panel from './panel.js?v=20261023-0435';
-import * as sheets from './sheets.js?v=20261023-0435';
+import { loadData } from './data.js?v=20261023-0506';
+import * as store from './store.js?v=20261023-0506';
+import { G, hooks, $, closeSheet, refreshSheet, resetNS, toast, unhtml } from './core.js?v=20261023-0506';
+import { describe } from './describe.js?v=20261023-0506';
+import { startSetup } from './setup.js?v=20261023-0506';
+import { renderBoard, clickBlocked } from './board.js?v=20261023-0506';
+import * as panel from './panel.js?v=20261023-0506';
+import * as sheets from './sheets.js?v=20261023-0506';
 
-export const VERSION = '20261023-0435';
+export const VERSION = '20261023-0506';
 const show = id => ['boot', 'login', 'setup', 'game'].forEach(x => { $(x).hidden = x !== id; });
 
 // ---------------- açılış ----------------

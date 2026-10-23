@@ -1,10 +1,10 @@
 // "İlk gece öncesi": gece sırası gibi adım adım akan hazırlık.
 // Sarhoş'un sandığı rol, gezgin takımı, kırmızı ringa, ilk gece bilgileri (Almanac: "while preparing the first night"),
 // Çırak / Cüce, İblis blöfleri. Oyuncular masada dokunarak seçilir. Her adım tek olay ('pre'): tek geri alma.
-import { G, esc, role, rname, icon, roleChip, shuffle, P, seated } from './core.js?v=20261023-0435';
-import { infoReminders } from './rules.js?v=20261023-0435';
-import { newId } from './store.js?v=20261023-0435';
-import { TEAM_TR } from './data.js?v=20261023-0435';
+import { G, esc, role, rname, icon, roleChip, shuffle, P, seated } from './core.js?v=20261023-0506';
+import { infoReminders } from './rules.js?v=20261023-0506';
+import { newId } from './store.js?v=20261023-0506';
+import { TEAM_TR } from './data.js?v=20261023-0506';
 
 // Kendini başka rol sanan roller ve sandıkları rolün takımı
 export const BELIEVES = { drunk: 'townsfolk', lunatic: 'demon', marionette: 'townsfolk' };

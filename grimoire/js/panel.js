@@ -1,9 +1,9 @@
 // Panel ekranı: gece adımı ve gündüz akışı. Masa ekranındaki dokunmalar da buradan yönetilir.
-import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0435';
-import * as store from './store.js?v=20261023-0435';
-import * as rules from './rules.js?v=20261023-0435';
-import { describe } from './describe.js?v=20261023-0435';
-import * as prep from './prep.js?v=20261023-0435';
+import { G, hooks, $, esc, rich, role, P, seated, icon, rname, sheet, closeSheet, confirmBox, toast, act, resetNS, unhtml } from './core.js?v=20261023-0506';
+import * as store from './store.js?v=20261023-0506';
+import * as rules from './rules.js?v=20261023-0506';
+import { describe } from './describe.js?v=20261023-0506';
+import * as prep from './prep.js?v=20261023-0506';
 
 const RN = id => role(id).name;
 const ctx = () => rules.ctx(G.S, role);
@@ -420,6 +420,13 @@ function dayAbility(k, pid) {
   const S = G.S, c = ctx(), dk = dayKey();
   const record = (text, effects = [], msg) => { const before = G.S; act('act', { step: k + ':' + store.newId(), special: 'day', text, effects }, msg || text); const d = effects.filter(e => e.type === 'die'); if (d.length) afterEffects(d, before); };
   const realOf = id => seated().find(p => p.role === id);
+  // Yeteneği kim kullanıyor: o rolde olan / sanan / kazanan yaşayan oyuncu. Tek kişiyse sormadan geçer.
+  const whoUses = (title, used, next) => {
+    const cands = seated().filter(p => !p.dead && [p.role, p.believed, p.gain].includes(k) && !used(p));
+    if (cands.length === 1) return next(cands[0].id);
+    const set = new Set(cands.map(p => p.id));
+    return startPick({ k, title, can: p => !p.dead && (!set.size || set.has(p.id)), auto: true, ok: ([a]) => next(a) });
+  };
   if (k === 'moonchild') {
     const m = P(pid);
     return startPick({ k, title: `${RN('moonchild')} ${m.name}: kimi seçti?`, hint: 'Yaşayan bir oyuncu. İyiyse bu gece ölür (durum gece bakılır).', can: p => !p.dead && p.id !== pid, auto: true,
@@ -442,8 +449,8 @@ function dayAbility(k, pid) {
   }
   if (k === 'slayer') {
     const real = realOf('slayer');
-    return startPick({ k, title: `${RN('slayer')}: yeteneği kim kullanıyor?`, hint: 'Herkesin önünde söyleyen oyuncu (blöf da olabilir).', can: p => !p.dead, auto: true,
-      ok: ([sh]) => startPick({ k: 'slayer2', title: `${P(sh).name} kimi seçti?`, can: () => true, auto: true,
+    return whoUses(`${RN('slayer')}: yeteneği kim kullanıyor?`, p => S.used[p.id + ':slayer'],
+      sh => startPick({ k: 'slayer2', title: `${RN('slayer')} ${P(sh).name} kimi vuruyor?`, hint: 'Herkesin önünde seçtiği oyuncu.', can: () => true, auto: true,
         ok: ([t]) => {
           const shooter = P(sh), q = P(t);
           const isReal = shooter.role === 'slayer' && !S.used[sh + ':slayer'];
@@ -455,20 +462,20 @@ function dayAbility(k, pid) {
               ($('sheetBody').onclick = e => { const b = e.target.closest('[data-k]'); if (!b) return; closeSheet(); record(`${RN('slayer')} ${shooter.name} → ${q.name}`, b.dataset.k === 'y' ? [...eff, { type: 'die', p: t, cause: 'slayer', by: sh }] : eff); });
           }
           record(`${RN('slayer')} ${shooter.name} → ${q.name}: hiçbir şey olmaz${isReal ? '' : ' (gerçek Şeytan Avcısı değil ya da yeteneği kullanılmış)'}`, eff, 'Hiçbir şey olmaz');
-          if (!real && !isReal) {} // blöf: sadece kayıt
-        } }) });
+        } }));
   }
   if (k === 'artist') {
-    return startPick({ k, title: `${RN('artist')}: kim soru sordu?`, hint: 'Gizlice evet/hayır sorusu sorar. "Evet", "Hayır" ya da "Bilmiyorum" de.', can: p => !p.dead, auto: true,
-      ok: ([a]) => {
+    return whoUses(`${RN('artist')}: kim soru sordu?`, p => S.used[p.id + ':artist'],
+      a => {
         const ar = P(a), isReal = ar.role === 'artist' && !S.used[a + ':artist'];
         const eff = isReal ? [{ type: 'use', key: a + ':artist' }, { type: 'remAdd', p: a, rid: store.newId(), role: 'artist', text: rules.TAG_TEXT.noability, tag: 'noability', src: a }] : [];
         record(`${RN('artist')} ${ar.name} soru sordu${isReal ? (c.sober(ar) ? '' : ' (zehirli/sarhoş: istersen yanlış cevap)') : ' (gerçek Sanatçı değil)'}`, eff);
-      } });
+        showItems([{ text: `${ar.name} gizlice evet/hayır sorusu sorar. "Evet", "Hayır" ya da "Bilmiyorum" de.${isReal && !c.sober(ar) ? ' Zehirli/sarhoş: yanlış cevap verebilirsin.' : isReal ? '' : ' Gerçek Sanatçı değil: istediğini söyle.'}` }]);
+      });
   }
   if (k === 'alsaahir') {
-    return startPick({ k, title: `${RN('alsaahir')}: kim tahmin ediyor?`, can: p => !p.dead, auto: true,
-      ok: ([a]) => startPick({ k: 'alsaahir2', title: `${P(a).name}: Minyon ve İblis dediği oyuncular`, hint: 'Hepsi doğru olmalı: tüm Minyonlar ve İblisler (ölüler dahil). Kötü gezginler gerekmez.', min: 1, max: 20, okLabel: 'Tahmini kaydet',
+    return whoUses(`${RN('alsaahir')}: kim tahmin ediyor?`, () => S.used['alsaahir:' + dk],
+      a => startPick({ k: 'alsaahir2', title: `${P(a).name}: Minyon ve İblis dediği oyuncular`, hint: 'Hepsi doğru olmalı: tüm Minyonlar ve İblisler (ölüler dahil). Kötü gezginler gerekmez.', min: 1, max: 20, okLabel: 'Tahmini kaydet',
         ok: sel => {
           const al = P(a), evilSet = seated().filter(p => ['minion', 'demon'].includes(c.team(p))).map(p => p.id).sort();
           const guess = [...sel].sort(), right = guess.length === evilSet.length && guess.every((x, i) => x === evilSet[i]);
@@ -476,7 +483,7 @@ function dayAbility(k, pid) {
           record(`${RN('alsaahir')} ${al.name} tahmin: ${sel.map(id => P(id).name).join(', ')} → ${right ? 'doğru' : 'yanlış'}`, al.role === 'alsaahir' ? [{ type: 'use', key: 'alsaahir:' + dk }] : []);
           if (right && isReal) showItems([{ text: 'Tahmin doğru: iyiler kazanır.', end: { winner: 'good', reason: `${RN('alsaahir')} doğru tahmin etti` } }]);
           else showItems([{ text: right ? (al.role === 'alsaahir' ? `Tahmin doğru ama ${al.name} zehirli/sarhoş: hiçbir şey olmaz.` : 'Tahmin doğru ama gerçek Alsaahir değil: hiçbir şey olmaz.') : 'Tahmin yanlış: hiçbir şey olmaz. Oyun devam eder.' }]);
-        } }) });
+        } }));
   }
   if (k === 'gunslinger') {
     const gs = seated().find(p => p.role === 'gunslinger' && !p.dead), first = votesToday()[0];
