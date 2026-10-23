@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1349';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261023-1514';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1349';
-import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1349';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261023-1514';
+import { initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261023-1514';
 
-export const VERSION = '20261023-1349';
+export const VERSION = '20261023-1514';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -440,6 +440,20 @@ function renderNight() {
   $('nightList').innerHTML = rows.join('') || '<p class="muted pad">Bu gece uyanan karakter yok.</p>';
 }
 
+// Gece sırasında rol açıklaması: herhangi bir yere dokununca kapanır
+function rolePop(id) {
+  let el = $('rolePop');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'rolePop'; el.className = 'rpop'; el.hidden = true;
+    el.addEventListener('click', () => { el.hidden = true; });
+    document.body.appendChild(el);
+  }
+  const r = role(id);
+  el.innerHTML = `<div class="rpop-c t-${r.team}">${icon(id, 'ic big')}<b>${esc(r.name)}</b><span class="team">${TEAM_TR[r.team] || r.team}</span>
+    <p>${rich(r.ability) || '<span class="muted">Yetenek metni yok.</span>'}</p><small>Kapatmak için dokun</small></div>`;
+  el.hidden = false;
+}
+
 // ================= 4. DİĞER =================
 const INFOS = [
   ['demon', 'Bu İblis', 'c-evil'], ['minions', 'Bunlar Minyonlarınız', 'c-evil'],
@@ -501,6 +515,8 @@ function wire() {
   $('nightList').onclick = e => {
     const row = e.target.closest('[data-k]'); if (!row) return;
     const k = row.dataset.k;
+    // sembole dokununca rolün açıklaması (yapıldı işareti değişmez)
+    if (!row.classList.contains('struct') && e.target.closest('.ic')) return rolePop(k);
     commit(S => { const d = S.night.done[S.night.tab]; const i = d.indexOf(k); if (i < 0) d.push(k); else d.splice(i, 1); }, true);
   };
   // diğer
