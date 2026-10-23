@@ -4,24 +4,30 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0c0808">
+<meta name="theme-color" content="#0b0f16">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Grimoire | Tavern Games</title>
 <link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="grim.css?v=20261023-0506">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="grim.css?v=20261023-1303">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><path id="tokArc" d="M 11,52 A 39,39 0 0 0 89,52"/></defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <path id="arcB" d="M 13,56 A 37,37 0 0 0 87,56"/>
+  <path id="arcT" d="M 17,46 A 33,33 0 0 1 83,46"/>
+</defs></svg>
+
 <div id="boot" class="center-msg">Yükleniyor…</div>
 
-<section id="login" class="screen" hidden>
-  <form class="card narrow" id="loginForm">
+<section id="login" class="login" hidden>
+  <form class="login-card" id="loginForm">
     <img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt="" class="logo">
     <h1>Grimoire</h1>
     <input id="lEmail" type="email" placeholder="E-posta" autocomplete="username" required>
@@ -31,32 +37,135 @@
   </form>
 </section>
 
-<section id="setup" class="screen" hidden></section>
-
-<section id="game" class="screen" hidden>
-  <header class="bar">
-    <div class="bar1">
-      <button class="ib" data-act="menu" aria-label="Menü">☰</button>
-      <button class="phase-btn" data-act="steps"><span id="phaseTxt"></span><small id="phaseSub"></small></button>
-      <button class="btn primary small" id="editDoneBtn" data-act="editDone" hidden>✓ Yerleşim bitti</button>
-      <button class="ib" data-act="undo" aria-label="Geri al" id="undoBtn">↶</button>
-    </div>
-    <div class="strip" id="strip"></div>
+<div id="app" hidden>
+  <header class="top">
+    <h1 class="brand">Grimoire</h1>
+    <nav class="jump">
+      <a href="#secSetup">Kurulum</a><a href="#secBoard">Grimoire</a><a href="#secNight">Gece</a><a href="#secMore">Diğer</a>
+    </nav>
   </header>
-  <div class="stage" id="stage">
-    <div id="board" class="board"></div>
-    <div id="drawer" class="drawer" hidden><div id="panel" class="panel"></div><button class="drawer-grip" data-act="drawer" aria-label="Kapat"><i></i></button></div>
-  </div>
-</section>
 
-<div id="sheet" class="sheet" hidden><div class="sheet-bg" data-act="close"></div><div class="sheet-body" id="sheetBody"></div></div>
-<div id="toast" class="toast" hidden></div>
+  <!-- 1. KURULUM -->
+  <section class="pane" id="secSetup">
+    <button class="pane-h" data-pane="setup"><span class="car">▾</span>Kurulum</button>
+    <div class="pane-b">
+      <div class="script-line" id="scriptLine"></div>
+      <div class="grid2">
+        <button class="btn" id="bScript">Senaryo seç</button>
+        <button class="btn" id="bChars">Karakterleri seç</button>
+        <button class="btn" id="bSheet">Karakter kağıdı</button>
+        <button class="btn" id="bNames">Oyuncu isimlerini gir</button>
+      </div>
+      <div class="data-line" id="dataLine"></div>
+    </div>
+  </section>
+
+  <!-- 2. GRIMOIRE -->
+  <section class="pane" id="secBoard">
+    <button class="pane-h" data-pane="board"><span class="car">▾</span>Grimoire</button>
+    <div class="pane-b">
+      <div class="board-wrap" id="boardWrap">
+        <div class="board" id="board">
+          <div id="tokens" class="tokens"></div>
+          <p class="empty-hint" id="emptyHint">Tabla boş. Kurulumdan <b>Karakterleri seç</b> ya da aşağıdan <b>Simge ekle</b>.</p>
+        </div>
+        <div class="board-tools">
+          <button class="ib" id="wrapUndo" title="Geri al" aria-label="Geri al">↶</button>
+          <button class="ib" id="wrapFull" title="Tam ekran" aria-label="Tam ekran">⛶</button>
+          <button class="ib" id="wrapLock" title="Karakter simgelerini kilitle" aria-label="Kilit">🔓</button>
+        </div>
+        <button class="veil" id="veil">Grimoire gizli<br><small>Göstermek için dokun</small></button>
+        <div class="board-grip" id="boardGrip" title="Tabla yüksekliği"><i></i></div>
+      </div>
+
+      <div class="sub">
+        <h3>İblis Blöfleri</h3>
+        <div class="bluffs" id="bluffs"></div>
+        <div class="grid2">
+          <button class="btn" id="bBluffShow">Tüm blöfleri göster</button>
+          <button class="btn" id="bBluffAdd">Blöf ekle</button>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <button class="btn" id="bAddTok">Simge ekle</button>
+        <button class="btn" id="bAddRem">Hatırlatıcı ekle</button>
+        <button class="btn" id="bAddTrav">Gezgin ekle</button>
+        <button class="btn" id="bAddFab">Efsanevi ekle</button>
+        <button class="btn" id="bHide">Grimoire'ı gizle</button>
+        <button class="btn" id="bHeight">Tabla yüksekliğini sıfırla</button>
+        <button class="btn" id="bNames2">İsimleri gir</button>
+        <button class="btn warn" id="bClear">Grimoire'ı temizle</button>
+      </div>
+
+      <details class="sub" id="tokSettings">
+        <summary>Simge ayarları</summary>
+        <label class="sw"><input type="checkbox" id="optNums"><i></i>Gece sırasını göster</label>
+        <label class="sw"><input type="checkbox" id="optSnap"><i></i>Izgaraya yapıştır</label>
+        <label class="sl">Karakter simgesi boyutu <output id="oRole"></output><input type="range" id="optRole" min="0.6" max="1.6" step="0.05"></label>
+        <label class="sl">Hatırlatıcı simgesi boyutu <output id="oRem"></output><input type="range" id="optRem" min="0.6" max="1.6" step="0.05"></label>
+      </details>
+    </div>
+  </section>
+
+  <!-- 3. GECE SIRASI -->
+  <section class="pane" id="secNight">
+    <button class="pane-h" data-pane="night"><span class="car">▾</span>Gece Sırası</button>
+    <div class="pane-b">
+      <div class="tabs" id="nightTabs">
+        <button data-tab="first">İlk gece</button><button data-tab="other">Sonraki geceler</button>
+      </div>
+      <div class="night" id="nightList"></div>
+      <div class="night-foot">
+        <label class="sw"><input type="checkbox" id="optDead"><i></i>Ölü karakterleri göster</label>
+        <label class="sw"><input type="checkbox" id="optOut"><i></i>Oyunda olmayan karakterleri göster</label>
+        <button class="btn ghost small" id="bNightReset">İşaretleri sıfırla</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. DİĞER -->
+  <section class="pane" id="secMore">
+    <button class="pane-h" data-pane="more"><span class="car">▾</span>Diğer</button>
+    <div class="pane-b">
+      <div class="sub">
+        <h3>Bilgi kartları</h3>
+        <div class="info-grid" id="infoGrid"></div>
+        <div class="row-in"><input id="infoNew" placeholder="Kendi kartını yaz"><button class="btn small" id="bInfoAdd">Ekle</button></div>
+      </div>
+      <div class="sub">
+        <h3>Hikaye anlatıcısı notları</h3>
+        <textarea id="notes" rows="5" placeholder="Notlar"></textarea>
+        <button class="btn ghost small" id="bNotesClear">Notları temizle</button>
+      </div>
+      <div class="sub">
+        <h3>Oyun</h3>
+        <div class="grid2">
+          <button class="btn" id="bExport">Oyunu dışa aktar</button>
+          <button class="btn" id="bImport">Oyunu içe aktar</button>
+          <button class="btn" id="bReload">Sheet verisini yenile</button>
+          <button class="btn ghost" id="bLogout">Çıkış yap</button>
+        </div>
+        <input type="file" id="fImport" accept=".json,application/json" hidden>
+      </div>
+    </div>
+  </section>
+  <p class="foot">Tavern Games · Grimoire</p>
+</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="m-bg"></div>
+  <div class="m-card">
+    <div class="m-head"><button class="ib" id="mBack" hidden aria-label="Geri">‹</button><h2 id="mTitle"></h2><button class="ib" id="mClose" aria-label="Kapat">✕</button></div>
+    <div class="m-body" id="mBody"></div>
+  </div>
+</div>
 <div id="show" class="show" hidden></div>
-<div id="update" class="update" hidden></div>
+<div id="toast" class="toast" hidden></div>
 
 <script>
 firebase.initializeApp({apiKey:"AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",authDomain:"tavern-quiz.firebaseapp.com",databaseURL:"https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tavern-quiz",appId:"1:280835700622:web:043d61c02d689de87056df"});
 </script>
-<script type="module" src="js/app.js?v=20261023-0506"></script>
+<script type="module" src="js/app.js?v=20261023-1303"></script>
 </body>
 </html>

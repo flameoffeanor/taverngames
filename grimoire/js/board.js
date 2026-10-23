@@ -1,166 +1,216 @@
-// Masa (Masa ekranı) ve paneldeki küçük masa.
-// Koltuk = [disk + altında oyuncu adı] [rol adı + hatırlatıcılar]
-import { G, hooks, $, esc, role, P, icon, remTr, guardSheet } from './core.js?v=20261023-0506';
-import * as store from './store.js?v=20261023-0506';
-import { layout, nearestSeat } from './table.js?v=20261023-0506';
-import * as rules from './rules.js?v=20261023-0506';
+// Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
+// Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
+import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261023-1303';
+import { remTr } from './data.js?v=20261023-1303';
 
-let L = null;   // son masa yerleşimi
-export const lastLayout = () => L;
+const GRID = 48;
+// Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
+const base = () => Math.min(92, Math.max(56, W() * 0.16));
+export const roleSize = () => Math.round(base() * G.S.board.roleScale);
+export const remSize = () => Math.round(base() * 0.68 * G.S.board.remScale);
+const sizeOf = t => (t.kind === 'rem' ? remSize() : roleSize());
 
-// ---------------- metin ölçümü (hatırlatıcıları satırlara dizmek için) ----------------
-const cv = document.createElement('canvas').getContext('2d');
-function textW(text, px, weight = 700) {
-  cv.font = `${weight} ${px}px Inter, system-ui, sans-serif`;
-  return cv.measureText(text).width;
-}
-// Uzun yazı kutuya sığsın diye küçülür (en fazla %28)
-function fitPx(text, width, px, weight = 700, min = 0.72) {
-  const w = textW(text, px, weight);
-  return w <= width ? px : Math.max(px * min, px * width / w);
-}
+let handlers = { tapRole: () => {}, tapRem: () => {} };
+export const onTap = h => { handlers = { ...handlers, ...h }; };
 
-// ---------------- hatırlatıcı hapları ----------------
-function pillItems(p, c) {
-  const its = [];
-  if (p.believed) its.push({ role: p.believed, text: 'Sanıyor: ' + role(p.believed).name, cls: 'b-bel' });
-  if (p.gain) its.push({ role: p.gain, text: 'Yetenek: ' + role(p.gain).name, cls: 'b-gain' });
-  p.reminders.forEach(r => {
-    const tg = rules.tagOf(r);
-    its.push({ role: r.role, text: remTr(r.text), cls: (tg ? 'b-' + tg : '') + (c.active(r, p) ? '' : ' off') });
-  });
-  return its;
-}
-// Hapları satırlara diz; sığmayanların yerine "+N"
-function packPills(items, width, rows, pf, withIcon) {
-  if (!items.length || !rows) return { shown: [], more: items.length };
-  const pw = it => Math.min(width, textW(it.text, pf) + pf * 1.25 + (withIcon && it.role ? pf * 1.8 : 0) + 5);
-  const moreW = n => textW('+' + n, pf) + pf * 1.25 + 5;
-  const gapX = 4;
-  let row = 0, x = 0;
-  const placed = [];
-  for (const it of items) {
-    const w = pw(it);
-    if (x > 0 && x + w > width + 0.5) { row++; x = 0; }
-    if (row >= rows) break;
-    placed.push({ it, row, x, w }); x += w + gapX;
-  }
-  let more = items.length - placed.length;
-  // "+N" son satıra sığsın: gerekirse sondan hap çıkar
-  while (more > 0 && placed.length) {
-    const last = placed[placed.length - 1];
-    const endX = last.row === rows - 1 ? last.x + last.w + gapX : 0;
-    if (last.row < rows - 1 || endX + moreW(more) <= width + 0.5) break;
-    placed.pop(); more++;
-  }
-  return { shown: placed.map(p => p.it), more };
-}
-function pillsHTML(p, seat, Lx, c) {
-  const items = pillItems(p, c);
-  if (!items.length || !Lx.rows) return '';
-  const withIcon = seat.infoW >= 150;
-  const { shown, more } = packPills(items, seat.infoW, Lx.rows, Lx.pf, withIcon);
-  return `<span class="pills">${shown.map(it => `<span class="rp ${it.cls}">${withIcon && it.role ? icon(it.role) : ''}<span>${esc(it.text)}</span></span>`).join('')}${more > 0 ? `<span class="rp b-more">+${more}</span>` : ''}</span>`;
+const board = () => $('board');
+export const W = () => board().clientWidth || 320;
+export const H = () => board().clientHeight || 400;
+export const defaultRatio = () => (window.innerHeight > window.innerWidth ? 1.25 : 0.72);
+export function applyHeight() {
+  const b = board(), wrap = $('boardWrap');
+  if (wrap.classList.contains('full')) { b.style.height = ''; return; }
+  const r = G.S.board.ratio || defaultRatio();
+  b.style.height = Math.round(b.clientWidth * r) + 'px';
 }
 
-// Rol adı tokenın içinde, altta yay şeklinde (gerçek BotC tokenları gibi). Yol index.html'deki #tokArc.
-function arcText(name, S) {
-  const base = Math.min(21, Math.max(15, 900 / S)); // küçük diskte en az ~9px
-  const w = textW(name, base, 800);                 // 100 birimlik disk içinde
-  const fs = Math.max(base * 0.6, Math.min(base, base * 116 / Math.max(w, 1)));
-  return `<svg class="arct" viewBox="0 0 100 100" aria-hidden="true"><text style="font-size:${fs.toFixed(1)}px"><textPath href="#tokArc" startOffset="50%" text-anchor="middle">${esc(name)}</textPath></text></svg>`;
-}
-
-// ---------------- koltuk ----------------
-export function seatHTML(p, i, seat, Lx, o = {}) {
-  const r = role(p.role), c = o.c;
-  const evilGood = c && c.isEvil(p) && !['minion', 'demon'].includes(r.team);
-  const goodEvil = c && !c.isEvil(p) && ['minion', 'demon'].includes(r.team);
-  const trav = p.traveller || r.team === 'traveller';
-  const cls = ['seat', 'o-' + seat.orient, seat.flip ? 'flip' : '', 't-' + r.team, p.dead ? 'dead' : '', o.actor ? 'actor' : '',
-    o.ti >= 0 ? 'target' : '', o.dim ? 'dim' : '', o.mini ? 'mini' : '', o.pick ? 'pickable' : '', evilGood ? 'turned' : '', goodEvil ? 'turned-g' : ''].filter(Boolean).join(' ');
-  const iw = seat.infoW, S = Lx.S;
-  const nameW = seat.orient === 'v' ? seat.w : Math.max(S + Lx.gap, S * 1.15);
-  const pnPx = fitPx(p.name, nameW - 4, Lx.f, 600, 0.7);
-  const tag = o.mini ? 'button' : 'div';
-  return `<${tag} class="${cls}" data-pid="${p.id}" data-seat="${i}"${o.mini ? ' data-c="tgt"' : ''} style="left:${seat.x}px;top:${seat.y}px;width:${seat.w}px;height:${seat.h}px;--s:${S}px;--f:${Lx.f}px;--pf:${Lx.pf}px;--lab:${Lx.lab}px">
-    <span class="dcol"><span class="disc arc">${icon(p.role, 'ic')}${arcText(r.name, S)}${p.dead ? `<i class="shroud"></i>${p.ghost ? '<i class="ghost" title="Ölü oyu var"></i>' : ''}` : ''}${o.ti >= 0 ? `<i class="tnum">${o.ti + 1}</i>` : ''}${trav ? '<i class="trv" title="Gezgin"></i>' : ''}</span><span class="pn${p.unnamed ? ' unnamed' : ''}" style="font-size:${pnPx}px">${esc(p.name)}</span></span>
-    <span class="sinfo" style="width:${iw}px">${pillsHTML(p, seat, Lx, c)}</span></${tag}>`;
-}
-
-// ---------------- Masa ekranı ----------------
-export function renderBoard(centerHTML) {
-  const board = $('board'), S = G.S;
-  const W0 = board.clientWidth, H0 = board.clientHeight;
-  if (!W0 || !H0) return;
-  L = layout(W0, H0, S.sides);
-  const cx = rules.ctx(S, role);
-  const tg = hooks.targeting();
-  const actor = hooks.actor();
-  const t = L.table;
-  let html = '';
-  if (t.w >= 120 && t.h >= 80) html += `<div class="tbl${G.edit ? ' editing' : ''}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px">${centerHTML}</div>`;
-  const pickMode = hooks.pickMode();
-  S.seats.forEach((pid, i) => {
-    const p = P(pid), seat = L.seats[i]; if (!seat || !p) return;
-    const ti = hooks.selIndex(pid);
-    let dim = false;
-    if (tg) dim = !(tg.can ? tg.can(p) : rules.canTarget(tg.cfg, S, role, tg.step, p));
-    if (pickMode && pickMode.can && !pickMode.can(p)) dim = true;
-    html += seatHTML(p, i, seat, L, { c: cx, actor: pid === actor, ti, dim, pick: !!tg || !!pickMode });
-  });
-  board.innerHTML = html;
-  board.classList.toggle('editing', canDrag());
-}
-
-// ---------------- paneldeki küçük masa ----------------
-// sel: seçili oyuncular (sıralı), can(p): seçilebilir mi, actor: uyanan oyuncu
-export function miniMapHTML(width, height, { sel = [], can = () => true, actor = null, mark = () => '' } = {}) {
-  const S = G.S, Lm = layout(width, height, S.sides, { mini: true });
-  const cx = rules.ctx(S, role);
-  let h = `<div class="minimap" style="width:${width}px;height:${height}px">`;
-  S.seats.forEach((pid, i) => {
-    const p = P(pid), seat = Lm.seats[i]; if (!p || !seat) return;
-    h += seatHTML(p, i, seat, Lm, { c: cx, mini: true, ti: sel.indexOf(pid), dim: !can(p), actor: pid === actor, pick: true });
-  });
-  return h + '</div>';
-}
-
-// ---------------- dokunma / sürükleme (Masa ekranı) ----------------
-const board = $('board');
-const canDrag = () => G.edit || !!G.S?.pre;   // ilk gece öncesinde yerler sürüklenebilir
-let drag = null, noClick = false;
-const blockClick = () => { noClick = true; setTimeout(() => { noClick = false; }, 450); };
-export const clickBlocked = () => noClick;
-board.addEventListener('contextmenu', e => e.preventDefault());
-board.addEventListener('pointerdown', e => {
-  // sadece tokenın kendisi (disk) dokunmaya açık
-  const el = e.target.closest('.seat'); if (!el || !e.target.closest('.disc') || e.target.closest('[data-c]')) return;
-  drag = { el, pid: el.dataset.pid, seat: +el.dataset.seat, x: e.clientX, y: e.clientY, moved: false, long: false };
-  if (canDrag()) { try { e.target.closest('.disc').setPointerCapture(e.pointerId); } catch (_) {} }   // disk yakalar: click hedefi disk kalır
-  drag.timer = setTimeout(() => {
-    if (drag && !drag.moved) {
-      drag.long = true; blockClick(); guardSheet(); navigator.vibrate?.(15);
-      window.getSelection?.().removeAllRanges?.();
-      hooks.openPlayer(drag.pid);
+// ---- gece sırası numaraları ----
+export function nightNumbers() {
+  const play = new Set(G.S.tokens.filter(t => t.kind === 'role').map(t => t.role));
+  const out = { first: {}, other: {} };
+  for (const [k, list] of [['first', G.D.night.firstNight], ['other', G.D.night.otherNight]]) {
+    let n = 0;
+    for (const id of list) {
+      if (!play.has(id)) continue;
+      const txt = k === 'first' ? role(id).first : role(id).other;
+      if (!txt) continue;
+      out[k][id] = ++n;
     }
-  }, 520);
-});
-board.addEventListener('pointermove', e => {
-  if (!drag) return;
-  const dx = e.clientX - drag.x, dy = e.clientY - drag.y, d = Math.hypot(dx, dy);
-  if (d > 10) clearTimeout(drag.timer);
-  if (!drag.moved && canDrag() && d > 12) { drag.moved = true; drag.el.classList.add('dragging'); }
-  if (drag.moved) drag.el.style.transform = `translate(${dx}px, ${dy}px)`;
-});
-board.addEventListener('pointerup', e => {
-  if (!drag) return;
-  const d = drag; drag = null; clearTimeout(d.timer);
-  if (d.moved) {
-    blockClick();
-    const s = L.seats[d.seat];
-    const to = nearestSeat(L.seats, s.cx + (e.clientX - d.x), s.cy + (e.clientY - d.y), L.S * 1.4);
-    if (to >= 0 && to !== d.seat) store.dispatch('swap', { a: d.pid, b: G.S.seats[to] }); else hooks.renderAll();
   }
-});
-board.addEventListener('pointercancel', () => { if (drag) { clearTimeout(drag.timer); const m = drag.moved; drag = null; if (m) hooks.renderAll(); } });
+  return out;
+}
+
+function arcText(txt, path, base) {
+  const s = String(txt || '');
+  const long = s.length > 11;
+  return `<text class="arc" font-size="${long ? Math.max(8.5, base * 11 / s.length) : base}"><textPath href="#${path}" startOffset="50%" text-anchor="middle">${esc(s)}</textPath></text>`;
+}
+
+function roleHTML(t, nums) {
+  const r = role(t.role), s = roleSize(), w = W();
+  const f = G.S.board.nums && nums.first[t.role], o = G.S.board.nums && nums.other[t.role];
+  return `<div class="tok role t-${r.team}${t.dead ? ' dead' : ''}${t.flip ? ' flip' : ''}" data-id="${t.id}"
+      style="--s:${s}px;left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
+    <div class="disc">${icon(t.role, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(r.name, 'arcB', 12.5)}</svg></div>
+    ${f ? `<span class="nb nf">${f}</span>` : ''}${o ? `<span class="nb no">${o}</span>` : ''}
+    ${t.dead ? `<span class="shroud"></span>${t.voteUsed ? '' : '<span class="vt" title="Ölü oyu var"></span>'}` : ''}
+    ${t.name ? `<span class="pname">${esc(t.name)}</span>` : ''}
+  </div>`;
+}
+function remHTML(t) {
+  const s = remSize(), w = W();
+  const top = t.role ? role(t.role).name : '';
+  return `<div class="tok rem${t.tone ? ' ' + t.tone : ''}" data-id="${t.id}" style="--s:${s}px;left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
+    <div class="disc">${t.role ? icon(t.role, 'ic') : `<span class="rtxt">${esc(t.glyph || '')}</span>`}
+    <svg viewBox="0 0 100 100" aria-hidden="true">${top ? arcText(top, 'arcT', 13) : ''}${arcText(remTr(t.text), 'arcB', 13.5)}</svg></div>
+  </div>`;
+}
+
+export function renderBoard() {
+  const S = G.S, b = board();
+  applyHeight();
+  const nums = nightNumbers();
+  const roles = S.tokens.filter(t => t.kind === 'role').map(t => roleHTML(t, nums)).join('');
+  const rems = S.tokens.filter(t => t.kind === 'rem').map(remHTML).join('');
+  $('tokens').innerHTML = roles + rems;
+  b.classList.toggle('locked', !!S.board.locked);
+  $('wrapLock').classList.toggle('on', !!S.board.locked);
+  $('wrapLock').innerHTML = S.board.locked ? '🔒' : '🔓';
+  $('boardWrap').classList.toggle('veiled', !!S.board.hidden);
+  $('emptyHint').hidden = S.tokens.length > 0;
+}
+
+// ---- yerleştirme ----
+const clampXY = (x, y, s) => {
+  const w = W(), h = H(), m = s / 2 / w;
+  return [Math.min(Math.max(x, m), 1 - m), Math.min(Math.max(y, m), h / w - m)];
+};
+const snapV = v => Math.round(v * GRID) / GRID;
+
+// Yeni simge için tablada boş yer bul (ortadan başlayıp spiral)
+export function freeSpot(kind = 'role') {
+  const w = W(), h = H(), s = kind === 'rem' ? remSize() : roleSize();
+  const cx = 0.5, cy = h / w / 2;
+  const taken = G.S.tokens.map(t => [t.x, t.y]);
+  const min = (s * 0.95) / w;
+  for (let i = 0; i < 400; i++) {
+    const a = i * 0.9, r = (i * s * 0.08) / w;
+    let x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    [x, y] = clampXY(x, y, s);
+    if (taken.every(([tx, ty]) => Math.hypot(tx - x, ty - y) > min)) return [x, y];
+  }
+  return [cx, cy];
+}
+
+// Karakterleri tabla kenarına oval diz (saat 12'den başlayıp saat yönünde)
+export function ovalSpots(n) {
+  const w = W(), h = H(), s = roleSize(), m = (s * 0.62) / w;
+  const rx = 0.5 - m, ry = h / w / 2 - m, cy = h / w / 2;
+  return Array.from({ length: n }, (_, i) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+    let x = 0.5 + Math.cos(a) * rx, y = cy + Math.sin(a) * ry;
+    if (G.S.board.snap) { x = snapV(x); y = snapV(y); }
+    return clampXY(x, y, s);
+  });
+}
+
+// Bir karakter simgesine bağlı hatırlatıcı için konum: simgeden tabla merkezine doğru, sıraya göre yelpaze
+export function remSpot(owner) {
+  const w = W(), h = H(), rs = roleSize(), ms = remSize();
+  const cx = 0.5, cy = h / w / 2;
+  const base = Math.atan2(cy - owner.y, cx - owner.x);
+  const k = G.S.tokens.filter(t => t.kind === 'rem' && t.owner === owner.id).length;
+  const steps = [0, 1, -1, 2, -2, 3, -3, 4, -4];
+  const a = base + (steps[k % steps.length] * Math.PI) / 4.2;
+  const d = (rs / 2 + ms / 2 + 3 + Math.floor(k / steps.length) * ms) / w;
+  return clampXY(owner.x + Math.cos(a) * d, owner.y + Math.sin(a) * d, ms);
+}
+
+// Saat yönünde oturma sırası (tabla merkezine göre açı, saat 12'den başlayarak)
+export function clockwise() {
+  const w = W(), cy = H() / w / 2;
+  const ang = t => { let a = Math.atan2(t.y - cy, t.x - 0.5) + Math.PI / 2; if (a < 0) a += 2 * Math.PI; return a; };
+  return G.S.tokens.filter(t => t.kind === 'role' && role(t.role).team !== 'fabled').sort((a, b) => ang(a) - ang(b));
+}
+
+// ---- sürükleme ----
+let drag = null;
+function down(e) {
+  const el = e.target.closest('.tok');
+  if (!el || e.button > 0) return;
+  const t = G.S.tokens.find(x => x.id === el.dataset.id);
+  if (!t) return;
+  const movable = t.kind === 'rem' || !G.S.board.locked;
+  drag = { el, t, sx: e.clientX, sy: e.clientY, moved: false, movable, pid: e.pointerId, ox: t.x, oy: t.y,
+    kids: t.kind === 'role' ? [...document.querySelectorAll('#tokens .tok.rem')].filter(r => G.S.tokens.find(x => x.id === r.dataset.id)?.owner === t.id) : [] };
+  if (movable) { el.setPointerCapture(e.pointerId); e.preventDefault(); }
+}
+function move(e) {
+  if (!drag || e.pointerId !== drag.pid || !drag.movable) return;
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+  if (!drag.moved) { drag.moved = true; drag.el.classList.add('drag'); }
+  const w = W(), s = sizeOf(drag.t);
+  let [x, y] = clampXY(drag.ox + dx / w, drag.oy + dy / w, s);
+  drag.nx = x; drag.ny = y;
+  drag.el.style.left = x * w - s / 2 + 'px';
+  drag.el.style.top = y * w - s / 2 + 'px';
+  const ddx = (x - drag.ox) * w, ddy = (y - drag.oy) * w;
+  drag.kids.forEach(k => { k.style.transform = `translate(${ddx}px,${ddy}px)`; });
+}
+function up(e) {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const d = drag; drag = null;
+  d.el.classList.remove('drag');
+  if (!d.moved) {
+    if (e.type === 'pointercancel') return;
+    return d.t.kind === 'rem' ? handlers.tapRem(d.t) : handlers.tapRole(d.t);
+  }
+  let x = d.nx, y = d.ny;
+  if (G.S.board.snap && d.t.kind === 'role') [x, y] = clampXY(snapV(x), snapV(y), sizeOf(d.t));
+  commit(S => {
+    const t = S.tokens.find(q => q.id === d.t.id); if (!t) return;
+    const ddx = x - t.x, ddy = y - t.y;
+    t.x = x; t.y = y;
+    if (t.kind === 'role') S.tokens.forEach(r => {
+      if (r.kind === 'rem' && r.owner === t.id) [r.x, r.y] = clampXY(r.x + ddx, r.y + ddy, remSize());
+    });
+  });
+}
+
+// ---- tabla yüksekliği tutamacı ----
+let rz = null;
+function rzDown(e) { rz = { y: e.clientY, h: H(), pid: e.pointerId }; e.target.setPointerCapture(e.pointerId); e.preventDefault(); }
+function rzMove(e) {
+  if (!rz || e.pointerId !== rz.pid) return;
+  const h = Math.max(220, rz.h + e.clientY - rz.y);
+  board().style.height = h + 'px';
+}
+function rzUp(e) {
+  if (!rz || e.pointerId !== rz.pid) return;
+  rz = null;
+  G.S.board.ratio = H() / W(); save();
+  renderBoard();
+}
+
+export function initBoard() {
+  const t = $('tokens');
+  t.addEventListener('pointerdown', down);
+  t.addEventListener('pointermove', move);
+  t.addEventListener('pointerup', up);
+  t.addEventListener('pointercancel', up);
+  const g = $('boardGrip');
+  g.addEventListener('pointerdown', rzDown);
+  g.addEventListener('pointermove', rzMove);
+  g.addEventListener('pointerup', rzUp);
+  g.addEventListener('pointercancel', rzUp);
+  let lastW = 0;
+  new ResizeObserver(() => { const w = W(); if (w !== lastW) { lastW = w; renderBoard(); } }).observe(board());
+}
+
+export function addRoleToken(roleId, at) {
+  const [x, y] = at || freeSpot('role');
+  const t = { id: uid(), kind: 'role', role: roleId, x, y, dead: false, flip: false, voteUsed: false, name: '' };
+  G.S.tokens.push(t);
+  return t;
+}
