@@ -31,6 +31,16 @@ const REM_TR = {
   Master: 'Efendi', '3 Votes': '3 oy', Cursed: 'Lanetli', Lunch: 'Öğle yemeği', Visitor: 'Ziyaretçi', 'False Info': 'Yanlış bilgi',
   Attack: 'Saldırı', 'Not Protected': 'Korunmuyor', Abnormal: 'Anormal', Correct: 'Doğru', Twin: 'İkiz', Executed: 'İdam edildi',
   'Used': 'Kullandı', 'Day 1': '1. gün', 'Day 2': '2. gün', 'Day 3': '3. gün', 'Day 4': '4. gün', 'Day 5+': '5+. gün',
+  'May Not Nominate': 'Artık Aday Gösteremez', 'Demon Voted': 'İblis oy verdi', 'Demon Not Voted': 'İblis oy vermedi',
+  'Minions Not Nominated': 'Minyon aday gösterilmedi', 'Minion Nominated': 'Minyon aday gösterildi', 'Faux Paw': 'Sahte Pati',
+  'Drunk 1': 'Sarhoş 1', 'Drunk 2': 'Sarhoş 2', 'Drunk 3': 'Sarhoş 3', "Doesn't Kill": 'Öldürmez', 'Is The Alchemist': 'Simyacı',
+  'Everyone Is Drunk': 'Herkes sarhoş', 'Cannot Die': 'Ölemez', 'Evil Wakes': 'Kötüler uyanır', Friend: 'Arkadaş',
+  'Storyteller Ability': 'Oyun Yöneticisi yeteneği', 'Haircuts Tonight': 'Bu gece tıraş', 'Tea Party Tonight': 'Bu gece çay partisi',
+  'Turns Evil': 'Kötü oluyor', Fear: 'Korku', 'Night 1': '1. gece', 'Night 2': '2. gece', 'Night 3': '3. gece', Claimed: 'İddia etti',
+  'About To Die': 'Ölmek üzere', 'Day 5': '5. gün', 'Good Player Executed': 'İyi oyuncu idam edildi', 'Sober & Healthy': 'Ayık ve sağlıklı',
+  'Acts Twice': 'İki kez yapar', 'Not Me': 'Ben değilim', 'Nominate Good': 'İyi aday göster', 'Nominate Evil': 'Kötü aday göster',
+  'Something Bad': 'Kötü bir şey', Whoopsie: 'Hoppala', 'Register Falsely?': 'Yanlış görünür mü?', Aligned: 'Takım belirlendi',
+  'No More Evil': 'Kötü kalmadı', 'Final Night: No Attack': 'Son gece: saldırı yok', Hat: 'Şapka', Stormcaught: 'Fırtınaya yakalandı', Goal: 'Hedef',
   'Guess Used': 'Tahmin yaptı', 'Is The Philosopher': 'Filozof', 'Is The Marionette': 'Kukla', 'Chosen': 'Seçildi',
 };
 export const remTr = t => REM_TR[t] || t;
@@ -67,7 +77,7 @@ async function fetchText(url) {
 }
 
 export async function loadData(force = false) {
-  const official = await (await fetch('data/official.json?v=20261023-1550')).json();
+  const official = await (await fetch('data/official.json?v=20261023-1619')).json();
   let sheet, offline = false;
   try {
     const [c, s] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL)]);
