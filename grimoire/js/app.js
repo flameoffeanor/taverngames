@@ -1,10 +1,10 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261024-0006';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261024-0648';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261024-0006';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261024-0006';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261024-0648';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261024-0648';
 
-export const VERSION = '20261024-0006';
+export const VERSION = '20261024-0648';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -293,26 +293,28 @@ function openToken(id) {
   const r = role(t.role);
   const rems = G.S.tokens.filter(x => x.kind === 'rem' && x.owner === t.id);
   const trav = r.team === 'traveller', fab = r.team === 'fabled';
+  const pills = rems.length ? `<div class="chips rem-pills">${rems.map(x => `<button class="chip" data-rdel="${x.id}" style="--gc:${colorOf(t.id)}">${esc(remTr(x.text))} <span>✕</span></button>`).join('')}</div>` : '';
   openModal(`${esc(r.name)}`, `
+    ${fab ? '' : `<div class="tm-who"><span class="${t.name ? 'who' : 'who none'}">${t.name ? esc(t.name) : 'İsim yok'}</span><button class="ib" id="tmEdit" title="İsmi değiştir" aria-label="İsmi değiştir">✎</button></div>
+    <div class="row-in" id="tmEditRow" hidden><input id="tmName" value="${esc(t.name)}" placeholder="İsim" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
+      <button class="btn small primary" id="tmNameOk">Kaydet</button><button class="btn small" id="tmNameNext" title="Kaydet ve saat yönünde sıradakine geç">Sonraki ›</button></div>`}
     <div class="tm-head t-${r.team}">${icon(t.role, 'ic big')}<div>
       <span class="team">${TEAM_TR[r.team] || r.team}${t.flip ? ' · <b>takımı ters</b>' : ''}${t.dead ? ' · <b>ölü</b>' : ''}</span>
       <p>${rich(r.ability) || '<span class="muted">Yetenek metni yok.</span>'}</p></div></div>
-    ${fab ? '' : `<label class="lbl">Bu oyuncunun ismi</label>
-    <div class="row-in"><input id="tmName" value="${esc(t.name)}" placeholder="İsim" autocomplete="off" autocapitalize="words" spellcheck="false" enterkeyhint="done">
-      <button class="btn small primary" id="tmNameOk">Kaydet</button><button class="btn small" id="tmNameNext" title="Kaydet ve saat yönünde sıradakine geç">Sonraki ›</button></div>`}
+    ${pills}
     <div class="grid2">
       <button class="btn" data-a="show">Göster</button>
-      ${fab ? '' : `<button class="btn" data-a="dead">${t.dead ? 'Dirilt' : 'Kefenle'}</button>
+      ${fab ? '' : `<button class="btn" data-a="dead">${t.dead ? 'Dirilt' : 'Öldür'}</button>
       <button class="btn" data-a="flip">Döndür (takım)</button>`}
       <button class="btn" data-a="rem">Hatırlatıcı</button>
       <button class="btn" data-a="swap">Değiştir</button>
       ${fab ? '' : `<button class="btn" data-a="vote" ${t.dead ? '' : 'disabled'}>${t.dead ? (t.voteUsed ? 'Ölü oyu: kullandı' : 'Ölü oyu: var') : 'Ölü oyu'}</button>`}
     </div>
-    ${rems.length ? `<label class="lbl">Bağlı hatırlatıcılar</label><div class="chips">${rems.map(x => `<button class="chip" data-rdel="${x.id}">${esc(remTr(x.text))} <span>✕</span></button>`).join('')}</div>` : ''}
     <button class="btn warn wide" data-a="del">Simgeyi kaldır</button>
     ${trav ? '<p class="muted small">Gezginler idam edilmez, sürgün edilir.</p>' : ''}`, body => {
     const save1 = () => setName(t.id, $('tmName').value);
     if (!fab) {
+      $('tmEdit').onclick = () => { $('tmEditRow').hidden = !$('tmEditRow').hidden; if (!$('tmEditRow').hidden) { $('tmName').focus(); $('tmName').select(); } };
       $('tmNameOk').onclick = () => { if (save1()) closeModal(); };
       $('tmNameNext').onclick = () => {
         if (!save1()) return;
