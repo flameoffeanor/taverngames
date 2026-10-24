@@ -2,19 +2,20 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="quiz.css"><script src="common.js"></script></head>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="quiz.css"><script src="common.js"></script><style>.sbrow{flex:1 1 0;min-height:0;font-size:clamp(1.15rem,3.3vh,2.5rem)}.sbname{font-weight:700}.chip{font-size:clamp(1rem,2.4vh,1.6rem)}.win{font-family:Cinzel,Georgia,serif;font-weight:800;line-height:1.05;color:#d3b8ff;text-shadow:0 0 40px rgba(183,148,244,.55);overflow-wrap:anywhere}.winp{font-weight:800;color:#fdb13b;letter-spacing:.08em}</style></head>
 <body class="bg-slate-950 text-white min-h-screen p-6 font-sans overflow-hidden flex flex-col">
 <header class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" class="h-14" alt=""><div class="cz bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div></div>
 <div class="text-center"><h1 id="ev" class="cz text-2xl font-bold text-slate-200 leading-tight"></h1><h2 id="ev2" class="text-lg font-semibold text-slate-400 leading-tight"></h2></div>
 <div class="justify-self-end"><div id="qnum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800">Lobi</div></div></header>
 <main id="lobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full"><img src="/assets/logo_beyaz_kenar.webp" class="h-56 mx-auto" alt=""><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
 <div id="tt" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-lg"></div></main>
-<main id="quiz" class="hidden my-auto grid-cols-12 gap-6 max-w-[1600px] mx-auto w-full">
-<div class="col-span-8 space-y-4"><div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-800"><div class="text-slate-300 font-bold text-lg">Gelen Yanıt: <b id="got" class="text-amber-400 text-2xl">0</b> / <b id="all">0</b> Takım</div><div id="timer" class="font-mono font-black text-5xl text-amber-400"></div></div>
+<main id="quiz" class="hidden my-auto grid-cols-12 gap-6 max-w-[1800px] mx-auto w-full relative z-10" style="min-height:calc(100vh - 150px)">
+<div class="col-span-6 space-y-4 min-w-0"><div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-800"><div class="text-slate-300 font-bold text-lg">Gelen Yanıt: <b id="got" class="text-amber-400 text-2xl">0</b> / <b id="all">0</b> Takım</div><div id="timer" class="font-mono font-black text-5xl text-amber-400"></div></div>
 <h2 id="qt" class="bg-slate-900 p-6 rounded-3xl border-2 border-slate-800 text-center text-4xl font-extrabold leading-snug"></h2>
-<div id="op" class="grid grid-cols-2 gap-4 text-xl font-bold"></div><div id="bd" class="flex flex-wrap justify-center gap-2 max-h-36 overflow-y-auto"></div></div>
-<div class="col-span-4 bg-slate-900 p-5 rounded-3xl border-2 border-slate-800"><div class="text-sm font-black uppercase tracking-widest text-amber-400 mb-4 text-center">🏆 Canlı Skor Tablosu (İlk 10)</div><div id="lb" class="text-base"></div></div></main>
-<main id="fin" class="hidden my-auto text-center space-y-6 max-w-3xl mx-auto w-full"><div class="text-9xl">🏆</div><h2 class="text-6xl font-black text-amber-400">QUIZ SONA ERDİ!</h2><div id="ff" class="bg-slate-900 p-8 rounded-3xl border-2 border-slate-800 text-left text-2xl"></div></main>
+<div id="op" class="grid grid-cols-2 gap-4 text-xl font-bold"></div><div id="bd" class="flex flex-wrap justify-center gap-3 max-h-[34vh] overflow-y-auto"></div></div>
+<div class="col-span-6 bg-slate-900 p-6 rounded-3xl border-2 border-slate-800 flex flex-col min-w-0"><div class="text-xl font-black uppercase tracking-widest text-amber-400 mb-4 text-center">🏆 Canlı Skor Tablosu</div><div id="lb" class="flex-1 min-h-0 flex flex-col gap-2"></div></div></main>
+<canvas id="cf" class="fixed inset-0 w-full h-full pointer-events-none" style="z-index:0"></canvas>
+<main id="fin" class="hidden my-auto text-center w-full max-w-[1800px] mx-auto relative z-10"><div class="cz text-3xl font-black tracking-widest text-slate-300 mb-2">🏆 QUIZ SONA ERDİ</div><div id="win" class="flex flex-col items-center justify-center gap-1"></div><div id="ff" class="grid grid-cols-2 gap-x-10 gap-y-1 max-w-5xl mx-auto mt-6 text-left"></div></main>
 <script>
 let teams={},sc={},st=null,ans={},res={},k=null,r1,r2;
 db.ref('config/public').on('value',s=>{const c=s.val()||{};$('ev').textContent=c.name||'Quiz Night';$('ev2').textContent=c.date||''});
@@ -24,17 +25,38 @@ db.ref('state').on('value',s=>{st=s.val();const nk=st&&st.qKey;if(nk!==k){if(r1)
 setInterval(()=>{const l=left(st);$('timer').textContent=st&&st.status=='question'?(l===null?'--':l>0?l+'s':'Süre Bitti'):st&&st.status=='revealed'?'Süre Bitti':''},250);
 const DOTS=['🔴','🟠','🟡','🟢','🔵','🟣','🟤','⚪','⚫'],dm={};
 function dots(){Object.keys(dm).forEach(u=>{if(!teams[u])delete dm[u]});Object.keys(teams).forEach(u=>{if(!dm[u]){const used=Object.values(dm);dm[u]=DOTS.find(d=>!used.includes(d))||DOTS[Object.keys(dm).length%DOTS.length]}})}
+const rk=u=>1+Object.keys(teams).filter(x=>(sc[x]||0)>(sc[u]||0)).length;
+function bigBoard(box,max){box.replaceChildren();Object.keys(teams).sort((a,b)=>(sc[b]||0)-(sc[a]||0)).slice(0,max).forEach(u=>{const i=rk(u)-1;
+ const r=h('div','sbrow flex items-center gap-4 px-5 rounded-2xl '+(i==0?'bg-amber-500/25 border-2 border-amber-400 text-amber-200':i<3?'bg-slate-800 border border-slate-700 text-slate-100':'border-b border-slate-700/50 text-slate-200'));
+ r.append(h('span','w-12 text-center font-black text-amber-400',i+1),h('span','sbname flex-1 truncate',teams[u].name),h('span','font-black',(sc[u]||0)+' P'));box.append(r)})}
+function finale(){const ids=Object.keys(teams).sort((a,b)=>(sc[b]||0)-(sc[a]||0)),top=ids.length?(sc[ids[0]]||0):0,win=top>0?ids.filter(u=>(sc[u]||0)==top):[],rest=ids.filter(u=>!win.includes(u)),n=win.length,sz=n==1?18:n==2?13:n<=4?10:7,w=$('win');
+ w.replaceChildren();win.forEach(u=>{const d=h('div','win',teams[u].name);d.style.fontSize='min('+sz+'vh,'+(sz*.55)+'vw)';w.append(d)});
+ if(n){const p=h('div','winp',top+' PUAN');p.style.fontSize=Math.max(sz*.35,3)+'vh';w.append(p)}
+ const f=$('ff');f.replaceChildren();rest.slice(0,n<=2?10:n<=4?6:4).forEach(u=>{const r=h('div','flex items-center gap-3 py-1 border-b border-slate-700/50 text-2xl text-slate-200');r.append(h('span','w-10 text-amber-400 font-black',rk(u)),h('span','flex-1 truncate font-bold',teams[u].name),h('span','font-black',(sc[u]||0)+' P'));f.append(r)})}
+let cfOn=0,cfRaf=0,cfP=[],cfB=[],cfLast=0,cfBt=0,cfFit=0;const CFC=['#b794f4','#d3b8ff','#9f6ff0','#fdb13b','#e04a3f','#3d9be0','#2fbf71'];
+function cfStart(){if(cfOn||matchMedia('(prefers-reduced-motion:reduce)').matches)return;cfOn=1;const c=$('cf'),x=c.getContext('2d'),R=Math.random;
+ const fit=()=>{c.width=innerWidth;c.height=innerHeight};fit();if(!cfFit){cfFit=1;addEventListener('resize',fit)}
+ const mk=(init,bx,by)=>{const a=R()*6.28,v=bx==null?0:300+R()*500;return{x:bx==null?R()*c.width:bx,y:bx==null?(init?R()*c.height:-20):by,w:6+R()*8,h:10+R()*10,vx:bx==null?-20+R()*40:Math.cos(a)*v,vy:bx==null?60+R()*90:Math.sin(a)*v-200,r:R()*6.28,vr:(R()-.5)*8,c:CFC[R()*CFC.length|0],t:R()<.25,ph:R()*6.28,b:bx!=null}};
+ cfP=Array.from({length:Math.round(c.width/12)},()=>mk(1));cfB=[];cfBt=0;cfLast=performance.now();
+ const burst=()=>{const bx=c.width*(.15+R()*.7),by=c.height*(.2+R()*.35);for(let i=0;i<45;i++)cfB.push(mk(0,bx,by))};burst();
+ const dr=(p,t)=>{x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.globalAlpha=.85;if(p.t){x.beginPath();x.arc(0,0,p.w/2,0,6.28);x.fill()}else{x.scale(1,Math.abs(Math.cos(p.r*1.3))*.9+.1);x.fillRect(-p.w/2,-p.h/2,p.w,p.h)}x.restore()};
+ const loop=t=>{if(!cfOn)return;const dt=Math.min((t-cfLast)/1000,.05);cfLast=t;cfBt+=dt;if(cfBt>2.6){cfBt=0;burst()}x.clearRect(0,0,c.width,c.height);
+  cfP.forEach((p,i)=>{p.y+=p.vy*dt;p.x+=(p.vx+Math.sin(t/900+p.ph)*30)*dt;p.r+=p.vr*dt;if(p.y>c.height+20)cfP[i]=mk(0);dr(p)});
+  cfB=cfB.filter(p=>p.y<c.height+30&&p.x>-30&&p.x<c.width+30);cfB.forEach(p=>{p.vy+=520*dt;p.vx*=1-1.4*dt;p.vy*=1-.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.r+=p.vr*dt;dr(p)});
+  cfRaf=requestAnimationFrame(loop)};cfRaf=requestAnimationFrame(loop)}
+function cfStop(){if(!cfOn)return;cfOn=0;cancelAnimationFrame(cfRaf);const c=$('cf');c.getContext('2d').clearRect(0,0,c.width,c.height)}
 function show(id){['lobby','quiz','fin'].forEach(x=>$(x).classList.toggle('hidden',x!=id));$('quiz').classList.toggle('grid',id=='quiz')}
 function draw(){const s=st||{},rev=s.status=='revealed';
+ if(s.status!='finished')cfStop();
  $('qnum').textContent=s.status=='question'||rev?'Soru '+s.currentQuestion+' / '+s.total:s.status=='finished'?'Sonuçlar':'Lobi';
- if(s.status=='finished'){show('fin');board($('ff'),teams,sc,null)}
+ if(s.status=='finished'){show('fin');finale();cfStart()}
  else if(s.status=='question'||rev){show('quiz');$('qt').textContent=s.qText;
   const o=$('op');o.replaceChildren();L.forEach(x=>o.append(h('div','p-5 rounded-2xl border '+(rev?(x==s.correct?'bg-green-500/25 border-4 border-green-500 text-green-300 font-black':'bg-slate-900 border-slate-800 opacity-30'):'bg-slate-900 border-slate-800'),x+') '+s[x]+(rev&&x==s.correct?'  ✅':''))));
   $('got').textContent=Object.keys(ans).length;$('all').textContent=Object.keys(teams).length;
   const b=$('bd');b.replaceChildren();Object.keys(teams).forEach(u=>{let c='bg-slate-800 text-slate-400',t='⏳';
    if(rev){const r=res[u];if(r&&r.ok){c='bg-green-500/30 text-green-300';t='✅ '+r.choice}else if(r&&r.choice!='-'){c='bg-red-500/30 text-red-300';t='❌ '+r.choice}else{c='bg-slate-900 text-slate-600';t='⚪'}}
    else if(ans[u]){c='bg-amber-500/30 text-amber-300';t='🔒'}
-   b.append(h('span','px-3 py-1.5 rounded-xl text-xs font-bold '+c,teams[u].name+' '+t))});
-  board($('lb'),teams,sc,null,10)}
+   b.append(h('span','chip px-5 py-2.5 rounded-2xl font-bold '+c,teams[u].name+'  '+t))});
+  bigBoard($('lb'),10)}
  else{show('lobby');$('tt').replaceChildren(...(dots(),Object.keys(teams).map(u=>h('div','bg-slate-800 p-4 rounded-2xl text-amber-300 font-bold',dm[u]+' '+teams[u].name))))}}
 </script><script>floaters(22,1.8)</script></body></html>
