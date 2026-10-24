@@ -49,7 +49,7 @@ function loadSheet(){const u=$('sl').value.trim(),m=u.match(/\/d\/([\w-]+)/),g=u
  if(!m)return $('msg').textContent='Geçerli bir Google Sheets linki yapıştırın.';
  try{localStorage.setItem('tg_quiz_sheet',u)}catch(e){}
  $('msg').textContent='Yükleniyor...';
- fetch('https://docs.google.com/spreadsheets/d/'+m[1]+'/gviz/tq?tqx=out:csv'+(g?'&gid='+g[1]:'')).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{if(/^\s*</.test(t))throw 0;importCsv(t)}).catch(()=>$('msg').textContent='Sheet okunamadı. Paylaşımın "Bağlantıya sahip herkes görüntüleyebilir" olduğundan emin olun.')}
+ fetch('https://docs.google.com/spreadsheets/d/'+m[1]+'/gviz/tq?tqx=out:csv&headers=1'+(g?'&gid='+g[1]:'')).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{if(/^\s*</.test(t))throw 0;importCsv(t)}).catch(()=>$('msg').textContent='Sheet okunamadı. Paylaşımın "Bağlantıya sahip herkes görüntüleyebilir" olduğundan emin olun.')}
 function mv(d){const n=cur+d;if(n<1||n>Q.length)return;cur=n;draw()}
 function pub(){const q=Q[cur-1];if(!q)return;
  if(st&&st.status=='question'&&st.currentQuestion!=cur&&!confirm('Soru '+st.currentQuestion+' henüz açıklanmadı. Yine de Soru '+cur+' gönderilsin mi?'))return;
