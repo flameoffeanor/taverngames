@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261024-0648';
-import { remTr } from './data.js?v=20261024-0648';
+import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261024-0714';
+import { remTr } from './data.js?v=20261024-0714';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -56,7 +56,7 @@ function roleHTML(t, nums) {
   const f = G.S.board.nums && nums.first[t.role], o = G.S.board.nums && nums.other[t.role];
   const linked = G.S.tokens.some(q => q.kind === 'rem' && q.owner === t.id);
   return `<div class="tok role t-${r.team}${t.dead ? ' dead' : ''}${t.flip ? ' flip' : ''}${linked ? ' linked' : ''}" data-id="${t.id}"
-      style="--s:${s}px;${linked ? `--gc:${colorOf(t.id)};` : ''}left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
+      style="--s:${s}px;z-index:${2 + (t.z || 0)};${linked ? `--gc:${colorOf(t.id)};` : ''}left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
     <div class="disc">${icon(t.role, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(r.name, 'arcB', 12.5)}</svg></div>
     ${f ? `<span class="nb nf">${f}</span>` : ''}${o ? `<span class="nb no">${o}</span>` : ''}
     ${t.dead ? `<span class="shroud"></span>${t.voteUsed ? '' : '<span class="vt" title="Ölü oyu var"></span>'}` : ''}
@@ -175,6 +175,19 @@ function down(e) {
   drag = { el, t, sx: e.clientX, sy: e.clientY, moved: false, movable, pid: e.pointerId, ox: t.x, oy: t.y,
     kids: t.kind === 'role' ? [...document.querySelectorAll('#tokens .tok.rem')].filter(r => G.S.tokens.find(x => x.id === r.dataset.id)?.owner === t.id) : [] };
   if (movable) { el.setPointerCapture(e.pointerId); e.preventDefault(); }
+  if (t.kind === 'role') {
+    // en son dokunulan simge üstte kalsın (hatırlatıcılar her zaman daha üstte)
+    t.z = Math.max(0, ...G.S.tokens.map(q => q.z || 0)) + 1;
+    el.style.zIndex = 2 + t.z; save();
+    // basılı tutunca büyük göster
+    const d = drag;
+    d.holdT = setTimeout(() => {
+      if (drag !== d || d.moved) return;
+      d.held = true; window.__tapAt = Date.now();
+      if (navigator.vibrate) try { navigator.vibrate(25); } catch (er) {}
+      handlers.holdRole && handlers.holdRole(d.t);
+    }, 480);
+  }
 }
 function setPreview(o, on) {
   const el = document.querySelector(`#tokens .tok[data-id="${o.id}"]`); if (!el) return;
@@ -185,7 +198,7 @@ function move(e) {
   if (!drag || e.pointerId !== drag.pid || !drag.movable) return;
   const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
   if (!drag.moved && Math.hypot(dx, dy) < 6) return;
-  if (!drag.moved) { drag.moved = true; drag.el.classList.add('drag'); }
+  if (!drag.moved) { clearTimeout(drag.holdT); drag.moved = true; drag.el.classList.add('drag'); }
   const w = W(), s = sizeOf(drag.t);
   let [x, y] = clampXY(drag.ox + dx / w, drag.oy + dy / w, s);
   if (drag.t.kind === 'rem') {
@@ -208,8 +221,9 @@ function move(e) {
 }
 function up(e) {
   if (!drag || e.pointerId !== drag.pid) return;
-  const d = drag; drag = null;
+  const d = drag; drag = null; clearTimeout(d.holdT);
   d.el.classList.remove('drag');
+  if (d.held) { window.__tapAt = Date.now(); return; }
   if (!d.moved) {
     if (e.type === 'pointercancel') return;
     window.__tapAt = Date.now(); // pencere açılınca parmağın altına düşen hayalet 'click'i engellemek için
@@ -245,6 +259,7 @@ function rzUp(e) {
 
 export function initBoard() {
   const t = $('tokens');
+  t.addEventListener('contextmenu', e => e.preventDefault());
   t.addEventListener('pointerdown', down);
   t.addEventListener('pointermove', move);
   t.addEventListener('pointerup', up);

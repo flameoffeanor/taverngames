@@ -117,10 +117,11 @@ textarea { width: 100%; resize: vertical; }
 /* simgeler */
 .tok { position: absolute; width: var(--s); height: var(--s); touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
 .board.locked .tok.role { touch-action: manipulation; cursor: pointer; }
-.tok.drag { z-index: 20; cursor: grabbing; }
+.tok.drag { z-index: 200000 !important; cursor: grabbing; }
 .tok.drag .disc { transform: scale(1.08); box-shadow: 0 10px 24px rgba(0,0,0,.7); }
-.tok.rem { z-index: 3; }
-.tok.role { z-index: 2; }
+.tok.rem { z-index: 100000; }
+.tok.role { z-index: 2; -webkit-touch-callout: none; }
+.tok img { -webkit-user-drag: none; pointer-events: none; }
 .disc { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; transition: transform .12s; }
 .tok.role .disc {
   background: radial-gradient(circle at 50% 40%, #fbf5e6 0%, var(--parch) 55%, var(--parch2) 100%);
@@ -365,3 +366,12 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .rem-pills { gap: 10px; }
 .rem-pills .chip { padding: 9px 15px; font-size: .95rem; font-weight: 700; color: #fff3cf; background: #2a2516; border: 1.5px solid var(--gc, var(--gold)); box-shadow: 0 0 12px var(--gc, var(--gold)), inset 0 0 8px rgba(255, 255, 255, .08); text-shadow: 0 0 6px rgba(255, 230, 160, .5); }
 .rem-pills .chip span { color: #fff3cf; opacity: .7; }
+
+/* Hatırlatmalar kutusu: sıkı satırlar */
+.ne-rems { gap: 5px; padding: 8px 8px 12px; }
+.ne-rems .ne { grid-template-columns: 30px 1fr; gap: 8px; align-items: center; padding: 4px 8px; }
+.ne-rems .ne .ic { width: 30px; height: 30px; }
+.ne-rems .ne > div { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 8px; }
+.ne-rems .rws { display: contents; }
+.ne-rems .rw { margin: 0; padding: 1px 8px; font-size: .76rem; }
+.board, .tokens { isolation: isolate; }
