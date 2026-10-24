@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261024-0714';
+import { normId } from './data.js?v=20261024-0721';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -120,6 +120,7 @@ export function showFull(html, cls = '') {
   el.hidden = false;
 }
 $('show').addEventListener('click', () => { $('show').hidden = true; });
+$('show').addEventListener('contextmenu', e => e.preventDefault());
 
 export const bigTok = id => `<div class="bigtok t-${role(id).team}"><div class="disc">${icon(id, 'ic')}</div><span>${esc(role(id).name)}</span></div>`;
 

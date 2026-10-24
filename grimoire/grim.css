@@ -375,3 +375,6 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .ne-rems .rws { display: contents; }
 .ne-rems .rw { margin: 0; padding: 1px 8px; font-size: .76rem; }
 .board, .tokens { isolation: isolate; }
+
+/* basılı tutma / büyük gösterimde metin seçilmesin, uzun basma menüsü çıkmasın */
+.show, .show *, .board, .board * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
