@@ -7,8 +7,9 @@
 <header class="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-b-2 border-slate-800 pb-3 mb-4"><div class="flex items-center gap-4"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" class="h-14" alt=""><div class="cz bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-xl text-xl">TAVERN QUIZ</div></div>
 <div class="text-center"><h1 id="ev" class="cz text-2xl font-bold text-slate-200 leading-tight"></h1><h2 id="ev2" class="text-lg font-semibold text-slate-400 leading-tight"></h2></div>
 <div class="justify-self-end"><div id="qnum" class="text-xl font-black text-amber-400 bg-slate-900 px-6 py-2 rounded-2xl border-2 border-slate-800">Lobi</div></div></header>
-<main id="lobby" class="my-auto text-center space-y-8 max-w-5xl mx-auto w-full"><img src="/assets/logo_beyaz_kenar.webp" class="h-56 mx-auto" alt=""><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
-<div id="tt" class="grid grid-cols-3 md:grid-cols-4 gap-4 text-lg"></div></main>
+<main id="lobby" class="my-auto grid grid-cols-12 gap-10 items-center w-full max-w-[1800px] mx-auto"><div class="col-span-7 text-center space-y-6 min-w-0"><img src="/assets/logo_beyaz_kenar.webp" class="h-44 mx-auto" alt=""><h2 class="text-5xl font-black text-amber-400">Yarışma Birazdan Başlıyor!</h2><p class="text-2xl text-slate-300">taverngames.com.tr/quiz adresinden giriş yapıp takım isminizi yazınız.</p>
+<div id="tt" class="grid grid-cols-2 xl:grid-cols-3 gap-4 text-lg"></div></div>
+<div class="col-span-5 flex flex-col items-center gap-5"><div class="bg-white rounded-3xl overflow-hidden p-2"><img src="qr.svg" alt="taverngames.com.tr/quiz" style="width:min(56vh,34vw);height:min(56vh,34vw);display:block"></div><div class="cz text-3xl font-black tracking-widest text-amber-400 text-center">TELEFONUNLA TARA VE KATIL</div><div class="text-2xl text-slate-300">taverngames.com.tr/quiz</div></div></main>
 <main id="quiz" class="hidden my-auto grid-cols-12 gap-6 max-w-[1800px] mx-auto w-full relative z-10" style="min-height:calc(100vh - 150px)">
 <div class="col-span-6 space-y-4 min-w-0"><div class="flex justify-between items-center bg-slate-900 p-4 rounded-2xl border-2 border-slate-800"><div class="text-slate-300 font-bold text-lg">Gelen Yanıt: <b id="got" class="text-amber-400 text-2xl">0</b> / <b id="all">0</b> Takım</div><div id="timer" class="font-mono font-black text-5xl text-amber-400"></div></div>
 <h2 id="qt" class="bg-slate-900 p-6 rounded-3xl border-2 border-slate-800 text-center text-4xl font-extrabold leading-snug"></h2>
@@ -45,7 +46,7 @@ function cfStart(){if(cfOn||matchMedia('(prefers-reduced-motion:reduce)').matche
   cfB=cfB.filter(p=>p.y<c.height+30&&p.x>-30&&p.x<c.width+30);cfB.forEach(p=>{p.vy+=520*dt;p.vx*=1-1.4*dt;p.vy*=1-.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.r+=p.vr*dt;dr(p)});
   cfRaf=requestAnimationFrame(loop)};cfRaf=requestAnimationFrame(loop)}
 function cfStop(){if(!cfOn)return;cfOn=0;cancelAnimationFrame(cfRaf);const c=$('cf');c.getContext('2d').clearRect(0,0,c.width,c.height)}
-function show(id){['lobby','quiz','fin'].forEach(x=>$(x).classList.toggle('hidden',x!=id));$('quiz').classList.toggle('grid',id=='quiz')}
+function show(id){['lobby','quiz','fin'].forEach(x=>$(x).classList.toggle('hidden',x!=id));$('quiz').classList.toggle('grid',id=='quiz');$('lobby').classList.toggle('grid',id=='lobby')}
 function draw(){const s=st||{},rev=s.status=='revealed';
  if(s.status!='finished')cfStop();
  $('qnum').textContent=s.status=='question'||rev?'Soru '+s.currentQuestion+' / '+s.total:s.status=='finished'?'Sonuçlar':'Lobi';
