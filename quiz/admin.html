@@ -18,7 +18,7 @@
 <details id="td" class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3"><summary id="ts" class="font-bold text-sm cursor-pointer"></summary><div id="tl" class="space-y-2 mt-2"></div></details>
 <details class="bg-slate-800 border border-slate-700 rounded-xl p-3 mt-3 text-sm"><summary id="ss" class="font-bold cursor-pointer"></summary>
 <div class="grid grid-cols-3 gap-2 mt-2"><input id="cn" placeholder="Etkinlik adı" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cd" placeholder="Alt başlık (Başlık 2)" class="bg-slate-900 border border-slate-700 rounded p-2"><input id="cp" placeholder="Oyuncu şifresi" class="bg-slate-900 border border-slate-700 rounded p-2"></div>
-<button onclick="saveCfg()" class="bg-slate-700 px-3 py-2 rounded font-bold mt-2">Kaydet</button><p class="text-xs text-slate-400 mt-2">Sorular: Sheets › Dosya › İndir › CSV. Sütunlar: No, Soru, A, B, C, D, Doğru(A-D)</p><input type="file" accept=".csv,text/csv" onchange="loadCsv(this.files[0])" class="text-xs mt-1"><p id="msg" class="text-xs text-amber-400"></p></details>
+<button onclick="saveCfg()" class="bg-slate-700 px-3 py-2 rounded font-bold mt-2">Kaydet</button><p class="text-xs text-slate-400 mt-2">Sorular: Sheets › Dosya › İndir › CSV. Sütunlar: No, Soru, A, B, C, D, Doğru(A-D)</p><div class="flex gap-2 mt-2"><input id="sl" placeholder="Google Sheets linki" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded p-2 text-xs"><button onclick="loadSheet()" class="bg-slate-700 px-3 py-2 rounded font-bold text-xs">Sheets'ten yükle</button></div><p class="text-xs text-slate-400 mt-1">veya CSV dosyası seç:</p><input type="file" accept=".csv,text/csv" onchange="loadCsv(this.files[0])" class="text-xs mt-1"><p id="msg" class="text-xs text-amber-400"></p></details>
 <details class="bg-slate-800 border border-red-900 rounded-xl p-3 mt-3"><summary class="font-bold text-sm cursor-pointer text-red-400">⚠️ Tehlikeli işlemler</summary><div class="flex gap-2 mt-2"><button onclick="finish()" class="flex-1 bg-purple-700 py-3 rounded-xl text-sm font-bold">🏁 Quiz'i Bitir</button><button onclick="reset()" class="flex-1 bg-red-600 py-3 rounded-xl text-sm font-bold">Yarışmayı Sıfırla</button></div></details></div>
 <div id="bb" class="hidden fixed bottom-0 inset-x-0 bg-slate-950/95 border-t border-slate-700 px-3 pt-3" style="padding-bottom:max(.75rem,env(safe-area-inset-bottom))"><div class="max-w-xl mx-auto space-y-2">
 <div class="flex gap-2"><button id="b1" onclick="pub()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">① 📡 Gönder</button><button id="b2" onclick="startTimer()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">② ⏱️ Süreyi Başlat</button><button id="b3" onclick="reveal()" data-c="flex-1 py-4 rounded-xl font-bold text-sm disabled:opacity-30">③ ✅ Cevabı Aç</button></div>
@@ -28,6 +28,7 @@ const auth=firebase.auth(),PTS=10;let Q=[],cur=1,st=null,teams={},sc={},ans={},t
 auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous;$('login').classList.toggle('hidden',ok);$('dash').classList.toggle('hidden',!ok);$('bb').classList.toggle('hidden',!ok);if(ok)init()});
 function login(){auth.signInWithEmailAndPassword($('em').value.trim(),$('ps').value).catch(e=>{const m=$('lerr');m.textContent='Giriş başarısız: '+e.code;m.classList.remove('hidden')})}
 function init(){if(inited++)return;
+ try{const l=localStorage.getItem('tg_quiz_sheet');if(l)$('sl').value=l}catch(e){}
  db.ref('private/questions').on('value',s=>{const v=s.val()||[];Q=Array.isArray(v)?v.filter(Boolean):Object.values(v);draw()});
  const sync=(id,v)=>{const e=$(id);if(e&&document.activeElement!==e)e.value=v};
  db.ref('config/public').on('value',s=>{const c=s.val()||{};sync('cn',c.name||'');sync('cd',c.date||'')});
@@ -40,9 +41,15 @@ function saveCfg(){db.ref().update({'config/public':{name:$('cn').value.trim(),d
 function csv(t){t=t.replace(/^\uFEFF/,'');const f=t.split('\n')[0],d=(f.match(/;/g)||[]).length>(f.match(/,/g)||[]).length?';':',',rows=[];let r=[],c='',q=0;
  for(let i=0;i<t.length;i++){const x=t[i];if(q){if(x=='"'){if(t[i+1]=='"'){c+='"';i++}else q=0}else c+=x}else if(x=='"')q=1;else if(x==d){r.push(c);c=''}else if(x=='\n'||x=='\r'){if(x=='\r'&&t[i+1]=='\n')i++;r.push(c);c='';rows.push(r);r=[]}else c+=x}
  if(c||r.length){r.push(c);rows.push(r)}return rows}
-function loadCsv(file){if(!file)return;const fr=new FileReader();fr.onload=()=>{const q=csv(fr.result).map(r=>({text:(r[1]||'').trim(),A:(r[2]||'').trim(),B:(r[3]||'').trim(),C:(r[4]||'').trim(),D:(r[5]||'').trim(),correct:(r[6]||'').trim().toUpperCase()})).filter(x=>x.text&&/^[A-D]$/.test(x.correct));
+function importCsv(text){const q=csv(text).map(r=>({text:(r[1]||'').trim(),A:(r[2]||'').trim(),B:(r[3]||'').trim(),C:(r[4]||'').trim(),D:(r[5]||'').trim(),correct:(r[6]||'').trim().toUpperCase()})).filter(x=>x.text&&/^[A-D]$/.test(x.correct));
  if(!q.length)return $('msg').textContent='Geçerli soru bulunamadı (7. sütun A-D olmalı).';
- db.ref('private/questions').set(q).then(()=>$('msg').textContent=q.length+' soru yüklendi.')};fr.readAsText(file)}
+ db.ref('private/questions').set(q).then(()=>$('msg').textContent=q.length+' soru yüklendi.')}
+function loadCsv(file){if(!file)return;const fr=new FileReader();fr.onload=()=>importCsv(fr.result);fr.readAsText(file)}
+function loadSheet(){const u=$('sl').value.trim(),m=u.match(/\/d\/([\w-]+)/),g=u.match(/[#&?]gid=(\d+)/);
+ if(!m)return $('msg').textContent='Geçerli bir Google Sheets linki yapıştırın.';
+ try{localStorage.setItem('tg_quiz_sheet',u)}catch(e){}
+ $('msg').textContent='Yükleniyor...';
+ fetch('https://docs.google.com/spreadsheets/d/'+m[1]+'/gviz/tq?tqx=out:csv'+(g?'&gid='+g[1]:'')).then(r=>{if(!r.ok)throw 0;return r.text()}).then(t=>{if(/^\s*</.test(t))throw 0;importCsv(t)}).catch(()=>$('msg').textContent='Sheet okunamadı. Paylaşımın "Bağlantıya sahip herkes görüntüleyebilir" olduğundan emin olun.')}
 function mv(d){const n=cur+d;if(n<1||n>Q.length)return;cur=n;draw()}
 function pub(){const q=Q[cur-1];if(!q)return;
  if(st&&st.status=='question'&&st.currentQuestion!=cur&&!confirm('Soru '+st.currentQuestion+' henüz açıklanmadı. Yine de Soru '+cur+' gönderilsin mi?'))return;
