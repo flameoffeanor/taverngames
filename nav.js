@@ -1,5 +1,5 @@
-(()=>{const L=[['/bilet','Biletler','Bilet'],['/botc','Blood on the Clocktower','BotC'],['/kutu','Kutu Oyunları','Oyunlar'],['/quiz','Quiz Night','Quiz']],p=location.pathname,n=document.createElement('nav');n.className='nav';
-n.innerHTML='<div class="wrap"><a class="brand" href="/"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt=""><span>Tavern Games</span></a><div class="links">'+L.map(([h,t,u])=>'<a href="'+h+'"'+(p.startsWith(h)?' aria-current="page"':'')+'><span class="nf">'+t+'</span><span class="ns">'+u+'</span></a>').join('')+'</div></div>';
+(()=>{const L=[['/bilet/','Biletler','Bilet'],['/botc/','Blood on the Clocktower','BotC'],['/kutu/','Kutu Oyunları','Oyunlar'],['/quiz/','Quiz Night','Quiz']],p=location.pathname,n=document.createElement('nav');n.className='nav';
+n.innerHTML='<div class="wrap"><a class="brand" href="/"><img src="/assets/logo_beyaz_kenar_yazisiz.webp" alt=""><span>Tavern Games</span></a><div class="links">'+L.map(([h,t,u])=>'<a href="'+h+'"'+(p.startsWith(h.slice(0,-1))?' aria-current="page"':'')+'><span class="nf">'+t+'</span><span class="ns">'+u+'</span></a>').join('')+'</div></div>';
 document.body.prepend(n);
 const old=document.querySelector('.social-card');
 if(old)old.outerHTML='<div class="soc"><a class="pill" style="--d:#e1306c" href="https://www.instagram.com/taverngamesclub/" target="_blank" rel="noopener"><i></i>Instagram</a><a class="pill" style="--d:#25d366" href="https://chat.whatsapp.com/LxsUKB5amFS5B3QGOR2k5r" target="_blank" rel="noopener"><i></i>WhatsApp Topluluğu</a></div>';
