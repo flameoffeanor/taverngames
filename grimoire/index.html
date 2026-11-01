@@ -14,9 +14,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="grim.css?v=20261024-0721">
+<link rel="stylesheet" href="grim.css?v=20261102-0249">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -40,6 +41,7 @@
 <div id="app" hidden>
   <header class="top">
     <h1 class="brand">Grimoire</h1>
+    <button class="sync off" id="syncDot" aria-label="Senkron durumu"></button>
     <nav class="jump">
       <a href="#secSetup">Kurulum</a><a href="#secBoard">Grimoire</a><a href="#secNight">Gece</a><a href="#secMore">Diğer</a>
     </nav>
@@ -143,6 +145,7 @@
       </div>
       <div class="sub">
         <h3>Oyun</h3>
+        <label class="sw"><input type="checkbox" id="optSync"><i></i>İki yönetici senkronu (ortak oda)</label>
         <div class="grid2">
           <button class="btn" id="bExport">Oyunu dışa aktar</button>
           <button class="btn" id="bImport">Oyunu içe aktar</button>
@@ -169,6 +172,6 @@
 <script>
 firebase.initializeApp({apiKey:"AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",authDomain:"tavern-quiz.firebaseapp.com",databaseURL:"https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tavern-quiz",appId:"1:280835700622:web:043d61c02d689de87056df"});
 </script>
-<script type="module" src="js/app.js?v=20261024-0721"></script>
+<script type="module" src="js/app.js?v=20261102-0249"></script>
 </body>
 </html>

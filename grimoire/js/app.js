@@ -1,10 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261024-0721';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0249';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261024-0721';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261024-0721';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0249';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0249';
 
-export const VERSION = '20261024-0721';
+import { startSync, stopSync, syncEnabled, setSyncEnabled } from './sync.js?v=20261102-0249';
+export const VERSION = '20261102-0249';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -12,12 +13,13 @@ const tokById = id => G.S.tokens.find(t => t.id === id);
 // ================= açılış =================
 const auth = firebase.auth();
 auth.onAuthStateChanged(async user => {
-  if (!user) { show('login'); return; }
+  if (!user) { stopSync(); show('login'); return; }
   show('boot');
   load();
   G.D = await loadData();
   show('app');
   start();
+  startSync('main');
 });
 $('loginForm').onsubmit = async e => {
   e.preventDefault(); $('lErr').hidden = true;
@@ -604,6 +606,13 @@ function wire() {
   $('bluffs').onclick = e => { const b = e.target.closest('[data-b]'); if (b) pickBluff(+b.dataset.b); };
   $('bBluffAdd').onclick = () => commit(S => { S.bluffs.push(null); });
   $('bBluffShow').onclick = () => showInfo('bluffs');
+  $('optSync').checked = syncEnabled();
+  $('optSync').onchange = e => {
+    if (!e.target.checked) return setSyncEnabled(false);
+    confirmBox('Ortak odaya bağlanınca oradaki oyun bu cihazdakinin yerine geçer (oda boşsa bu cihazdaki oyun odaya yazılır). Devam?', 'Bağlan', () => { setSyncEnabled(true); $('optSync').checked = true; }, { danger: false });
+    e.target.checked = false;
+  };
+  $('syncDot').onclick = () => toast($('syncDot').dataset.txt || 'Senkron', 3000);
   $('optNums').onchange = e => commit(S => { S.board.nums = e.target.checked; }, true);
   $('optRole').oninput = e => commit(S => { S.board.roleScale = +e.target.value; }, true);
   $('optRem').oninput = e => commit(S => { S.board.remScale = +e.target.value; }, true);

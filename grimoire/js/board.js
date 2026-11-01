@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid } from './core.js?v=20261024-0721';
-import { remTr } from './data.js?v=20261024-0721';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261102-0249';
+import { remTr } from './data.js?v=20261102-0249';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -166,6 +166,7 @@ export function clockwise() {
 
 // ---- sürükleme ----
 let drag = null;
+export const isDragging = () => !!drag;
 function down(e) {
   const el = e.target.closest('.tok');
   if (!el || e.button > 0) return;
@@ -178,7 +179,7 @@ function down(e) {
   if (t.kind === 'role') {
     // en son dokunulan simge üstte kalsın (hatırlatıcılar her zaman daha üstte)
     t.z = Math.max(0, ...G.S.tokens.map(q => q.z || 0)) + 1;
-    el.style.zIndex = 2 + t.z; save();
+    el.style.zIndex = 2 + t.z; save(); syncNow();
     // basılı tutunca büyük göster
     const d = drag;
     d.holdT = setTimeout(() => {

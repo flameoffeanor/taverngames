@@ -378,3 +378,10 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 
 /* basılı tutma / büyük gösterimde metin seçilmesin, uzun basma menüsü çıkmasın */
 .show, .show *, .board, .board * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+
+/* senkron göstergesi */
+.top { position: sticky; }
+.sync { position: absolute; right: 8px; top: 12px; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); background: #5b6577; cursor: pointer; }
+.sync.ok { background: #3fbf8a; box-shadow: 0 0 8px #3fbf8a; }
+.sync.warn { background: #e0a93b; }
+.sync.bad { background: #d0645c; }

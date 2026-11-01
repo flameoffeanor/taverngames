@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261024-0721';
+import { normId } from './data.js?v=20261102-0249';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -34,22 +34,51 @@ export function load() {
 }
 export function save() { try { localStorage.setItem(KEY, JSON.stringify(G.S)); } catch (e) {} }
 
+// ---- ortak (iki yönetici arasında senkron) durum ----
+// Ortak: oyunun kendisi. Ayrı kalan: pencereler, sekmeler, perde, simge boyutları, notlar.
+const JKEYS = ['script', 'setup', 'bluffs', 'customInfo', 'deal', 'fangguDone'];
+export function sharedMap(S) {
+  const m = {};
+  for (const k of JKEYS) m['j/' + k] = JSON.stringify(S[k] === undefined ? null : S[k]);
+  m['j/done'] = JSON.stringify(S.night.done);
+  for (const t of S.tokens) m['t/' + t.id] = JSON.stringify(t);
+  return m;
+}
+export function applySharedMap(S, m) {
+  for (const k of JKEYS) { const v = m['j/' + k]; if (v !== undefined) S[k] = JSON.parse(v); }
+  if (m['j/done'] !== undefined) S.night.done = { first: [], other: [], ...JSON.parse(m['j/done']) };
+  S.tokens = Object.keys(m).filter(k => k.startsWith('t/')).map(k => k.slice(2)).sort().map(id => JSON.parse(m['t/' + id]));
+}
+export const hooks = { onCommit: null };
+export const syncNow = () => { if (hooks.onCommit) hooks.onCommit(sharedMap(G.S)); };
+
 // ---- değişiklik + geri alma ----
+// Geri alma: yalnızca kendi son hamlenin değiştirdiği parçaları eski haline getirir (diğer yöneticinin hamlelerine dokunmaz).
 const hist = [];
 const subs = new Set();
 export const subscribe = fn => subs.add(fn);
 export function emit() { save(); subs.forEach(f => f()); }
 // fn durumu yerinde değiştirir; quiet=true ise geri alma kaydı tutulmaz (ayar, not vb.)
 export function commit(fn, quiet = false) {
-  if (!quiet) { hist.push(JSON.stringify(G.S)); if (hist.length > 60) hist.shift(); }
+  const before = sharedMap(G.S);
   fn(G.S);
+  const after = sharedMap(G.S);
+  if (!quiet) {
+    const patch = {};
+    for (const k of new Set([...Object.keys(before), ...Object.keys(after)])) if (before[k] !== after[k]) patch[k] = before[k];
+    if (Object.keys(patch).length) { hist.push(patch); if (hist.length > 60) hist.shift(); }
+  }
   emit();
+  if (hooks.onCommit) hooks.onCommit(after);
 }
 export const canUndo = () => hist.length > 0;
 export function undo() {
   if (!hist.length) return false;
-  G.S = JSON.parse(hist.pop());
+  const patch = hist.pop(), cur = sharedMap(G.S);
+  for (const k of Object.keys(patch)) { if (patch[k] === undefined) delete cur[k]; else cur[k] = patch[k]; }
+  applySharedMap(G.S, cur);
   emit();
+  if (hooks.onCommit) hooks.onCommit(cur);
   return true;
 }
 
