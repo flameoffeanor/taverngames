@@ -1,23 +1,29 @@
 // İki yönetici arasında canlı senkron: Firebase Realtime Database, sabit oda.
 // Ortak olan: oyunun kendisi (tokenlar, konumlar, ölü/diri, isimler, hatırlatıcılar, blöfler, gece işaretleri).
 // Yerel kalan: pencereler, sekmeler, perde, simge boyutları, notlar.
-import { G, $, emit, hooks, sharedMap, applySharedMap, toast } from './core.js?v=20261102-0249';
-import { isDragging } from './board.js?v=20261102-0249';
+import { G, $, emit, hooks, sharedMap, applySharedMap, toast } from './core.js?v=20261102-0257';
+import { isDragging } from './board.js?v=20261102-0257';
 
-const KEY = 'tg-g3-sync';
-let ref = null, last = {}, ready = false, latest = null, tm = 0, conn = false, denied = false, room = 'main';
-export const syncEnabled = () => { try { return localStorage.getItem(KEY) !== '0'; } catch (e) { return true; } };
+const SKEY = 'tg-g3-room', LKEY = 'tg-g3-lastroom';
+let ref = null, last = {}, ready = false, latest = null, tm = 0, conn = false, denied = false, room = null, connRef = null;
+const sget = (st, k) => { try { return window[st].getItem(k); } catch (e) { return null; } };
+const sset = (st, k, v) => { try { v == null ? window[st].removeItem(k) : window[st].setItem(k, v); } catch (e) {} };
+export const normRoom = c => String(c || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
+export const currentRoom = () => room;
+export const lastRoom = () => sget('localStorage', LKEY) || '';
+export const savedSessionRoom = () => sget('sessionStorage', SKEY);
+export const syncState = () => (!room ? 'local' : denied ? 'denied' : !conn ? 'offline' : !ready ? 'connecting' : 'ok');
 
 const same = (a, b) => { const ka = Object.keys(a); if (ka.length !== Object.keys(b).length) return false; return ka.every(k => a[k] === b[k]); };
 
 function status() {
   const el = $('syncDot'); if (!el) return;
-  let cls = 'off', txt = 'Senkron kapalı';
-  if (syncEnabled()) {
+  let cls = 'off', txt = 'Yerel: bu cihaz tek başına çalışıyor';
+  if (room) {
     if (denied) { cls = 'bad'; txt = 'Senkron: izin yok (Firebase kuralları)'; }
-    else if (!conn) { cls = 'warn'; txt = 'Senkron: bağlantı yok, bağlanınca eşitlenecek'; }
-    else if (!ready) { cls = 'warn'; txt = 'Senkron: bağlanıyor…'; }
-    else { cls = 'ok'; txt = 'Senkron: bağlı'; }
+    else if (!conn) { cls = 'warn'; txt = `Oda ${room}: bağlantı yok, bağlanınca eşitlenecek`; }
+    else if (!ready) { cls = 'warn'; txt = `Oda ${room}: bağlanıyor…`; }
+    else { cls = 'ok'; txt = `Oda ${room}: bağlı`; }
   }
   el.className = 'sync ' + cls; el.title = txt; el.dataset.txt = txt;
 }
@@ -58,21 +64,29 @@ function push(cur) {
   ref.update(upd).catch(fail);
 }
 
-export function startSync(roomId = 'main') {
-  room = roomId;
-  stopSync();
-  if (!syncEnabled() || !window.firebase || !firebase.database) { status(); return; }
-  ref = firebase.database().ref('grimoire/' + room);
+// Odaya bağlan (kod = oda adı). Aynı kodu giren cihazlar aynı oyunu paylaşır; kod girmeyen cihaz yerel kalır.
+export function roomExists(code) {
+  return firebase.database().ref('grimoire/' + normRoom(code) + '/meta').once('value').then(s => s.exists());
+}
+export function connectRoom(code) {
+  const c = normRoom(code);
+  if (!c || !window.firebase || !firebase.database) return false;
+  disconnect(true);
+  room = c; denied = false;
+  sset('sessionStorage', SKEY, c); sset('localStorage', LKEY, c);
+  ref = firebase.database().ref('grimoire/' + c);
   hooks.onCommit = push;
-  firebase.database().ref('.info/connected').on('value', s => { conn = !!s.val(); status(); });
+  connRef = firebase.database().ref('.info/connected');
+  connRef.on('value', s => { conn = !!s.val(); status(); });
   ref.on('value', onSnap, err => fail(err));
   status();
+  return true;
 }
-export function stopSync() {
+export function disconnect(silent = false) {
   if (ref) { try { ref.off(); } catch (e) {} }
-  ref = null; ready = false; hooks.onCommit = null; status();
+  if (connRef) { try { connRef.off(); } catch (e) {} }
+  ref = null; connRef = null; ready = false; hooks.onCommit = null; room = null;
+  if (!silent) sset('sessionStorage', SKEY, null);
+  status();
 }
-export function setSyncEnabled(on) {
-  try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {}
-  if (on) startSync(room); else stopSync();
-}
+export const stopSync = () => disconnect(true);

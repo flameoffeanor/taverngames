@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0249';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0257';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0249';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0249';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0257';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0257';
 
-import { startSync, stopSync, syncEnabled, setSyncEnabled } from './sync.js?v=20261102-0249';
-export const VERSION = '20261102-0249';
+import { connectRoom, disconnect, stopSync, roomExists, currentRoom, lastRoom, savedSessionRoom, syncState, normRoom } from './sync.js?v=20261102-0257';
+export const VERSION = '20261102-0257';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -19,7 +19,7 @@ auth.onAuthStateChanged(async user => {
   G.D = await loadData();
   show('app');
   start();
-  startSync('main');
+  if (savedSessionRoom()) connectRoom(savedSessionRoom()); // sayfa yenilenirse oda korunur; uygulama yeniden açılırsa yerel başlar
 });
 $('loginForm').onsubmit = async e => {
   e.preventDefault(); $('lErr').hidden = true;
@@ -396,6 +396,38 @@ function pickRole(o, cb, back) {
   render();
 }
 
+
+// ---- senkron paneli: varsayılan yerel; kod girip odaya bağlanınca iki cihaz aynı oyunu paylaşır ----
+function openSyncPanel() {
+  const room = currentRoom(), st = syncState();
+  const stTxt = { ok: 'bağlı', connecting: 'bağlanıyor…', offline: 'internet yok, gelince eşitlenir', denied: 'izin yok (Firebase kuralları)' }[st];
+  if (room) {
+    openModal('Senkron', `
+      <p class="lead">Bağlı oda: <b class="room-code">${esc(room)}</b> · ${stTxt}</p>
+      <p class="muted small">Bu odaya aynı kodla bağlanan cihazlar aynı oyunu görür. Pencereler, sekmeler, perde ve simge boyutları cihaza özel kalır.</p>
+      <button class="btn warn wide" id="syDis">Bağlantıyı kes (yerel devam et)</button>`, () => {
+      $('syDis').onclick = () => { disconnect(); closeModal(); toast('Yerel moda geçildi. Oyun bu cihazda kaldı.'); };
+    });
+    return;
+  }
+  openModal('Senkron', `
+    <p class="lead">Şu an <b>yerel</b>: bu cihaz tek başına çalışıyor.</p>
+    <p class="muted small">Aynı masayı iki yönetici beraber yönetecekse ikisi de aynı oda kodunu girsin. Başka masa için başka kod kullan. Kod girmeyen cihaz hiçbir şeyi paylaşmaz.</p>
+    <label class="lbl">Oda kodu</label>
+    <div class="row-in"><input id="syCode" value="${esc(lastRoom())}" placeholder="örn. masa1" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20">
+      <button class="btn small primary" id="syGo">Bağlan</button></div>`, () => {
+    $('syGo').onclick = async () => {
+      const c = normRoom($('syCode').value); if (!c) return toast('Önce bir oda kodu yaz (harf, rakam, tire).');
+      let exists;
+      try { exists = await roomExists(c); } catch (e) { return toast('Odaya ulaşılamadı: internet ya da Firebase izni yok.', 4000); }
+      confirmBox(exists
+        ? `"${c}" odasında oyun var. Bağlanınca bu cihazdaki oyun SİLİNİP odadaki oyun yüklenecek. Devam?`
+        : `"${c}" odası boş. Bağlanınca bu cihazdaki oyun odaya yazılacak, diğer cihaz kodu girince onu alacak. Devam?`,
+        'Bağlan', () => { connectRoom(c); closeModal(); toast(`Oda ${c}`); }, { danger: exists });
+    };
+  });
+}
+
 // ---- hatırlatıcı seçici ----
 let remAll = false, remMulti = false;
 function pickReminder(ownerId, back) {
@@ -596,7 +628,7 @@ function wire() {
   $('bTools').onclick = () => commit(S => { S.board.tools = !S.board.tools; }, true);
   $('bHide').onclick = () => commit(S => { S.board.hidden = !S.board.hidden; }, true);
   $('bHeight').onclick = () => commit(S => { S.board.ratio = 0; }, true);
-  $('bClear').onclick = () => confirmBox('Tabladaki tüm simgeler, hatırlatıcılar, isimler ve blöfler silinsin mi? (Senaryo ve ayarlar kalır.)', 'Temizle', () => {
+  $('bClear').onclick = () => confirmBox('Tabladaki tüm simgeler, hatırlatıcılar, isimler ve blöfler silinsin mi? (Senaryo ve ayarlar kalır.)' + (currentRoom() ? ' DİKKAT: ortak oda bağlı, diğer cihazda da silinir.' : ''), 'Temizle', () => {
     commit(S => { S.tokens = []; S.fangguDone = false; S.bluffs = [null, null, null]; S.night.done = { first: [], other: [] }; });
   });
   $('bAddTok').onclick = () => pickRole({ title: 'Simge ekle' }, rid => { commit(() => { addRoleToken(rid); }); closeModal(); });
@@ -606,13 +638,8 @@ function wire() {
   $('bluffs').onclick = e => { const b = e.target.closest('[data-b]'); if (b) pickBluff(+b.dataset.b); };
   $('bBluffAdd').onclick = () => commit(S => { S.bluffs.push(null); });
   $('bBluffShow').onclick = () => showInfo('bluffs');
-  $('optSync').checked = syncEnabled();
-  $('optSync').onchange = e => {
-    if (!e.target.checked) return setSyncEnabled(false);
-    confirmBox('Ortak odaya bağlanınca oradaki oyun bu cihazdakinin yerine geçer (oda boşsa bu cihazdaki oyun odaya yazılır). Devam?', 'Bağlan', () => { setSyncEnabled(true); $('optSync').checked = true; }, { danger: false });
-    e.target.checked = false;
-  };
-  $('syncDot').onclick = () => toast($('syncDot').dataset.txt || 'Senkron', 3000);
+  $('syncDot').onclick = openSyncPanel;
+  $('bSync').onclick = openSyncPanel;
   $('optNums').onchange = e => commit(S => { S.board.nums = e.target.checked; }, true);
   $('optRole').oninput = e => commit(S => { S.board.roleScale = +e.target.value; }, true);
   $('optRem').oninput = e => commit(S => { S.board.remScale = +e.target.value; }, true);
