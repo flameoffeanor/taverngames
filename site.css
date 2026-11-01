@@ -48,3 +48,11 @@ footer img{height:46px;width:auto;margin-bottom:8px}
 .links .ns{display:none}@media(max-width:760px){.links .nf{display:none}.links .ns{display:inline}}.links a{font-size:.8rem;font-weight:500}
 html{scrollbar-gutter:stable}
 .fl-links{display:flex;gap:6px 16px;justify-content:center;flex-wrap:wrap;margin:10px 0 12px}.fl-links a{color:var(--cream);opacity:.8}.fl-links a:hover{opacity:1;color:var(--gold)}
+
+body>.fab.fab.fab{position:fixed;right:16px;bottom:16px;left:auto;width:auto;max-width:none;margin:0;z-index:30;display:flex;flex-direction:column;gap:10px}
+.fab a{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.45);transition:transform .2s}
+.fab a:hover{transform:scale(1.08)}
+.fab svg{width:22px;height:22px;fill:currentColor}
+.fab .ig{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285aeb 90%)}
+.fab .wa{background:#25d366}
+@media print{.fab{display:none}}
