@@ -2,8 +2,8 @@
 // istediğinde yerel masasına döner. Oda silinirse içindekiler yerel masaya düşer.
 // Ortak olan: oyunun kendisi (tokenlar, konumlar, ölü/diri, isimler, hatırlatıcılar, blöfler, gece işaretleri).
 // Yerel kalan: pencereler, sekmeler, perde, simge boyutları, notlar.
-import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory } from './core.js?v=20261102-0410';
-import { isDragging } from './board.js?v=20261102-0410';
+import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory, noteAlert } from './core.js?v=20261102-0425';
+import { isDragging } from './board.js?v=20261102-0425';
 
 const SKEY = 'tg-g3-room', LOCAL = 'tg-g3-local';
 const CID = uid();
@@ -33,11 +33,13 @@ function status() {
 function fail(err) {
   if (err && /PERMISSION_DENIED/i.test(String(err.code || err.message))) { denied = true; ready = false; status(); toast('Oda için Firebase izni yok. Kuralları kontrol et.', 5000); }
 }
-function apply(remote) {
+function apply(remote, notify) {
   latest = remote;
-  if (isDragging()) { clearTimeout(tm); tm = setTimeout(() => apply(latest), 250); return; }
+  if (isDragging()) { clearTimeout(tm); tm = setTimeout(() => apply(latest, notify), 250); return; }
+  const oldNote = G.S.notes || '';
   applySharedMap(G.S, remote);
   emit();
+  if (notify && (G.S.notes || '') !== oldNote && G.S.notes) noteAlert(G.S.notes);
 }
 function onSnap(snap) {
   denied = false;
@@ -50,8 +52,9 @@ function onSnap(snap) {
   for (const [k, v] of Object.entries(val.j || {})) remote['j/' + k] = v;
   for (const [k, v] of Object.entries(val.t || {})) remote['t/' + k] = v;
   last = remote;
+  const was = ready;
   ready = true; status();
-  if (!same(sharedMap(G.S), remote)) apply(remote);
+  if (!same(sharedMap(G.S), remote)) apply(remote, was);
 }
 function push(cur) {
   if (!ref || !ready) return;

@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0410';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0425';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0410';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0410';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0425';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0425';
 
-import { enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0410';
-export const VERSION = '20261102-0410';
+import { enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0425';
+export const VERSION = '20261102-0425';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -621,10 +621,13 @@ const INFOS = [
   ['use', 'Yeteneğini kullanmak istiyor musun?', 'c-brown'], ['choose', 'Bir seçim yap', 'c-brown'],
   ['nom', 'Bugün aday gösterdin mi?', 'c-sand'], ['voted', 'Bugün oy verdin mi?', 'c-sand'],
 ];
+let noteDirty = false;
 function renderMore() {
   $('infoGrid').innerHTML = INFOS.map(([k, t, c]) => `<button class="btn info ${c}" data-info="${k}">${esc(t)}</button>`).join('')
     + G.S.customInfo.map((t, i) => `<span class="info-c"><button class="btn info c-teal" data-ci="${i}">${esc(t)}</button><button class="ib sm" data-cdel="${i}" aria-label="Sil">✕</button></span>`).join('');
-  if (document.activeElement !== $('notes')) $('notes').value = G.S.notes || '';
+  if (!noteDirty && document.activeElement !== $('notes')) $('notes').value = G.S.notes || '';
+  $('bNotesOk').textContent = currentRoom() ? 'Onayla ve odaya gönder' : 'Onayla';
+  $('notesHint').textContent = currentRoom() ? 'Onaylayınca odadaki herkese gider; herkesin ekranında "Yeni not" uyarısı çıkar.' : 'Onaylanan not bu masada kayıtlı kalır. Odaya girersen oradakilere gider.';
 }
 function showInfo(k) {
   const text = INFOS.find(x => x[0] === k)[1];
@@ -691,8 +694,9 @@ function wire() {
   };
   $('bInfoAdd').onclick = () => { const v = $('infoNew').value.trim(); if (!v) return; commit(S => { S.customInfo.push(v); }, true); $('infoNew').value = ''; };
   let nt;
-  $('notes').oninput = e => { clearTimeout(nt); const v = e.target.value; nt = setTimeout(() => { G.S.notes = v; save(); }, 300); };
-  $('bNotesClear').onclick = () => confirmBox('Notlar silinsin mi?', 'Sil', () => commit(S => { S.notes = ''; }));
+  $('notes').oninput = () => { noteDirty = true; };
+  $('bNotesOk').onclick = () => { const v = $('notes').value; noteDirty = false; commit(S => { S.notes = v; }, true); toast(currentRoom() ? 'Not odaya gönderildi' : 'Not kaydedildi'); };
+  $('bNotesClear').onclick = () => confirmBox(currentRoom() ? 'Not silinsin mi? (Odadaki herkesten silinir)' : 'Not silinsin mi?', 'Sil', () => { noteDirty = false; commit(S => { S.notes = ''; }, true); });
   $('bExport').onclick = () => {
     const blob = new Blob([JSON.stringify(G.S, null, 1)], { type: 'application/json' });
     const a = document.createElement('a');

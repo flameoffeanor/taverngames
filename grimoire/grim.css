@@ -393,3 +393,8 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .room.here { border-color: var(--gold2); background: #1d2433; }
 .here-t { color: var(--gold); font-weight: 700; font-size: .85rem; }
 .room-code { color: var(--gold); }
+
+.note-alert { position: fixed; top: calc(var(--safe-t, 0px) + 8px); left: 50%; transform: translateX(-50%); z-index: 95; background: var(--gold); color: #1a1405; border: 0; border-radius: 999px; padding: 9px 18px; font: 700 .9rem Inter, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,.55); animation: nal .35s ease; }
+.note-alert[hidden] { display: none; }
+@keyframes nal { from { opacity: 0; transform: translate(-50%, -14px); } }
+.note-full { white-space: pre-wrap; font-size: 1.1rem; line-height: 1.5; }

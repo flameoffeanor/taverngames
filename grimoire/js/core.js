@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261102-0410';
+import { normId } from './data.js?v=20261102-0425';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -35,8 +35,8 @@ export function load() {
 export function save() { try { localStorage.setItem(KEY, JSON.stringify(G.S)); } catch (e) {} }
 
 // ---- ortak (iki yönetici arasında senkron) durum ----
-// Ortak: oyunun kendisi. Ayrı kalan: pencereler, sekmeler, perde, simge boyutları, notlar.
-const JKEYS = ['script', 'setup', 'bluffs', 'customInfo', 'deal', 'fangguDone'];
+// Ortak: oyunun kendisi + onaylanmış anlatıcı notu. Ayrı kalan: pencereler, sekmeler, perde, simge boyutları.
+const JKEYS = ['script', 'setup', 'bluffs', 'customInfo', 'deal', 'fangguDone', 'notes'];
 export function sharedMap(S) {
   const m = {};
   for (const k of JKEYS) m['j/' + k] = JSON.stringify(S[k] === undefined ? null : S[k]);
@@ -100,6 +100,11 @@ const initials = n => esc(String(n || '?').split(/\s+/).map(w => w[0]).join('').
 export const icon = (id, cls = 'ic') =>
   `<span class="${cls} ini" data-i="${initials(role(id).name)}"><img src="/botc_assets/${esc(id)}.png" alt="" draggable="false" onerror="this.remove()"></span>`;
 
+export function noteAlert(text) {
+  const b = $('noteAlert'); if (!b) return;
+  b.textContent = 'Yeni not · bak'; b.hidden = false; b.onclick = () => { b.hidden = true; openModal('Hikaye anlatıcısı notu', `<div class="note-full">${esc(text)}</div>`); };
+  clearTimeout(noteAlert.t); noteAlert.t = setTimeout(() => { b.hidden = true; }, 8000);
+}
 export function toast(msg, ms = 2200) {
   const t = $('toast'); t.textContent = msg; t.hidden = false;
   clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, ms);
