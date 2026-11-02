@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0315';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0405';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0315';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0315';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0405';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0405';
 
-import { enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0315';
-export const VERSION = '20261102-0315';
+import { enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0405';
+export const VERSION = '20261102-0405';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -402,7 +402,7 @@ async function openRoomPanel() {
   const cur = currentRoom();
   let rooms = [];
   openModal('Masalar', '<p class="muted">Yükleniyor…</p>');
-  try { rooms = await listRooms(); } catch (e) { toast('Oda listesi alınamadı: internet ya da Firebase izni yok.', 4000); }
+  try { rooms = await listRooms(); } catch (e) { toast('Oda listesi alınamadı: ' + (e && (e.code || e.message) || e), 6000); }
   const fmt = n => n === 1 ? '1 cihaz' : `${n} cihaz`;
   openModal('Masalar', `
     <p class="lead">Şu an: <b class="room-code">${cur ? esc(cur) : 'Yerel masa'}</b></p>
@@ -424,14 +424,14 @@ async function openRoomPanel() {
     $('rmNew').onclick = async () => {
       const c = normRoom($('rmName').value); if (!c) return toast('Oda adı yaz (harf, rakam, tire).');
       try { await enterRoom(c, { create: true, copy: $('rmCopy').checked }); closeModal(); toast(`Oda ${c}`); }
-      catch (e) { toast(e === 'exists' ? 'Bu isimde bir oda zaten var, listeden gir.' : 'Oda açılamadı: internet ya da Firebase izni yok.', 4000); }
+      catch (e) { toast(e === 'exists' ? 'Bu isimde bir oda zaten var, listeden gir.' : 'Oda açılamadı: ' + (e && (e.code || e.message) || e), 6000); }
     };
     body.onclick = async e => {
       const go = e.target.closest('[data-go]'), del = e.target.closest('[data-del]');
       if (go) {
         const c = go.dataset.go;
         try { if (c) await enterRoom(c); else leaveToLocal(); closeModal(); toast(c ? `Oda ${c}` : 'Yerel masa'); }
-        catch (er) { toast(er === 'missing' ? 'Bu oda artık yok.' : 'Odaya girilemedi.', 4000); openRoomPanel(); }
+        catch (er) { toast(er === 'missing' ? 'Bu oda artık yok.' : 'Odaya girilemedi: ' + (er && (er.code || er.message) || er), 6000); openRoomPanel(); }
       }
       if (del) confirmRoomDelete(del.dataset.del);
     };
