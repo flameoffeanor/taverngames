@@ -410,3 +410,6 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .chat-empty { margin: auto; text-align: center; }
 .chat-in { display: flex; gap: 8px; margin-top: 8px; }
 .chat-in input { flex: 1; min-width: 0; }
+.chat-in input { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; outline: none; }
+.chat-in input:focus { border-color: var(--gold2); }
+.chat-in input::placeholder { color: var(--muted); }
