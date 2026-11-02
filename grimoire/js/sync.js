@@ -2,8 +2,8 @@
 // istediğinde yerel masasına döner. Oda silinirse içindekiler yerel masaya düşer.
 // Ortak olan: oyunun kendisi (tokenlar, konumlar, ölü/diri, isimler, hatırlatıcılar, blöfler, gece işaretleri).
 // Yerel kalan: pencereler, sekmeler, perde, simge boyutları, notlar.
-import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory, noteAlert } from './core.js?v=20261102-0425';
-import { isDragging } from './board.js?v=20261102-0425';
+import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory } from './core.js?v=20261102-0431';
+import { isDragging } from './board.js?v=20261102-0431';
 
 const SKEY = 'tg-g3-room', LOCAL = 'tg-g3-local';
 const CID = uid();
@@ -11,6 +11,20 @@ let ref = null, connRef = null, presRef = null, last = {}, ready = false, latest
 const sget = (st, k) => { try { return window[st].getItem(k); } catch (e) { return null; } };
 const sset = (st, k, v) => { try { v == null ? window[st].removeItem(k) : window[st].setItem(k, v); } catch (e) {} };
 const db = () => firebase.database();
+// ---- oda sohbeti (grimoire/<oda>/chat/<id>) ----
+let chat = [], chatHook = null;
+const myUid = () => { try { return firebase.auth().currentUser.uid; } catch (e) { return ''; } };
+export const setChatHook = f => { chatHook = f; };
+export const getChat = () => chat;
+export const chatMe = myUid;
+export function sendChat(text) {
+  text = String(text || '').trim().slice(0, 600); if (!text || !ref || !ready) return Promise.resolve(false);
+  let n = ''; try { n = (firebase.auth().currentUser.email || '').split('@')[0]; } catch (e) {}
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const upd = { ['chat/' + id]: { u: myUid(), n: n || 'anlatıcı', x: text, ts: Date.now() } };
+  chat.slice(0, Math.max(0, chat.length + 1 - 150)).forEach(m => { upd['chat/' + m.id] = null; });
+  return ref.update(upd).then(() => true).catch(e => { fail(e); return false; });
+}
 export const normRoom = c => String(c || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 20);
 export const currentRoom = () => room;
 export const syncState = () => (!room ? 'local' : denied ? 'denied' : !conn ? 'offline' : !ready ? 'connecting' : 'ok');
@@ -33,13 +47,11 @@ function status() {
 function fail(err) {
   if (err && /PERMISSION_DENIED/i.test(String(err.code || err.message))) { denied = true; ready = false; status(); toast('Oda için Firebase izni yok. Kuralları kontrol et.', 5000); }
 }
-function apply(remote, notify) {
+function apply(remote) {
   latest = remote;
-  if (isDragging()) { clearTimeout(tm); tm = setTimeout(() => apply(latest, notify), 250); return; }
-  const oldNote = G.S.notes || '';
+  if (isDragging()) { clearTimeout(tm); tm = setTimeout(() => apply(latest), 250); return; }
   applySharedMap(G.S, remote);
   emit();
-  if (notify && (G.S.notes || '') !== oldNote && G.S.notes) noteAlert(G.S.notes);
 }
 function onSnap(snap) {
   denied = false;
@@ -54,7 +66,10 @@ function onSnap(snap) {
   last = remote;
   const was = ready;
   ready = true; status();
-  if (!same(sharedMap(G.S), remote)) apply(remote, was);
+  if (!same(sharedMap(G.S), remote)) apply(remote);
+  const old = new Set(chat.map(m => m.id));
+  chat = Object.entries(val.chat || {}).map(([id, m]) => ({ id, ...m })).sort((a, b) => a.ts - b.ts);
+  if (chatHook) chatHook(chat, was ? chat.filter(m => !old.has(m.id) && m.u !== myUid()) : []);
 }
 function push(cur) {
   if (!ref || !ready) return;
@@ -82,7 +97,7 @@ function detach() {
   if (ref) { try { ref.off(); } catch (e) {} }
   if (connRef) { try { connRef.off(); } catch (e) {} }
   if (presRef) { try { presRef.remove(); } catch (e) {} }
-  ref = connRef = presRef = null; ready = false; hooks.onCommit = null;
+  ref = connRef = presRef = null; ready = false; hooks.onCommit = null; chat = []; if (chatHook) chatHook([], []);
 }
 function attach(c) {
   detach();
