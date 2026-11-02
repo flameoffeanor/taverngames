@@ -427,3 +427,8 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .info-show.big-text h1 { font-size: clamp(3.4rem, 17vw, 8.5rem); line-height: 1.1; }
 .info-show.big-text .show-in { max-width: 100%; }
 @media (min-width: 720px) { .info-show h1 { font-size: 4.6rem; } .info-show.big-text h1 { font-size: 9rem; } }
+.show-in { width: 100%; }
+.show h1 { width: 100%; overflow-wrap: normal; word-break: normal; }
+.show { grid-template-columns: minmax(0, 1fr); }
+.show-in { min-width: 0; }
+.show-in { grid-template-columns: minmax(0, 1fr); }

@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261102-0451';
+import { normId } from './data.js?v=20261102-0454';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -153,6 +153,13 @@ export function showFull(html, cls = '') {
   el.className = 'show ' + cls;
   el.innerHTML = `<div class="show-in">${html}</div><p class="show-hint">Kapatmak için dokun</p>`;
   el.hidden = false;
+  // başlık ekrana sığana kadar küçült (uzun tek kelimeler taşmasın)
+  const fit = () => el.querySelectorAll('h1').forEach(h => {
+    let fs = parseFloat(getComputedStyle(h).fontSize);
+    for (let i = 0; i < 40 && h.scrollWidth > h.clientWidth + 1 && fs > 18; i++) { fs *= 0.94; h.style.fontSize = fs + 'px'; }
+  });
+  fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 }
 $('show').addEventListener('click', () => { $('show').hidden = true; });
 $('show').addEventListener('contextmenu', e => e.preventDefault());
