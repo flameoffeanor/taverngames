@@ -98,7 +98,7 @@ export const role = id => (G.D && G.D.roles[id]) || { id, name: id || '?', team:
 
 const initials = n => esc(String(n || '?').split(/\s+/).map(w => w[0]).join('').slice(0, 2).toLocaleUpperCase('tr'));
 export const icon = (id, cls = 'ic') =>
-  `<span class="${cls} ini" data-i="${initials(role(id).name)}"><img src="/botc/${esc(id)}.png" alt="" draggable="false" onerror="this.remove()"></span>`;
+  `<span class="${cls} ini" data-i="${initials(role(id).name)}"><img src="/botc_assets/${esc(id)}.png" alt="" draggable="false" onerror="this.remove()"></span>`;
 
 export function toast(msg, ms = 2200) {
   const t = $('toast'); t.textContent = msg; t.hidden = false;
