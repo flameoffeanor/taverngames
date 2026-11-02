@@ -30,20 +30,20 @@ function nt(c){if(!c)return'';const x=String(c.f!=null?c.f:c.v||'');const m=x.ma
 const tx=c=>c?String(c.f!=null?c.f:c.v!=null?c.v:'').trim():'';
 function parse(rows){const td=new Date();td.setHours(0,0,0,0);const now=td.getTime();
  return rows.map(r=>({k:tx(r[0]),d:nd(r[1]),t:nt(r[2])||'20:00',yer:tx(r[3]),ln:tx(r[4]),fy:tx(r[5]),du:tx(r[6])}))
- .filter(e=>e.k&&e.d&&/^https?:\/\//.test(e.ln)).map(e=>{const[y,m,d]=e.d.split('-').map(Number),[h,mi]=e.t.split(':').map(Number);e.dt=new Date(y,m-1,d,h,mi);return e})
+ .filter(e=>e.k&&e.d).map(e=>{e.ig=!/^https?:\/\//.test(e.ln);if(e.ig)e.note=e.ln||"Bilet için Instagram DM'den yazabilirsiniz.";const[y,m,d]=e.d.split('-').map(Number),[h,mi]=e.t.split(':').map(Number);e.dt=new Date(y,m-1,d,h,mi);return e})
  .filter(e=>e.dt.getTime()>=now).sort((a,b)=>a.dt-b.dt)}
-function card(e){const a=el('a','ev');a.style.setProperty('--c',e.s.c);a.href=e.ln;a.target='_blank';a.rel='noopener';
+function card(e){const a=el('a','ev');a.style.setProperty('--c',e.s.c);a.href=e.ig?'https://www.instagram.com/taverngamesclub/':e.ln;a.target='_blank';a.rel='noopener';
  const sold=/tükendi|dolu/i.test(e.du);if(sold)a.classList.add('sold');
  const dt=el('div','dt');dt.append(el('b','',e.dt.getDate()),el('span','',AY[e.dt.getMonth()]));
  const inf=el('div','inf');inf.append(el('h3','',e.s.title),el('p','',GUN[e.dt.getDay()]+' · '+e.t+(e.yer?' · '+e.yer:'')));
- {const tg=el('div','tags');if(e.fy)tg.append(el('span','tag',e.fy));if(e.du&&!sold)tg.append(el('span','tag p',e.du));inf.append(tg)}
+ {const tg=el('div','tags');if(e.ig)tg.append(el('span','tag p',e.note));if(e.fy)tg.append(el('span','tag',e.fy));if(e.du&&!sold)tg.append(el('span','tag p',e.du));inf.append(tg)}
  a.append(dt,inf,el('span','buy',sold?'Tükendi':'Bilet Al'));return a}
 const AYU=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 function render(ev){const l=$('list');l.replaceChildren();let last='';
  ev.forEach(e=>{e.s=SECTIONS.find(s=>s.re.test(e.k))||{title:e.k,c:'#fdb13b'};
   const m=AYU[e.dt.getMonth()]+' '+e.dt.getFullYear();if(m!==last){last=m;l.append(el('div','mon',m))}
   l.append(card(e))})}
-function ld(ev){try{const old=document.getElementById('ev-ld');if(old)old.remove();if(!ev.length)return;
+function ld(ev){try{ev=ev.filter(e=>!e.ig);const old=document.getElementById('ev-ld');if(old)old.remove();if(!ev.length)return;
  const g=ev.map(e=>{const sold=/tükendi|dolu/i.test(e.du),pr=(e.fy.match(/\d+/)||[])[0],o={'@type':'Offer',url:e.ln,priceCurrency:'TRY',availability:'https://schema.org/'+(sold?'SoldOut':'InStock')};if(pr)o.price=pr;
   return{'@type':'Event',name:e.s.title+(e.yer?' - '+e.yer:''),startDate:e.d+'T'+e.t+':00+03:00',eventStatus:'https://schema.org/EventScheduled',eventAttendanceMode:'https://schema.org/OfflineEventAttendanceMode',
   location:{'@type':'Place',name:e.yer||'Kadıköy, İstanbul',address:{'@type':'PostalAddress',addressLocality:'Kadıköy',addressRegion:'İstanbul',addressCountry:'TR'}},
