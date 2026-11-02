@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0435';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0442';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0435';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0435';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0442';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0442';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0435';
-export const VERSION = '20261102-0435';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0442';
+export const VERSION = '20261102-0442';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -624,7 +624,7 @@ const INFOS = [
 const hhmm = ts => new Date(ts).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 function renderChat() {
   const inRoom = !!currentRoom();
-  $('chatBox').hidden = !inRoom; $('notesBox').hidden = inRoom;
+  $('chatBox').hidden = !inRoom; $('notesBox').hidden = inRoom; $('jChat').hidden = !inRoom;
   if (!inRoom) return;
   $('chatRoom').textContent = '· ' + currentRoom();
   const log = $('chatLog'), me = chatMe(), msgs = getChat();
@@ -636,7 +636,7 @@ function renderChat() {
 function startChat() {
   setChatHook((all, fresh) => {
     renderChat();
-    if (fresh.length) { const m = fresh[fresh.length - 1]; noteAlert(`Yeni mesaj · ${m.n}`, () => { if (G.S.open.more) commit(S => { S.open.more = false; }, true); $('chatBox').scrollIntoView({ behavior: 'smooth' }); $('chatText').focus({ preventScroll: true }); }); }
+    if (fresh.length) { const m = fresh[fresh.length - 1]; noteAlert(`${m.n}: ${m.x.length > 90 ? m.x.slice(0, 90) + '…' : m.x}`, () => { if (G.S.open.more) commit(S => { S.open.more = false; }, true); $('chatBox').scrollIntoView({ behavior: 'smooth' }); $('chatText').focus({ preventScroll: true }); }); }
   });
   $('chatForm').onsubmit = async e => { e.preventDefault(); const v = $('chatText').value; if (!v.trim()) return; $('chatText').value = ''; if (!(await sendChat(v))) { $('chatText').value = v; toast('Mesaj gönderilemedi.'); } const l = $('chatLog'); l.scrollTop = l.scrollHeight; };
 }
@@ -713,6 +713,7 @@ function wire() {
   let nt;
   $('notes').oninput = e => { clearTimeout(nt); const v = e.target.value; nt = setTimeout(() => { G.S.notes = v; save(); }, 300); };
   startChat();
+  $('jChat').onclick = e => { e.preventDefault(); if (G.S.open.more) commit(S => { S.open.more = false; }, true); $('chatBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
   $('bNotesClear').onclick = () => confirmBox('Notlar silinsin mi?', 'Sil', () => commit(S => { S.notes = ''; }, true));
   $('bExport').onclick = () => {
     const blob = new Blob([JSON.stringify(G.S, null, 1)], { type: 'application/json' });

@@ -2,8 +2,8 @@
 // istediğinde yerel masasına döner. Oda silinirse içindekiler yerel masaya düşer.
 // Ortak olan: oyunun kendisi (tokenlar, konumlar, ölü/diri, isimler, hatırlatıcılar, blöfler, gece işaretleri).
 // Yerel kalan: pencereler, sekmeler, perde, simge boyutları, notlar.
-import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory } from './core.js?v=20261102-0435';
-import { isDragging } from './board.js?v=20261102-0435';
+import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory } from './core.js?v=20261102-0442';
+import { isDragging } from './board.js?v=20261102-0442';
 
 const SKEY = 'tg-g3-room', LOCAL = 'tg-g3-local';
 const CID = uid();
