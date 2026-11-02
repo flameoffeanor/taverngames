@@ -379,9 +379,17 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 /* basılı tutma / büyük gösterimde metin seçilmesin, uzun basma menüsü çıkmasın */
 .show, .show *, .board, .board * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
-/* senkron göstergesi */
+/* masa / oda göstergesi */
 .top { position: sticky; }
-.sync { position: absolute; right: 8px; top: 12px; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); background: #5b6577; cursor: pointer; }
-.sync.ok { background: #3fbf8a; box-shadow: 0 0 8px #3fbf8a; }
-.sync.warn { background: #e0a93b; }
-.sync.bad { background: #d0645c; }
+.sync { position: absolute; left: 8px; top: 10px; max-width: 42vw; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px; border: 1px solid var(--line2); background: rgba(20, 26, 37, .9); color: var(--text); font: 600 .78rem Inter, sans-serif; cursor: pointer; }
+.sync i { width: 10px; height: 10px; border-radius: 50%; background: #5b6577; flex: none; }
+.sync span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sync.ok i { background: #3fbf8a; box-shadow: 0 0 8px #3fbf8a; } .sync.ok { border-color: #2f7f5f; }
+.sync.warn i { background: #e0a93b; } .sync.bad i { background: #d0645c; }
+.rooms { display: grid; gap: 8px; }
+.room { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--line); }
+.room > div:first-child { flex: 1; display: grid; }
+.room small { color: var(--muted); }
+.room.here { border-color: var(--gold2); background: #1d2433; }
+.here-t { color: var(--gold); font-weight: 700; font-size: .85rem; }
+.room-code { color: var(--gold); }

@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0257';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0315';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0257';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0257';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0315';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0315';
 
-import { connectRoom, disconnect, stopSync, roomExists, currentRoom, lastRoom, savedSessionRoom, syncState, normRoom } from './sync.js?v=20261102-0257';
-export const VERSION = '20261102-0257';
+import { enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0315';
+export const VERSION = '20261102-0315';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -19,7 +19,7 @@ auth.onAuthStateChanged(async user => {
   G.D = await loadData();
   show('app');
   start();
-  if (savedSessionRoom()) connectRoom(savedSessionRoom()); // sayfa yenilenirse oda korunur; uygulama yeniden açılırsa yerel başlar
+  resumeSession(); // sayfa yenilenirse oda korunur; uygulama yeniden açılırsa yerel masayla başlar
 });
 $('loginForm').onsubmit = async e => {
   e.preventDefault(); $('lErr').hidden = true;
@@ -397,33 +397,56 @@ function pickRole(o, cb, back) {
 }
 
 
-// ---- senkron paneli: varsayılan yerel; kod girip odaya bağlanınca iki cihaz aynı oyunu paylaşır ----
-function openSyncPanel() {
-  const room = currentRoom(), st = syncState();
-  const stTxt = { ok: 'bağlı', connecting: 'bağlanıyor…', offline: 'internet yok, gelince eşitlenir', denied: 'izin yok (Firebase kuralları)' }[st];
-  if (room) {
-    openModal('Senkron', `
-      <p class="lead">Bağlı oda: <b class="room-code">${esc(room)}</b> · ${stTxt}</p>
-      <p class="muted small">Bu odaya aynı kodla bağlanan cihazlar aynı oyunu görür. Pencereler, sekmeler, perde ve simge boyutları cihaza özel kalır.</p>
-      <button class="btn warn wide" id="syDis">Bağlantıyı kes (yerel devam et)</button>`, () => {
-      $('syDis').onclick = () => { disconnect(); closeModal(); toast('Yerel moda geçildi. Oyun bu cihazda kaldı.'); };
-    });
-    return;
-  }
-  openModal('Senkron', `
-    <p class="lead">Şu an <b>yerel</b>: bu cihaz tek başına çalışıyor.</p>
-    <p class="muted small">Aynı masayı iki yönetici beraber yönetecekse ikisi de aynı oda kodunu girsin. Başka masa için başka kod kullan. Kod girmeyen cihaz hiçbir şeyi paylaşmaz.</p>
-    <label class="lbl">Oda kodu</label>
-    <div class="row-in"><input id="syCode" value="${esc(lastRoom())}" placeholder="örn. masa1" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20">
-      <button class="btn small primary" id="syGo">Bağlan</button></div>`, () => {
-    $('syGo').onclick = async () => {
-      const c = normRoom($('syCode').value); if (!c) return toast('Önce bir oda kodu yaz (harf, rakam, tire).');
-      let exists;
-      try { exists = await roomExists(c); } catch (e) { return toast('Odaya ulaşılamadı: internet ya da Firebase izni yok.', 4000); }
-      confirmBox(exists
-        ? `"${c}" odasında oyun var. Bağlanınca bu cihazdaki oyun SİLİNİP odadaki oyun yüklenecek. Devam?`
-        : `"${c}" odası boş. Bağlanınca bu cihazdaki oyun odaya yazılacak, diğer cihaz kodu girince onu alacak. Devam?`,
-        'Bağlan', () => { connectRoom(c); closeModal(); toast(`Oda ${c}`); }, { danger: exists });
+// ---- masalar / odalar paneli ----
+async function openRoomPanel() {
+  const cur = currentRoom();
+  let rooms = [];
+  openModal('Masalar', '<p class="muted">Yükleniyor…</p>');
+  try { rooms = await listRooms(); } catch (e) { toast('Oda listesi alınamadı: internet ya da Firebase izni yok.', 4000); }
+  const fmt = n => n === 1 ? '1 cihaz' : `${n} cihaz`;
+  openModal('Masalar', `
+    <p class="lead">Şu an: <b class="room-code">${cur ? esc(cur) : 'Yerel masa'}</b></p>
+    <div class="rooms">
+      <div class="room${cur ? '' : ' here'}"><div><b>Yerel masa</b><small>Sadece bu cihazda</small></div>
+        ${cur ? '<button class="btn small" data-go="">Dön</button>' : '<span class="here-t">Buradasın</span>'}</div>
+      ${rooms.map(r => `<div class="room${r.code === cur ? ' here' : ''}"><div><b>${esc(r.code)}</b><small>${fmt(r.n)} bağlı</small></div>
+        ${r.code === cur ? '<span class="here-t">Buradasın</span>' : `<button class="btn small" data-go="${esc(r.code)}">Gir</button>`}
+        <button class="ib" data-del="${esc(r.code)}" title="Odayı sil" aria-label="Odayı sil">🗑</button></div>`).join('')}
+      ${rooms.length ? '' : '<p class="muted small">Henüz oda yok.</p>'}
+    </div>
+    <label class="lbl">Yeni oda</label>
+    <div class="row-in"><input id="rmName" placeholder="örn. masa1" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20">
+      <button class="btn small primary" id="rmNew">Oluştur ve gir</button></div>
+    <label class="sw"><input type="checkbox" id="rmCopy" ${G.S.tokens.length ? 'checked' : ''}><i></i>Şu an ekrandaki oyunu odaya kopyala</label>
+    <p class="muted small">Aynı odaya giren cihazlar aynı oyunu paylaşır. Yerel masan ve diğer odalar birbirinden bağımsızdır; istediğin zaman geçiş yapabilirsin.</p>
+    <button class="btn ghost small" id="rmRefresh">Listeyi yenile</button>`, body => {
+    $('rmRefresh').onclick = openRoomPanel;
+    $('rmNew').onclick = async () => {
+      const c = normRoom($('rmName').value); if (!c) return toast('Oda adı yaz (harf, rakam, tire).');
+      try { await enterRoom(c, { create: true, copy: $('rmCopy').checked }); closeModal(); toast(`Oda ${c}`); }
+      catch (e) { toast(e === 'exists' ? 'Bu isimde bir oda zaten var, listeden gir.' : 'Oda açılamadı: internet ya da Firebase izni yok.', 4000); }
+    };
+    body.onclick = async e => {
+      const go = e.target.closest('[data-go]'), del = e.target.closest('[data-del]');
+      if (go) {
+        const c = go.dataset.go;
+        try { if (c) await enterRoom(c); else leaveToLocal(); closeModal(); toast(c ? `Oda ${c}` : 'Yerel masa'); }
+        catch (er) { toast(er === 'missing' ? 'Bu oda artık yok.' : 'Odaya girilemedi.', 4000); openRoomPanel(); }
+      }
+      if (del) confirmRoomDelete(del.dataset.del);
+    };
+  });
+}
+function confirmRoomDelete(code) {
+  openModal('Odayı sil', `
+    <p class="lead"><b>${esc(code)}</b> odası ve içindeki oyun <b>herkes için kalıcı olarak silinecek</b>. Odadaki cihazlar yerel masalarına döner. Bu geri alınamaz.</p>
+    <label class="sw"><input type="checkbox" id="rdOk"><i></i>Onaylıyorum, odayı silmek istiyorum</label>
+    <div class="row-btns"><button class="btn warn" id="rdGo" disabled>Odayı sil</button><button class="btn ghost" id="rdNo">Vazgeç</button></div>`, () => {
+    $('rdOk').onchange = e => { $('rdGo').disabled = !e.target.checked; };
+    $('rdNo').onclick = openRoomPanel;
+    $('rdGo').onclick = async () => {
+      try { await deleteRoom(code); toast(`${code} silindi`); } catch (e) { toast('Silinemedi: internet ya da Firebase izni yok.', 4000); }
+      openRoomPanel();
     };
   });
 }
@@ -638,8 +661,8 @@ function wire() {
   $('bluffs').onclick = e => { const b = e.target.closest('[data-b]'); if (b) pickBluff(+b.dataset.b); };
   $('bBluffAdd').onclick = () => commit(S => { S.bluffs.push(null); });
   $('bBluffShow').onclick = () => showInfo('bluffs');
-  $('syncDot').onclick = openSyncPanel;
-  $('bSync').onclick = openSyncPanel;
+  $('syncDot').onclick = openRoomPanel;
+  $('bSync').onclick = openRoomPanel;
   $('optNums').onchange = e => commit(S => { S.board.nums = e.target.checked; }, true);
   $('optRole').oninput = e => commit(S => { S.board.roleScale = +e.target.value; }, true);
   $('optRem').oninput = e => commit(S => { S.board.remScale = +e.target.value; }, true);
