@@ -422,3 +422,8 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .show-roles .bigtok { max-width: min(44vw, 260px); }
 .show-roles .bigtok span { font-size: clamp(1.4rem, 6.2vw, 2.2rem); }
 @media (min-width: 720px) { .bigtok span { font-size: 3.4rem; } .show-roles .bigtok span { font-size: 2.4rem; } .show-roles .bigtok { max-width: 300px; } }
+/* bilgi kartı başlıkları: mümkün olduğunca büyük */
+.info-show h1 { font-size: clamp(2.2rem, 9.5vw, 4.2rem); }
+.info-show.big-text h1 { font-size: clamp(3.4rem, 17vw, 8.5rem); line-height: 1.1; }
+.info-show.big-text .show-in { max-width: 100%; }
+@media (min-width: 720px) { .info-show h1 { font-size: 4.6rem; } .info-show.big-text h1 { font-size: 9rem; } }
