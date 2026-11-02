@@ -417,3 +417,8 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .chat-in input { width: 0; }
 .note-alert { max-width: 92vw; white-space: normal; text-align: left; border-radius: 16px; line-height: 1.3; }
 .note-alert b { display: block; font-size: .72rem; opacity: .75; }
+/* büyük gösterimde karakter adları: uzaktan rahat okunsun */
+.bigtok span { font-size: clamp(1.9rem, 8.5vw, 3.2rem); line-height: 1.15; text-align: center; text-shadow: 0 2px 14px rgba(0,0,0,.7); }
+.show-roles .bigtok { max-width: min(44vw, 260px); }
+.show-roles .bigtok span { font-size: clamp(1.4rem, 6.2vw, 2.2rem); }
+@media (min-width: 720px) { .bigtok span { font-size: 3.4rem; } .show-roles .bigtok span { font-size: 2.4rem; } .show-roles .bigtok { max-width: 300px; } }
