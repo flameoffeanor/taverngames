@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261102-0454';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261103-2104';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261102-0454';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261102-0454';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261103-2104';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261103-2104';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261102-0454';
-export const VERSION = '20261102-0454';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261103-2104';
+export const VERSION = '20261103-2104';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -401,38 +401,41 @@ function pickRole(o, cb, back) {
 // ---- masalar / odalar paneli ----
 async function openRoomPanel() {
   const cur = currentRoom();
-  let rooms = [];
+  let rooms = [], offline = false;
   openModal('Masalar', '<p class="muted">Yükleniyor…</p>');
-  try { rooms = await listRooms(); } catch (e) { toast('Oda listesi alınamadı: ' + (e && (e.code || e.message) || e), 6000); }
-  const fmt = n => n === 1 ? '1 cihaz' : `${n} cihaz`;
+  try { ({ rooms, offline } = await listRooms()); } catch (e) { toast('Oda listesi alınamadı: ' + (e && (e.code || e.message) || e), 6000); }
+  const fmt = n => n === 1 ? '1 cihaz bağlı' : `${n} cihaz bağlı`;
+  const sub = r => offline ? (r.cached ? 'Bu cihazda kayıtlı' : 'Kayıt yok, internet gerekli') + (r.pending ? ' · gönderilmemiş değişiklik var' : '')
+    : fmt(r.n) + (r.pending ? ' · gönderilmemiş değişiklik var' : '');
   openModal('Masalar', `
     <p class="lead">Şu an: <b class="room-code">${cur ? esc(cur) : 'Yerel masa'}</b></p>
+    ${offline ? '<p class="offline-note">İnternet yok. Bu cihazda kayıtlı odalar arasında geçebilirsin; değişiklikler internet gelince gönderilir. Oda açma ve silme internet ister.</p>' : ''}
     <div class="rooms">
       <div class="room${cur ? '' : ' here'}"><div><b>Yerel masa</b><small>Sadece bu cihazda</small></div>
         ${cur ? '<button class="btn small" data-go="">Dön</button>' : '<span class="here-t">Buradasın</span>'}</div>
-      ${rooms.map(r => `<div class="room${r.code === cur ? ' here' : ''}"><div><b>${esc(r.code)}</b><small>${fmt(r.n)} bağlı</small></div>
-        ${r.code === cur ? '<span class="here-t">Buradasın</span>' : `<button class="btn small" data-go="${esc(r.code)}">Gir</button>`}
-        <button class="ib" data-del="${esc(r.code)}" title="Odayı sil" aria-label="Odayı sil">🗑</button></div>`).join('')}
-      ${rooms.length ? '' : '<p class="muted small">Henüz oda yok.</p>'}
+      ${rooms.map(r => `<div class="room${r.code === cur ? ' here' : ''}"><div><b>${esc(r.code)}</b><small>${sub(r)}</small></div>
+        ${r.code === cur ? '<span class="here-t">Buradasın</span>' : (offline && !r.cached ? '' : `<button class="btn small" data-go="${esc(r.code)}">Gir</button>`)}
+        ${offline ? '' : `<button class="ib" data-del="${esc(r.code)}" title="Odayı sil" aria-label="Odayı sil">🗑</button>`}</div>`).join('')}
+      ${rooms.length ? '' : `<p class="muted small">${offline ? 'Bu cihazda kayıtlı oda yok.' : 'Henüz oda yok.'}</p>`}
     </div>
-    <label class="lbl">Yeni oda</label>
+    ${offline ? '' : `<label class="lbl">Yeni oda</label>
     <div class="row-in"><input id="rmName" placeholder="örn. masa1" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="20">
       <button class="btn small primary" id="rmNew">Oluştur ve gir</button></div>
-    <label class="sw"><input type="checkbox" id="rmCopy" ${G.S.tokens.length ? 'checked' : ''}><i></i>Şu an ekrandaki oyunu odaya kopyala</label>
-    <p class="muted small">Aynı odaya giren cihazlar aynı oyunu paylaşır. Yerel masan ve diğer odalar birbirinden bağımsızdır; istediğin zaman geçiş yapabilirsin.</p>
+    <label class="sw"><input type="checkbox" id="rmCopy" ${G.S.tokens.length ? 'checked' : ''}><i></i>Şu an ekrandaki oyunu odaya kopyala</label>`}
+    <p class="muted small">Aynı odaya giren cihazlar aynı oyunu paylaşır. Yerel masan ve diğer odalar birbirinden bağımsızdır; istediğin zaman geçiş yapabilirsin. Girdiğin odalar bu cihazda saklanır, internet giderse de açılır.</p>
     <button class="btn ghost small" id="rmRefresh">Listeyi yenile</button>`, body => {
     $('rmRefresh').onclick = openRoomPanel;
-    $('rmNew').onclick = async () => {
+    if ($('rmNew')) $('rmNew').onclick = async () => {
       const c = normRoom($('rmName').value); if (!c) return toast('Oda adı yaz (harf, rakam, tire).');
       try { await enterRoom(c, { create: true, copy: $('rmCopy').checked }); closeModal(); toast(`Oda ${c}`); }
-      catch (e) { toast(e === 'exists' ? 'Bu isimde bir oda zaten var, listeden gir.' : 'Oda açılamadı: ' + (e && (e.code || e.message) || e), 6000); }
+      catch (e) { toast(e === 'exists' ? 'Bu isimde bir oda zaten var, listeden gir.' : e === 'offline' ? 'İnternet yok, oda açılamadı.' : 'Oda açılamadı: ' + (e && (e.code || e.message) || e), 6000); }
     };
     body.onclick = async e => {
       const go = e.target.closest('[data-go]'), del = e.target.closest('[data-del]');
       if (go) {
         const c = go.dataset.go;
         try { if (c) await enterRoom(c); else leaveToLocal(); closeModal(); toast(c ? `Oda ${c}` : 'Yerel masa'); }
-        catch (er) { toast(er === 'missing' ? 'Bu oda artık yok.' : 'Odaya girilemedi: ' + (er && (er.code || er.message) || er), 6000); openRoomPanel(); }
+        catch (er) { toast(er === 'missing' ? 'Bu oda artık yok.' : er === 'offline' ? 'İnternet yok ve bu oda bu cihazda kayıtlı değil.' : 'Odaya girilemedi: ' + (er && (er.code || er.message) || er), 6000); openRoomPanel(); }
       }
       if (del) confirmRoomDelete(del.dataset.del);
     };
@@ -446,7 +449,7 @@ function confirmRoomDelete(code) {
     $('rdOk').onchange = e => { $('rdGo').disabled = !e.target.checked; };
     $('rdNo').onclick = openRoomPanel;
     $('rdGo').onclick = async () => {
-      try { await deleteRoom(code); toast(`${code} silindi`); } catch (e) { toast('Silinemedi: internet ya da Firebase izni yok.', 4000); }
+      try { await deleteRoom(code); toast(`${code} silindi`); } catch (e) { toast(e === 'offline' ? 'İnternet yok, oda silinemedi.' : 'Silinemedi: ' + (e && (e.code || e.message) || e), 5000); }
       openRoomPanel();
     };
   });
@@ -638,7 +641,7 @@ function startChat() {
     renderChat();
     if (fresh.length) { const m = fresh[fresh.length - 1]; noteAlert(`${m.n}: ${m.x.length > 90 ? m.x.slice(0, 90) + '…' : m.x}`, () => { if (G.S.open.more) commit(S => { S.open.more = false; }, true); $('chatBox').scrollIntoView({ behavior: 'smooth' }); $('chatText').focus({ preventScroll: true }); }); }
   });
-  $('chatForm').onsubmit = async e => { e.preventDefault(); const v = $('chatText').value; if (!v.trim()) return; $('chatText').value = ''; if (!(await sendChat(v))) { $('chatText').value = v; toast('Mesaj gönderilemedi.'); } const l = $('chatLog'); l.scrollTop = l.scrollHeight; };
+  $('chatForm').onsubmit = async e => { e.preventDefault(); const v = $('chatText').value; if (!v.trim()) return; $('chatText').value = ''; const r = await sendChat(v); if (r !== true) { $('chatText').value = v; toast(r === 'offline' ? 'İnternet yok, mesaj gönderilemedi.' : 'Mesaj gönderilemedi.'); } const l = $('chatLog'); l.scrollTop = l.scrollHeight; };
 }
 function renderMore() {
   $('infoGrid').innerHTML = INFOS.map(([k, t, c]) => `<button class="btn info ${c}" data-info="${k}">${esc(t)}</button>`).join('')

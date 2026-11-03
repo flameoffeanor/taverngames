@@ -432,3 +432,4 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .show { grid-template-columns: minmax(0, 1fr); }
 .show-in { min-width: 0; }
 .show-in { grid-template-columns: minmax(0, 1fr); }
+.offline-note { background: #3a2e14; border: 1px solid #7a5f22; color: #f0d79a; border-radius: 10px; padding: 8px 12px; font-size: .85rem; margin: 0 0 10px; }
