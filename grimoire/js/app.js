@@ -1,16 +1,36 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261103-2104';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261103-2129';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261103-2104';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261103-2104';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay } from './core.js?v=20261103-2129';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H } from './board.js?v=20261103-2129';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261103-2104';
-export const VERSION = '20261103-2104';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261103-2129';
+export const VERSION = '20261103-2129';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
 
 // ================= açılış =================
+// Çevrimdışı kabuk: servis çalışanını kaydet ve şu an yüklü her şeyi (sayfa, kod, yazı tipleri, Firebase betikleri, görseller) kaydet.
+async function cacheShell() {
+  try {
+    const c = await caches.open('tg-grimoire-v1');
+    const urls = new Set([location.href.split('#')[0], ...performance.getEntriesByType('resource').map(r => r.name)]);
+    const ok = u => { try { const x = new URL(u); return /^https?:$/.test(x.protocol) && (x.origin === location.origin || ['www.gstatic.com', 'fonts.googleapis.com', 'fonts.gstatic.com'].includes(x.hostname)) && !x.pathname.endsWith('/sw.js'); } catch (e) { return false; } };
+    const have = new Set((await c.keys()).map(k => k.url));
+    for (const u of urls) {
+      if (!ok(u) || have.has(u)) continue;
+      try { const res = await fetch(u, { mode: new URL(u).origin === location.origin ? 'same-origin' : 'no-cors' }); if (res.ok || res.type === 'opaque') await c.put(u, res); } catch (e) {}
+    }
+    // eski sürüm damgalı kopyaları temizle (aynı yol, farklı ?v=)
+    const cur = new Set(urls), paths = new Set([...urls].map(u => u.split('?')[0]));
+    for (const k of await c.keys()) if (!cur.has(k.url) && paths.has(k.url.split('?')[0])) await c.delete(k);
+  } catch (e) {}
+}
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => setTimeout(cacheShell, 3000)).catch(() => {}));
+}
+
 const auth = firebase.auth();
 auth.onAuthStateChanged(async user => {
   if (user && user.isAnonymous) { auth.signOut(); return; } // quiz sayfasının anonim oturumu grimoire girişi sayılmaz

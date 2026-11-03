@@ -6,8 +6,8 @@
 // İnternetsiz çalışma: cihaz, girdiği her odanın son halini ve henüz sunucuya ulaştığı onaylanmamış
 // değişiklikleri ("dirty" anahtarlar) localStorage'da tutar. İnternet yokken kayıtlı odalar arasında geçilebilir.
 // Bağlantı gelince: sunucudaki hal alınır, üstüne bu cihazın onaylanmamış değişiklikleri yazılır ve gönderilir.
-import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory, subscribe } from './core.js?v=20261103-2104';
-import { isDragging } from './board.js?v=20261103-2104';
+import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory, subscribe } from './core.js?v=20261103-2129';
+import { isDragging } from './board.js?v=20261103-2129';
 
 const SKEY = 'tg-g3-room', LOCAL = 'tg-g3-local', CPRE = 'tg-g3-rc:';
 const CID = uid();
