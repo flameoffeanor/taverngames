@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2248';
-import { remTr } from './data.js?v=20261108-2248';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2301';
+import { remTr } from './data.js?v=20261108-2301';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -112,6 +112,7 @@ export function renderBoard() {
   const rems = S.tokens.filter(t => t.kind === 'rem').map(t => remHTML(t)).join('');
   $('tokens').innerHTML = roles + rems;
   b.classList.toggle('locked', !!S.board.locked);
+  $('boardWrap').classList.toggle('locked', !!S.board.locked);
   $('wrapLock').classList.toggle('on', !!S.board.locked);
   $('wrapLock').innerHTML = S.board.locked ? '🔒' : '🔓';
   $('boardWrap').classList.toggle('veiled', !!S.board.hidden);
@@ -268,7 +269,7 @@ function up(e) {
 
 // ---- tabla yüksekliği tutamacı ----
 let rz = null;
-function rzDown(e) { rz = { y: e.clientY, h: H(), pid: e.pointerId }; e.target.setPointerCapture(e.pointerId); e.preventDefault(); }
+function rzDown(e) { if (G.S.board.locked) return; rz = { y: e.clientY, h: H(), pid: e.pointerId }; e.target.setPointerCapture(e.pointerId); e.preventDefault(); }
 function rzMove(e) {
   if (!rz || e.pointerId !== rz.pid) return;
   const h = Math.max(220, rz.h + e.clientY - rz.y);

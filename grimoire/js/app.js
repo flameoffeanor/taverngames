@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2248';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2301';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2248';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2248';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2301';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2301';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2248';
-export const VERSION = '20261108-2248';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2301';
+export const VERSION = '20261108-2301';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -681,7 +681,22 @@ function confirmRoomDelete(code) {
 }
 
 // ---- hatırlatıcı seçici ----
-let remAll = false, remMulti = false;
+let remAll = false, remMulti = true;
+// Tablada olanların hatırlatıcıları ekrana kaydırmadan sığsın (sütun sayısı artar, simge küçülür; en az 54px).
+// "Tümünü göster" açıkken makul boyutta kalır ve kaydırılır.
+function fitRemGrid(g) {
+  if (!g) return;
+  g.style.gridTemplateColumns = '';
+  if (g.classList.contains('all')) return;
+  const n = g.children.length, w = g.clientWidth, gap = 8;
+  const avail = Math.max(160, window.innerHeight - 300);
+  for (let c = 3; c <= 8; c++) {
+    const s = (w - gap * (c - 1)) / c;
+    if (s < 54) break;
+    g.style.gridTemplateColumns = `repeat(${c}, 1fr)`;
+    if (Math.ceil(n / c) * (s + gap) <= avail) break;
+  }
+}
 function pickReminder(ownerId, back) {
   const render = () => {
     const play = [...inPlay()];
@@ -693,16 +708,17 @@ function pickReminder(ownerId, back) {
     scriptIds().forEach(rid => role(rid).remindersGlobal.forEach(t => push(rid, t)));
     const owner = ownerId && tokById(ownerId);
     openModal(owner ? `Hatırlatıcı · ${esc(RN(owner.role))}` : 'Hatırlatıcı Seç', `
-      <div class="rem-grid">
+      <div class="rem-scroll${remAll ? ' all' : ''}"><div class="rem-grid${remAll ? ' all' : ''}">
         <button class="rpk good" data-t="İyi takım" data-g="👍" data-tone="good"><span class="rtxt">${glyphHTML('👍')}</span><svg viewBox="0 0 100 100" aria-hidden="true">${arcText('İyi takım', 'arcB', 13.5)}</svg></button>
         <button class="rpk evil" data-t="Kötü takım" data-g="👎" data-tone="evil"><span class="rtxt">${glyphHTML('👎')}</span><svg viewBox="0 0 100 100" aria-hidden="true">${arcText('Kötü takım', 'arcB', 13.5)}</svg></button>
         ${items.map(x => `<button class="rpk" data-t="${esc(x.text)}" data-r="${x.rid}">${icon(x.rid, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(RN(x.rid), 'arcT', 13)}${arcText(remTr(x.text), 'arcB', 13.5)}</svg></button>`).join('')}
-      </div>
+      </div></div>
       ${items.length ? '' : '<p class="muted small">Tablada hatırlatıcısı olan karakter yok. "Tüm hatırlatıcıları göster"i aç.</p>'}
       <div class="row-in"><input id="rmCustom" placeholder="Kendi hatırlatıcını yaz"><button class="btn small" id="rmCustomOk">Ekle</button></div>
       <label class="sw"><input type="checkbox" id="rmAll" ${remAll ? 'checked' : ''}><i></i>Tüm hatırlatıcıları göster</label>
       <label class="sw"><input type="checkbox" id="rmMulti" ${remMulti ? 'checked' : ''}><i></i>Birden fazla ekle</label>`, body => {
       $('rmAll').onchange = e => { remAll = e.target.checked; render(); };
+      fitRemGrid(body.querySelector('.rem-grid'));
       $('rmMulti').onchange = e => { remMulti = e.target.checked; };
       const add = (text, rid, glyph, tone) => {
         commit(S => {
@@ -864,10 +880,21 @@ function renderChat() {
     : '<p class="muted small chat-empty">Henüz mesaj yok. Yazdıkların sadece bu odadakilere gider.</p>';
   if (stick) log.scrollTop = log.scrollHeight;
 }
+// Sohbet bildirimi: üstte kalır, dokunana kadar kapanmaz; birden fazlaysa alt alta dizilir
+function chatAlert(m) {
+  let box = $('chatAlerts');
+  if (!box) { box = document.createElement('div'); box.id = 'chatAlerts'; box.className = 'chat-alerts'; document.body.appendChild(box); }
+  const b = document.createElement('button');
+  b.className = 'chat-alert';
+  b.innerHTML = `<b>${esc(m.n)}</b><span>${esc(m.x)}</span><small>dokun, kapat</small>`;
+  b.onclick = () => b.remove();
+  box.appendChild(b);
+  while (box.children.length > 4) box.firstChild.remove();
+}
 function startChat() {
   setChatHook((all, fresh) => {
     renderChat();
-    if (fresh.length) { const m = fresh[fresh.length - 1]; noteAlert(`${m.n}: ${m.x.length > 90 ? m.x.slice(0, 90) + '…' : m.x}`, () => { if (G.S.open.more) commit(S => { S.open.more = false; }, true); $('chatBox').scrollIntoView({ behavior: 'smooth' }); $('chatText').focus({ preventScroll: true }); }); }
+    fresh.forEach(m => chatAlert(m));
   });
   $('chatForm').onsubmit = async e => { e.preventDefault(); const v = $('chatText').value; if (!v.trim()) return; $('chatText').value = ''; const r = await sendChat(v); if (r !== true) { $('chatText').value = v; toast(r === 'offline' ? 'İnternet yok, mesaj gönderilemedi.' : 'Mesaj gönderilemedi.'); } const l = $('chatLog'); l.scrollTop = l.scrollHeight; };
 }
@@ -903,8 +930,8 @@ function wire() {
   $('bTools').onclick = () => commit(S => { S.board.tools = !S.board.tools; }, true);
   $('bHide').onclick = () => commit(S => { S.board.hidden = !S.board.hidden; }, true);
   $('bHeight').onclick = () => commit(S => { S.board.ratio = 0; }, true);
-  $('bClear').onclick = () => confirmBox('Tabladaki tüm simgeler, hatırlatıcılar, isimler ve blöfler silinsin mi? (Senaryo ve ayarlar kalır.)' + (currentRoom() ? ' DİKKAT: ortak oda bağlı, diğer cihazda da silinir.' : ''), 'Temizle', () => {
-    commit(S => { S.tokens = []; S.fangguDone = false; S.bluffs = [null, null, null]; S.night.done = { first: [], other: [] }; });
+  $('bClear').onclick = () => confirmBox('Tabladaki tüm simgeler, hatırlatıcılar, isimler, blöfler ve oyun günlüğü silinsin, evre Gece 1\'e dönsün mü? (Senaryo ve ayarlar kalır.)' + (currentRoom() ? ' DİKKAT: ortak oda bağlı, diğer cihazda da silinir.' : ''), 'Temizle', () => {
+    commit(S => { S.tokens = []; S.fangguDone = false; S.bluffs = [null, null, null]; S.night.done = { first: [], other: [] }; S.phase = { n: 1, day: false }; S.log = []; S.night.tab = 'first'; });
   });
   $('bAddTok').onclick = () => pickRole({ title: 'Simge ekle' }, rid => { commit(() => { addRoleToken(rid); }); closeModal(); });
   $('bAddTrav').onclick = () => pickRole({ title: 'Gezgin ekle', team: 'traveller' }, rid => { commit(() => { addRoleToken(rid); }); closeModal(); });

@@ -499,3 +499,18 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .log .lg-rem span, .log .lg-remoff span { color: #e8a838; }
 .log .lg-death span { color: #ff8a80; } .log .lg-revive span { color: #3fbf8a; } .log .lg-info span { color: #8fb8ff; }
 .stepper h2.gone { text-decoration: line-through; text-decoration-thickness: 2px; opacity: .7; }
+
+/* kilitliyken tabla boyu da değişmez */
+.board-wrap.locked .board-grip { opacity: .25; cursor: default; }
+/* gece adımlarında sadece geri al (küçük) */
+.board-wrap.stepping #wrapFull, .board-wrap.stepping #wrapLock { display: none; }
+.board-wrap.stepping #wrapUndo { width: 34px; height: 34px; min-height: 0; font-size: .9rem; padding: 0; }
+/* hatırlatıcı seçici */
+.rem-grid { gap: 8px; }
+.rem-grid.all { grid-template-columns: repeat(auto-fill, minmax(74px, 1fr)); }
+.rem-scroll.all { max-height: calc(100vh - 330px); overflow-y: auto; padding: 2px; }
+/* sohbet bildirimleri */
+.chat-alerts { position: fixed; top: calc(var(--safe-t, 0px) + 6px); left: 50%; transform: translateX(-50%); z-index: 96; width: min(94vw, 520px); display: grid; gap: 6px; }
+.chat-alert { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; text-align: left; background: var(--gold); color: #1a1405; border: 0; border-radius: 14px; padding: 9px 14px; font: 500 .95rem/1.3 Inter, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,.6); animation: nal .35s ease; }
+.chat-alert b { font-weight: 800; } .chat-alert span { word-break: break-word; }
+.chat-alert small { grid-column: 1 / -1; font-size: .68rem; opacity: .6; }
