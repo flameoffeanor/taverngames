@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2301';
-import { remTr } from './data.js?v=20261108-2301';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2317';
+import { remTr } from './data.js?v=20261108-2317';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -75,7 +75,7 @@ function roleHTML(t, nums) {
       style="--s:${s}px;z-index:${2 + (t.z || 0)};${linked ? `--gc:${colorOf(t.id)};` : ''}left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
     <div class="disc">${icon(t.role, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(r.name, 'arcB', 12.5)}</svg></div>
     ${f ? `<span class="nb nf">${f}</span>` : ''}${o ? `<span class="nb no">${o}</span>` : ''}
-    ${t.dead ? `<span class="shroud"></span>${t.voteUsed ? '' : '<span class="vt" title="Ölü oyu var"></span>'}` : ''}
+    ${t.dead ? `<svg class="dx${t.voteUsed ? ' used' : ''}" viewBox="0 0 100 100" aria-hidden="true"><path d="M16 16 84 84M84 16 16 84"/></svg>` : ''}
     ${t.name ? `<span class="pname">${esc(t.name)}</span>` : ''}
     ${imp.length ? `<span class="impb">${imp.map(i => i.kind === 'Zehirli' ? 'Z' : 'S').join('')}</span>` : ''}
   </div>`;
@@ -108,7 +108,10 @@ export function renderBoard() {
   const S = G.S, b = board();
   applyHeight();
   const nums = nightNumbers();
-  const roles = S.tokens.filter(t => t.kind === 'role').map(t => roleHTML(t, nums)).join('');
+  const rs = roleSize(), w = W();
+  // sırası gelenin parıltısı: tüm tokenların altında ayrı katman
+  const glows = G.turn ? S.tokens.filter(t => t.kind === 'role' && G.turn.has(t.id)).map(t => `<span class="tglow" style="--s:${rs}px;left:${t.x * w}px;top:${t.y * w}px"></span>`).join('') : '';
+  const roles = glows + S.tokens.filter(t => t.kind === 'role').map(t => roleHTML(t, nums)).join('');
   const rems = S.tokens.filter(t => t.kind === 'rem').map(t => remHTML(t)).join('');
   $('tokens').innerHTML = roles + rems;
   b.classList.toggle('locked', !!S.board.locked);

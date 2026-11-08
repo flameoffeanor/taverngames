@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2301';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2317';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2301';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2301';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2317';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2317';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2301';
-export const VERSION = '20261108-2301';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2317';
+export const VERSION = '20261108-2317';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -253,7 +253,7 @@ function renderStep() {
     body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}${allDead ? ' gone' : ''}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
       <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${rich(st.txt)}</p>
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
-      <input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe" maxlength="160"></div>`;
+      <div class="st-inrow"><input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe" maxlength="160" enterkeyhint="done"><button class="st-ok" id="stInOk">Tamam</button></div></div>`;
     skip = true;
   }
   const keep = $('stInfo') && STEP.shown === STEP.i ? { v: $('stInfo').value, f: document.activeElement === $('stInfo') } : null;
@@ -266,6 +266,10 @@ function renderStep() {
   const w = $('boardWrap');
   w.style.setProperty('--stT', $('stepper').offsetHeight + 'px');
   w.style.setProperty('--stB', $('stepNav').offsetHeight + 'px');
+  if ($('stInfo')) {
+    $('stInfo').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
+    $('stInOk').onclick = () => $('stInfo').blur();
+  }
   $('stX').onclick = closeStepper;
   $('stBack').onclick = () => { STEP.i--; renderStep(); };
   if ($('stSkip')) $('stSkip').onclick = () => { STEP.i++; renderStep(); };
