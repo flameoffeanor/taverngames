@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2200';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2215';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2200';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2200';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2215';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2215';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2200';
-export const VERSION = '20261108-2200';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2215';
+export const VERSION = '20261108-2215';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -206,30 +206,31 @@ function renderStep() {
     const rems = toks.filter(t => G.S.tokens.some(x => x.kind === 'rem' && x.owner === t.id && !/^(poisoned|drunk( \d)?|is the drunk)$/i.test(String(x.text).trim())));
     const wake = steps.filter(s => s.k === 'role').length;
     turn = imp.map(t => t.id);
-    body = `<div class="sp-head"><span class="sp-moon">🌙</span><div><h2>${tab === 'first' ? 'İlk gece' : esc(ph)} başlıyor</h2><p class="muted small">Sırada ${wake} karakter var. Yanıp sönenler sarhoş/zehirli.</p></div></div>
-      ${imp.map(t => `<div class="st-imp"><b>${esc(RN(t.role))}${t.name ? ' · ' + esc(t.name) : ''}</b> <span>${impairOf(t).map(i => i.kind + (i.src && i.src !== 'drunk' ? ` (${esc(RN(i.src))})` : '')).join(', ')}</span></div>`).join('')}
-      ${rems.length ? `<div class="rws">${rems.map(t => remChips([t])).join('')}</div>` : ''}`;
+    body = `<div class="sp-head"><span class="sp-moon">🌙</span><h2>${tab === 'first' ? 'İlk gece' : esc(ph)}</h2><span class="muted small">${wake} karakter</span></div>
+      <div class="sp-scroll">${imp.map(t => `<div class="st-imp"><b>${t.name ? esc(t.name) + ' · ' : ''}${esc(RN(t.role))}</b> ${impairOf(t).map(i => i.kind + (i.src && i.src !== 'drunk' ? ` (${esc(RN(i.src))})` : '')).join(', ')}</div>`).join('')}
+      ${rems.length ? `<div class="rws">${rems.map(t => remChips([t])).join('')}</div>` : ''}${!imp.length && !rems.length ? '<p class="muted small">Sarhoş/zehirli ya da hatırlatıcı yok.</p>' : ''}</div>`;
     next = 'Başla ›';
   } else if (st.k === 'struct') {
     const [nm, txt] = STRUCT[st.id];
     turn = toks.filter(t => ['minion', 'demon'].includes(role(t.role).team)).map(t => t.id);
-    body = `<div class="sp-head"><span class="ne-ic s-${st.id}"></span><div><h2>${nm}</h2></div></div><p class="st-txt">${esc(txt)}</p>`;
+    body = `<div class="sp-head"><span class="ne-ic s-${st.id}"></span><h2>${nm}</h2></div><div class="sp-scroll"><p class="st-txt">${esc(txt)}</p></div>`;
     skip = true;
   } else if (st.k === 'dawn') {
     const deaths = (S.log || []).filter(e => e.ph === ph && e.k === 'death');
     turn = deaths.map(e => e.tid).filter(Boolean);
-    body = `<div class="sp-head"><span class="sp-moon">🌅</span><div><h2>Şafak</h2><p class="muted small">Herkesi uyandır, gece ölenleri açıkla (nasıl öldüklerini söyleme).</p></div></div>
-      ${deaths.length ? deaths.map(e => `<p class="st-death">† ${esc(e.x.replace(/ öldü$/, ''))}</p>`).join('') : '<p class="muted small">Bu gece tablada kimse öldü olarak işaretlenmedi.</p>'}`;
+    const dn = e => { const t = G.S.tokens.find(x => x.id === e.tid); return t ? { n: t.name || 'isimsiz', r: RN(t.role) } : { n: e.x.replace(/ öldü$/, ''), r: '' }; };
+    body = `<div class="sp-head"><span class="sp-moon">🌅</span><h2>Şafak</h2><span class="muted small">Ölenleri açıkla, nasıl öldüklerini söyleme</span></div>
+      <div class="sp-scroll">${deaths.length ? deaths.map(e => { const d = dn(e); return `<p class="st-death">† <b>${esc(d.n)}</b>${d.r ? ` <small>${esc(d.r)}</small>` : ''}</p>`; }).join('') : '<p class="muted small">Bu gece tablada kimse öldü olarak işaretlenmedi.</p>'}</div>`;
     next = `☀️ Güne geç`;
   } else {
     const r = role(st.id), allDead = st.mine.every(t => t.dead);
     turn = st.mine.map(t => t.id);
     const who = st.mine.map(t => `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : 'isimsiz'}${t.dead ? ' †' : ''}</span>`).join('');
-    body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><div><h2 class="t-${r.team}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2><div class="st-who">${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}</div></div></div>
-      ${impBanner(st.mine)}
-      <p class="st-txt">${rich(st.txt)}</p>
+    const imp = st.mine.flatMap(t => impairOf(t).map(i => `<span class="st-impb">⚠ ${st.mine.length > 1 && t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</span>`)).join('');
+    body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
+      <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${rich(st.txt)}</p>
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
-      <input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe yazılır" maxlength="160">`;
+      <input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe" maxlength="160"></div>`;
     skip = true;
   }
   const keep = $('stInfo') && STEP.shown === STEP.i ? { v: $('stInfo').value, f: document.activeElement === $('stInfo') } : null;
