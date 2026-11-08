@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2132';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2140';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2132';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2132';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2140';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2140';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2132';
-export const VERSION = '20261108-2132';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2140';
+export const VERSION = '20261108-2140';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -65,6 +65,7 @@ function start() {
 }
 
 function renderAll() {
+  renderPhase();
   renderPanes();
   renderSetup();
   renderBoard();
@@ -72,7 +73,6 @@ function renderAll() {
   renderToolbar();
   renderNight();
   renderMore();
-  renderPhase();
   if (!$('stepper').hidden) renderStep();
   $('wrapUndo').disabled = !canUndo();
 }
@@ -82,8 +82,13 @@ const PH0 = { n: 1, day: false };
 const phaseLabel = p => (p.day ? `Gün ${p.n}` : `Gece ${p.n}`);
 const curPhase = () => G.S.phase || PH0;
 function players() { return boardRoles().filter(t => role(t.role).team !== 'fabled'); }
+let seenPhase = '';
 function renderPhase() {
   const p = curPhase();
+  const lbl = phaseLabel(p);
+  if (seenPhase && seenPhase !== lbl && !p.day) G.S.night.tab = p.n === 1 ? 'first' : 'other'; // diğer yönetici evreyi ilerlettiyse
+  if (seenPhase !== lbl && seenPhase && !$('stepper').hidden && p.day) closeStepper();
+  seenPhase = lbl;
   $('phNow').innerHTML = `<span class="ph-i">${p.day ? '☀️' : '🌙'}</span><b>${phaseLabel(p)}</b><small>günlük</small>`;
   $('phaseBar').classList.toggle('day', !!p.day);
   const pl = players(), alive = pl.filter(t => !t.dead).length, ghosts = pl.filter(t => t.dead && !t.voteUsed).length;
@@ -98,7 +103,7 @@ function phaseStep(dir) {
     S.phase = p;
     if (!p.day) { S.night.tab = p.n === 1 ? 'first' : 'other'; if (dir > 0) S.night.done[S.night.tab] = []; }
     if (!Array.isArray(S.log)) S.log = [];
-    if (dir > 0) S.log.push({ ph: phaseLabel(p), k: 'phase', t: Date.now() });
+    if (dir > 0) S.log.push({ id: uid(), ph: phaseLabel(p), k: 'phase', t: Date.now() });
   });
   toast(phaseLabel(curPhase()));
 }
@@ -110,23 +115,23 @@ hooks.onLocal = (before, S) => {
     if (t.kind !== 'role') continue;
     const b = before['t/' + t.id]; if (!b) continue;
     const o = JSON.parse(b);
-    if (!!o.dead !== !!t.dead) S.log.push({ ph, k: t.dead ? 'death' : 'revive', x: `${RN(t.role)}${t.name ? ' (' + t.name + ')' : ''} ${t.dead ? 'öldü' : 'dirildi'}`, t: Date.now() });
+    if (!!o.dead !== !!t.dead) S.log.push({ id: uid(), ph, k: t.dead ? 'death' : 'revive', x: `${RN(t.role)}${t.name ? ' (' + t.name + ')' : ''} ${t.dead ? 'öldü' : 'dirildi'}`, t: Date.now() });
   }
   if (S.log.length > 400) S.log.splice(0, S.log.length - 400);
 };
 const LOGI = { death: '†', revive: '✚', info: 'ℹ', note: '✎' };
 function openLog() {
-  const groups = []; let cur = null;
-  for (const e of G.S.log || []) {
-    if (!cur || cur.ph !== e.ph || e.k === 'phase') { cur = { ph: e.ph, items: [] }; groups.push(cur); }
-    if (e.k !== 'phase') cur.items.push(e);
-  }
+  // evreye göre grupla, evre sırasına diz (cihaz saatleri farklı olsa da karışmaz)
+  const ord = ph => { const m = /^(Gece|Gün) (\d+)/.exec(ph || ''); return m ? +m[2] * 2 + (m[1] === 'Gün' ? 1 : 0) : 0; };
+  const by = new Map();
+  for (const e of G.S.log || []) { if (!by.has(e.ph)) by.set(e.ph, { ph: e.ph, items: [] }); if (e.k !== 'phase') by.get(e.ph).items.push(e); }
+  const groups = [...by.values()].sort((x, y) => ord(x.ph) - ord(y.ph));
   const hm = t => t ? new Date(t).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
   openModal('Oyun günlüğü', `
     <div class="row-in"><input id="lgTxt" placeholder="Not ekle (ör. Empat'a 1 dedim)" maxlength="200"><button class="btn small primary" id="lgAdd">Ekle</button></div>
     <div class="log">${groups.length ? groups.slice().reverse().map(g => `<section><h4>${esc(g.ph)}</h4>${g.items.length ? g.items.map(e => `<p class="lg-${e.k}"><span>${LOGI[e.k] || '•'}</span>${esc(e.x)}<small>${hm(e.t)}</small></p>`).join('') : '<p class="muted small">—</p>'}</section>`).join('') : '<p class="muted">Henüz kayıt yok. Ölümler, evre geçişleri ve gece verdiğin bilgiler buraya kendiliğinden yazılır.</p>'}</div>
     <button class="btn ghost small" id="lgClear">Günlüğü temizle</button>`, () => {
-    $('lgAdd').onclick = () => { const v = $('lgTxt').value.trim(); if (!v) return; commit(S => { S.log.push({ ph: phaseLabel(curPhase()), k: 'note', x: v, t: Date.now() }); }, true); openLog(); };
+    $('lgAdd').onclick = () => { const v = $('lgTxt').value.trim(); if (!v) return; commit(S => { S.log.push({ id: uid(), ph: phaseLabel(curPhase()), k: 'note', x: v, t: Date.now() }); }, true); openLog(); };
     $('lgClear').onclick = () => confirmBox('Günlük silinsin mi?', 'Sil', () => commit(S => { S.log = []; }));
   });
 }
@@ -204,12 +209,15 @@ function renderStep() {
       <input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe yazılır" maxlength="160">`;
   }
   const isDone = st.id && done.has(st.id);
+  const keep = $('stInfo') && STEP.shown === STEP.i ? { v: $('stInfo').value, f: document.activeElement === $('stInfo') } : null;
+  STEP.shown = STEP.i;
   $('stepper').innerHTML = `<div class="st-top"><span>${esc(ph)} · ${STEP.i + 1} / ${steps.length}</span><button class="ib" id="stX" aria-label="Kapat">✕</button></div>
     <div class="st-bar"><i style="width:${(STEP.i + 1) / steps.length * 100}%"></i></div>
     <div class="st-body${isDone ? ' done' : ''}">${body}</div>
     <div class="st-nav"><button class="btn" id="stBack" ${STEP.i ? '' : 'disabled'}>‹ Geri</button>
       ${st.k === 'role' || st.k === 'struct' ? '<button class="btn ghost" id="stSkip">Atla</button>' : ''}
       <button class="btn primary" id="stNext" ${STEP.i === steps.length - 1 ? 'hidden' : ''}>${st.k === 'role' || st.k === 'struct' ? '✓ Yapıldı' : 'Başla ›'}</button></div>`;
+  if (keep && $('stInfo')) { $('stInfo').value = keep.v; if (keep.f) $('stInfo').focus(); }
   $('stX').onclick = closeStepper;
   $('stBack').onclick = () => { STEP.i--; renderStep(); };
   if ($('stSkip')) $('stSkip').onclick = () => { STEP.i++; renderStep(); };
@@ -217,7 +225,7 @@ function renderStep() {
     const info = $('stInfo') ? $('stInfo').value.trim() : '';
     if (st.id) commit(S => {
       const d = new Set(S.night.done[tab] || []); d.add(st.id); S.night.done[tab] = [...d];
-      if (info) S.log.push({ ph, k: 'info', x: `${RN(st.id)}${st.mine && st.mine[0].name ? ' (' + st.mine[0].name + ')' : ''}: ${info}`, t: Date.now() });
+      if (info) S.log.push({ id: uid(), ph, k: 'info', x: `${RN(st.id)}${st.mine && st.mine[0].name ? ' (' + st.mine[0].name + ')' : ''}: ${info}`, t: Date.now() });
     }, true);
     STEP.i++; renderStep();
   };
