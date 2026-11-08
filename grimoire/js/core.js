@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261103-2129';
+import { normId } from './data.js?v=20261108-2132';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };
@@ -16,6 +16,8 @@ export function fresh() {
     notes: '',
     customInfo: [],
     deal: null,
+    phase: { n: 1, day: false },
+    log: [],
     open: {},
   };
 }
@@ -36,7 +38,7 @@ export function save() { try { localStorage.setItem(KEY, JSON.stringify(G.S)); }
 
 // ---- ortak (iki yönetici arasında senkron) durum ----
 // Ortak: oyunun kendisi. Ayrı kalan: pencereler, sekmeler, perde, simge boyutları, yerel notlar. (Oda sohbeti ayrı düğümde: sync.js)
-const JKEYS = ['script', 'setup', 'bluffs', 'customInfo', 'deal', 'fangguDone'];
+const JKEYS = ['script', 'setup', 'bluffs', 'customInfo', 'deal', 'fangguDone', 'phase', 'log'];
 export function sharedMap(S) {
   const m = {};
   for (const k of JKEYS) m['j/' + k] = JSON.stringify(S[k] === undefined ? null : S[k]);
@@ -49,7 +51,7 @@ export function applySharedMap(S, m) {
   if (m['j/done'] !== undefined) S.night.done = { first: [], other: [], ...JSON.parse(m['j/done']) };
   S.tokens = Object.keys(m).filter(k => k.startsWith('t/')).map(k => k.slice(2)).sort().map(id => JSON.parse(m['t/' + id]));
 }
-export const hooks = { onCommit: null };
+export const hooks = { onCommit: null, onLocal: null };
 export const syncNow = () => { if (hooks.onCommit) hooks.onCommit(sharedMap(G.S)); };
 
 // ---- değişiklik + geri alma ----
@@ -62,6 +64,7 @@ export function emit() { save(); subs.forEach(f => f()); }
 export function commit(fn, quiet = false) {
   const before = sharedMap(G.S);
   fn(G.S);
+  if (hooks.onLocal) hooks.onLocal(before, G.S);
   const after = sharedMap(G.S);
   if (!quiet) {
     const patch = {};
