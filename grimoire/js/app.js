@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2215';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2228';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2215';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2215';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2228';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2228';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2215';
-export const VERSION = '20261108-2215';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2228';
+export const VERSION = '20261108-2228';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -117,9 +117,25 @@ hooks.onLocal = (before, S) => {
     const o = JSON.parse(b);
     if (!!o.dead !== !!t.dead) S.log.push({ id: uid(), tid: t.id, ph, k: t.dead ? 'death' : 'revive', x: `${RN(t.role)}${t.name ? ' (' + t.name + ')' : ''} ${t.dead ? 'öldü' : 'dirildi'}`, t: Date.now() });
   }
+  // hatırlatıcılar: yeni konan, başka oyuncuya taşınan, kaldırılan (toplu silmelerde yazma)
+  const remName = x => (x.role ? `${RN(x.role)} – ${remTr(x.text)}` : remTr(x.text));
+  const whoOf = id => { const o = S.tokens.find(t => t.id === id); return o ? `${RN(o.role)}${o.name ? ' (' + o.name + ')' : ''}` : ''; };
+  const now = new Set(S.tokens.map(t => t.id));
+  const goneRoles = Object.keys(before).some(k => k.startsWith('t/') && !now.has(k.slice(2)) && JSON.parse(before[k]).kind === 'role');
+  for (const x of S.tokens) {
+    if (x.kind !== 'rem' || !x.owner) continue;
+    const b = before['t/' + x.id];
+    if (!b) S.log.push({ id: uid(), ph, k: 'rem', x: `${remName(x)} → ${whoOf(x.owner)}`, t: Date.now() });
+    else if (JSON.parse(b).owner !== x.owner) S.log.push({ id: uid(), ph, k: 'rem', x: `${remName(x)} → ${whoOf(x.owner)} (taşındı)`, t: Date.now() });
+  }
+  if (!goneRoles) for (const k of Object.keys(before)) {
+    if (!k.startsWith('t/') || now.has(k.slice(2))) continue;
+    const x = JSON.parse(before[k]);
+    if (x.kind === 'rem' && x.owner) S.log.push({ id: uid(), ph, k: 'remoff', x: `${remName(x)} kaldırıldı${whoOf(x.owner) ? ' (' + whoOf(x.owner) + ')' : ''}`, t: Date.now() });
+  }
   if (S.log.length > 400) S.log.splice(0, S.log.length - 400);
 };
-const LOGI = { death: '†', revive: '✚', info: 'ℹ', note: '✎' };
+const LOGI = { death: '†', revive: '✚', info: 'ℹ', note: '✎', rem: '◉', remoff: '○' };
 function openLog() {
   // evreye göre grupla, evre sırasına diz (cihaz saatleri farklı olsa da karışmaz)
   const ord = ph => { const m = /^(Gece|Gün) (\d+)/.exec(ph || ''); return m ? +m[2] * 2 + (m[1] === 'Gün' ? 1 : 0) : 0; };
@@ -162,15 +178,16 @@ function openStepper() {
   if (STEP.key !== key) STEP = { i: 0, key };
   const w = $('boardWrap');
   stepFull = !w.classList.contains('full');
-  if (stepFull) toggleFull();
   w.classList.add('stepping');
+  if (stepFull) toggleFull();
   $('stepper').hidden = false; $('stepNav').hidden = false;
   renderStep();
+  renderBoard();
 }
 function closeStepper() {
   $('stepper').hidden = true; $('stepNav').hidden = true;
   const w = $('boardWrap'); w.classList.remove('stepping');
-  setTurn([]);
+  setTurn([]); renderBoard();
   if (stepFull && w.classList.contains('full')) toggleFull();
   stepFull = false;
 }

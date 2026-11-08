@@ -453,9 +453,9 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 /* ===== adım adım gece: tablayla birlikte ===== */
 .step-go { width: 100%; margin: 4px 0 10px; }
 .board-wrap.full.stepping { padding-top: calc(var(--stT, 160px) + 4px); padding-bottom: calc(var(--stB, 70px) + 4px); }
-.board-wrap.full.stepping .board { overflow-y: auto; }
+.board-wrap.full.stepping .tokens { transform-origin: 50% 0; }
 .board-wrap.full.stepping .board-tools { top: calc(var(--stT, 200px) + 10px); }
-.stepper { position: fixed; top: 0; left: 0; right: 0; z-index: 45; height: 20vh; min-height: 150px; box-sizing: border-box; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; padding: calc(var(--safe-t, 0px) + 5px) 10px 6px; background: linear-gradient(#1a2240, #121828); border-bottom: 2px solid var(--gold2); box-shadow: 0 6px 18px rgba(0,0,0,.55); color: var(--text); overflow: hidden; }
+.stepper { position: fixed; top: 0; left: 0; right: 0; z-index: 45; height: 25vh; min-height: 170px; box-sizing: border-box; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; padding: calc(var(--safe-t, 0px) + 5px) 10px 6px; background: linear-gradient(#1a2240, #121828); border-bottom: 2px solid var(--gold2); box-shadow: 0 6px 18px rgba(0,0,0,.55); color: var(--text); overflow: hidden; }
 .stepper[hidden], .step-nav[hidden] { display: none; }
 .st-top { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; color: var(--muted); font-weight: 600; font-size: .72rem; }
 .st-bar { height: 3px; background: #222b40; border-radius: 3px; overflow: hidden; }
@@ -496,4 +496,5 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .log p { margin: 2px 0; display: flex; gap: 8px; align-items: baseline; }
 .log p span { width: 16px; text-align: center; color: var(--muted); }
 .log p small { margin-left: auto; color: var(--muted); font-size: .7rem; }
+.log .lg-rem span, .log .lg-remoff span { color: #e8a838; }
 .log .lg-death span { color: #ff8a80; } .log .lg-revive span { color: #3fbf8a; } .log .lg-info span { color: #8fb8ff; }

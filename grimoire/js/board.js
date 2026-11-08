@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2215';
-import { remTr } from './data.js?v=20261108-2215';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2228';
+import { remTr } from './data.js?v=20261108-2228';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -14,11 +14,26 @@ export const onTap = h => { handlers = { ...handlers, ...h }; };
 
 const board = () => $('board');
 export const W = () => board().clientWidth || 320;
-export const H = () => board().clientHeight || 400;
+export const H = () => (board().clientHeight || 400) / SCALE;
+// Gece adımlarında tabla, üst panel ve alt düğmeler arasına orantılı küçültülerek sığdırılır
+export let SCALE = 1;
 export const defaultRatio = () => (window.innerHeight > window.innerWidth ? 1.25 : 0.72);
 export function applyHeight() {
   const b = board(), wrap = $('boardWrap');
-  if (wrap.classList.contains('full')) { b.style.height = ''; return; }
+  if (wrap.classList.contains('full')) {
+    b.style.height = '';
+    let k = 1;
+    if (wrap.classList.contains('stepping')) {
+      const bw = b.clientWidth || 320, rs = roleSize();
+      const low = G.S.tokens.reduce((m, t) => Math.max(m, t.y * bw + (t.kind === 'rem' ? remSize() : rs) / 2 + (t.kind === 'role' ? 16 : 4)), 0);
+      const need = Math.max((G.S.board.ratio || defaultRatio()) * bw, low);
+      k = Math.min(1, (b.clientHeight || need) / need);
+    }
+    SCALE = k;
+    $('tokens').style.transform = k < 1 ? `scale(${k})` : '';
+    return;
+  }
+  SCALE = 1; $('tokens').style.transform = '';
   const r = G.S.board.ratio || defaultRatio();
   b.style.height = Math.round(b.clientWidth * r) + 'px';
 }
@@ -209,7 +224,7 @@ function move(e) {
   if (!drag.moved && Math.hypot(dx, dy) < 6) return;
   if (!drag.moved) { clearTimeout(drag.holdT); drag.moved = true; drag.el.classList.add('drag'); }
   const w = W(), s = sizeOf(drag.t);
-  let [x, y] = clampXY(drag.ox + dx / w, drag.oy + dy / w, s);
+  let [x, y] = clampXY(drag.ox + dx / (w * SCALE), drag.oy + dy / (w * SCALE), s);
   if (drag.t.kind === 'rem') {
     // canlı önizleme: yaklaşınca renk değişir, uzaklaşınca eski haline döner
     const o = nearestOwner(x, y, drag.t.id), prev = drag.target;
@@ -225,7 +240,7 @@ function move(e) {
   drag.nx = x; drag.ny = y;
   drag.el.style.left = x * w - s / 2 + 'px';
   drag.el.style.top = y * w - s / 2 + 'px';
-  const ddx = (x - drag.ox) * w, ddy = (y - drag.oy) * w;
+  const ddx = (x - drag.ox) * w, ddy = (y - drag.oy) * w; // #tokens içinde: ölçek zaten uygulanıyor
   drag.kids.forEach(k => { k.style.transform = `translate(${ddx}px,${ddy}px)`; });
 }
 function up(e) {
