@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2148';
-import { remTr } from './data.js?v=20261108-2148';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2200';
+import { remTr } from './data.js?v=20261108-2200';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -56,7 +56,7 @@ function roleHTML(t, nums) {
   const f = G.S.board.nums && nums.first[t.role], o = G.S.board.nums && nums.other[t.role];
   const linked = G.S.tokens.some(q => q.kind === 'rem' && q.owner === t.id);
   const imp = impairOf(t);
-  return `<div class="tok role t-${r.team}${t.dead ? ' dead' : ''}${t.flip ? ' flip' : ''}${linked ? ' linked' : ''}${imp.length ? ' impaired' : ''}" data-id="${t.id}"
+  return `<div class="tok role t-${r.team}${t.dead ? ' dead' : ''}${t.flip ? ' flip' : ''}${linked ? ' linked' : ''}${imp.length ? ' impaired' : ''}${G.turn && G.turn.has(t.id) ? ' turn' : ''}" data-id="${t.id}"
       style="--s:${s}px;z-index:${2 + (t.z || 0)};${linked ? `--gc:${colorOf(t.id)};` : ''}left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
     <div class="disc">${icon(t.role, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(r.name, 'arcB', 12.5)}</svg></div>
     ${f ? `<span class="nb nf">${f}</span>` : ''}${o ? `<span class="nb no">${o}</span>` : ''}

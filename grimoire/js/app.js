@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2148';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2200';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2148';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2148';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2200';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2200';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2148';
-export const VERSION = '20261108-2148';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2200';
+export const VERSION = '20261108-2200';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -87,7 +87,7 @@ function renderPhase() {
   const p = curPhase();
   const lbl = phaseLabel(p);
   if (seenPhase && seenPhase !== lbl && !p.day) G.S.night.tab = p.n === 1 ? 'first' : 'other'; // diğer yönetici evreyi ilerlettiyse
-  if (seenPhase !== lbl && seenPhase && !$('stepper').hidden && p.day) closeStepper();
+  if (seenPhase !== lbl && seenPhase && !$('stepper').hidden && p.day) setTimeout(closeStepper);
   seenPhase = lbl;
   $('phNow').innerHTML = `<span class="ph-i">${p.day ? '☀️' : '🌙'}</span><b>${phaseLabel(p)}</b><small>günlük</small>`;
   $('phaseBar').classList.toggle('day', !!p.day);
@@ -115,7 +115,7 @@ hooks.onLocal = (before, S) => {
     if (t.kind !== 'role') continue;
     const b = before['t/' + t.id]; if (!b) continue;
     const o = JSON.parse(b);
-    if (!!o.dead !== !!t.dead) S.log.push({ id: uid(), ph, k: t.dead ? 'death' : 'revive', x: `${RN(t.role)}${t.name ? ' (' + t.name + ')' : ''} ${t.dead ? 'öldü' : 'dirildi'}`, t: Date.now() });
+    if (!!o.dead !== !!t.dead) S.log.push({ id: uid(), tid: t.id, ph, k: t.dead ? 'death' : 'revive', x: `${RN(t.role)}${t.name ? ' (' + t.name + ')' : ''} ${t.dead ? 'öldü' : 'dirildi'}`, t: Date.now() });
   }
   if (S.log.length > 400) S.log.splice(0, S.log.length - 400);
 };
@@ -156,72 +156,97 @@ function nightSteps() {
   if (!steps.some(s => s.k === 'dawn')) steps.push({ k: 'dawn' });
   return steps;
 }
+let stepFull = false; // adım modu tam ekranı kendisi açtıysa kapanırken geri kapatır
 function openStepper() {
   const key = phaseLabel(curPhase()) + '|' + G.S.night.tab;
   if (STEP.key !== key) STEP = { i: 0, key };
-  $('stepper').hidden = false; document.body.classList.add('noscroll');
+  const w = $('boardWrap');
+  stepFull = !w.classList.contains('full');
+  if (stepFull) toggleFull();
+  w.classList.add('stepping');
+  $('stepper').hidden = false; $('stepNav').hidden = false;
   renderStep();
 }
-function closeStepper() { $('stepper').hidden = true; document.body.classList.remove('noscroll'); }
+function closeStepper() {
+  $('stepper').hidden = true; $('stepNav').hidden = true;
+  const w = $('boardWrap'); w.classList.remove('stepping');
+  setTurn([]);
+  if (stepFull && w.classList.contains('full')) toggleFull();
+  stepFull = false;
+}
+// sırası gelen token(lar) tablada yanıp söner
+let turnKey = '';
+function setTurn(ids) {
+  const k = ids.join(',');
+  G.turn = ids.length ? new Set(ids) : null;
+  $('board').classList.toggle('turning', !!ids.length);
+  if (k !== turnKey) { turnKey = k; renderBoard(); }
+}
 function remChips(mine) {
   const out = [];
   mine.forEach(t => G.S.tokens.filter(x => x.kind === 'rem' && x.owner === t.id).forEach(x => {
-    if (impairOf({ id: t.id }).length && /^(poisoned|drunk( \d)?|is the drunk)$/i.test(String(x.text).trim())) return;
+    if (/^(poisoned|drunk( \d)?|is the drunk)$/i.test(String(x.text).trim())) return;
     const nm = x.role ? `${RN(x.role)} – ${remTr(x.text)}` : remTr(x.text);
     out.push(`<span class="rw" style="--gc:${colorOf(t.id)}">${esc(nm)}${mine.length > 1 && t.name ? ` <small>(${esc(t.name)})</small>` : ''}</span>`);
   }));
   return out.join('');
 }
 function impBanner(mine) {
-  return mine.flatMap(t => impairOf(t).map(i => `<div class="st-imp"><b>⚠ ${t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</b>${i.src && i.src !== 'drunk' ? ` <small>(${esc(RN(i.src))} yüzünden)</small>` : ''}<span>Bilgi yanlış olabilir, yeteneği çalışmaz.</span></div>`)).join('');
+  return mine.flatMap(t => impairOf(t).map(i => `<div class="st-imp"><b>⚠ ${t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</b>${i.src && i.src !== 'drunk' ? ` <small>(${esc(RN(i.src))} yüzünden)</small>` : ''} <span>Bilgi yanlış olabilir, yeteneği çalışmaz.</span></div>`)).join('');
 }
 function renderStep() {
   const steps = nightSteps(), S = G.S, tab = S.night.tab;
   STEP.i = Math.max(0, Math.min(STEP.i, steps.length - 1));
   const st = steps[STEP.i], done = new Set(S.night.done[tab] || []);
   const ph = phaseLabel(curPhase());
-  let body = '';
+  const toks = boardRoles();
+  let body = '', turn = [], next = '✓ Yapıldı', skip = false;
   if (st.k === 'summary') {
-    const toks = boardRoles();
     const imp = toks.filter(t => impairOf(t).length);
-    const rems = toks.filter(t => G.S.tokens.some(x => x.kind === 'rem' && x.owner === t.id));
+    const rems = toks.filter(t => G.S.tokens.some(x => x.kind === 'rem' && x.owner === t.id && !/^(poisoned|drunk( \d)?|is the drunk)$/i.test(String(x.text).trim())));
     const wake = steps.filter(s => s.k === 'role').length;
-    body = `<div class="st-ic moon">🌙</div><h2>${tab === 'first' ? 'İlk gece' : esc(ph)} başlıyor</h2>
-      <p class="st-lead">Sırada ${wake} karakter var. Önce dikkat edilecekler:</p>
-      ${imp.length ? `<h4 class="st-h">Sarhoş / zehirli</h4>${imp.map(t => `<div class="st-imp sm"><b>${esc(RN(t.role))}${t.name ? ' · ' + esc(t.name) : ''}</b><span>${impairOf(t).map(i => i.kind + (i.src && i.src !== 'drunk' ? ` (${esc(RN(i.src))})` : '')).join(', ')}</span></div>`).join('')}` : '<p class="muted small">Sarhoş ya da zehirli işaretli oyuncu yok.</p>'}
-      ${rems.length ? `<h4 class="st-h">Diğer hatırlatıcılar</h4><div class="rws">${rems.map(t => remChips([t])).join('')}</div>` : ''}`;
+    turn = imp.map(t => t.id);
+    body = `<div class="sp-head"><span class="sp-moon">🌙</span><div><h2>${tab === 'first' ? 'İlk gece' : esc(ph)} başlıyor</h2><p class="muted small">Sırada ${wake} karakter var. Yanıp sönenler sarhoş/zehirli.</p></div></div>
+      ${imp.map(t => `<div class="st-imp"><b>${esc(RN(t.role))}${t.name ? ' · ' + esc(t.name) : ''}</b> <span>${impairOf(t).map(i => i.kind + (i.src && i.src !== 'drunk' ? ` (${esc(RN(i.src))})` : '')).join(', ')}</span></div>`).join('')}
+      ${rems.length ? `<div class="rws">${rems.map(t => remChips([t])).join('')}</div>` : ''}`;
+    next = 'Başla ›';
   } else if (st.k === 'struct') {
     const [nm, txt] = STRUCT[st.id];
-    body = `<div class="st-ic s-${st.id}"></div><h2>${nm}</h2><p class="st-txt">${esc(txt)}</p>`;
+    turn = toks.filter(t => ['minion', 'demon'].includes(role(t.role).team)).map(t => t.id);
+    body = `<div class="sp-head"><span class="ne-ic s-${st.id}"></span><div><h2>${nm}</h2></div></div><p class="st-txt">${esc(txt)}</p>`;
+    skip = true;
   } else if (st.k === 'dawn') {
     const deaths = (S.log || []).filter(e => e.ph === ph && e.k === 'death');
-    body = `<div class="st-ic moon">🌅</div><h2>Şafak</h2><p class="st-txt">Herkesi uyandır ve gece ölenleri açıkla (nasıl öldüklerini söyleme).</p>
-      <h4 class="st-h">Bu gece işaretlenen ölümler</h4>${deaths.length ? deaths.map(e => `<p class="st-death">† ${esc(e.x.replace(/ öldü$/, ''))}</p>`).join('') : '<p class="muted">Tablada bu gece kimse öldü olarak işaretlenmedi.</p>'}
-      <button class="btn primary st-day" id="stDay">☀️ Güne geç (${esc(phaseLabel({ n: curPhase().n, day: true }))})</button>`;
+    turn = deaths.map(e => e.tid).filter(Boolean);
+    body = `<div class="sp-head"><span class="sp-moon">🌅</span><div><h2>Şafak</h2><p class="muted small">Herkesi uyandır, gece ölenleri açıkla (nasıl öldüklerini söyleme).</p></div></div>
+      ${deaths.length ? deaths.map(e => `<p class="st-death">† ${esc(e.x.replace(/ öldü$/, ''))}</p>`).join('') : '<p class="muted small">Bu gece tablada kimse öldü olarak işaretlenmedi.</p>'}`;
+    next = `☀️ Güne geç`;
   } else {
     const r = role(st.id), allDead = st.mine.every(t => t.dead);
+    turn = st.mine.map(t => t.id);
     const who = st.mine.map(t => `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : 'isimsiz'}${t.dead ? ' †' : ''}</span>`).join('');
-    body = `<div class="st-ic">${icon(st.id, 'ic')}</div><h2 class="t-${r.team}">${esc(r.name)}</h2>
-      <div class="st-who">${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}</div>
+    body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><div><h2 class="t-${r.team}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2><div class="st-who">${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}</div></div></div>
       ${impBanner(st.mine)}
       <p class="st-txt">${rich(st.txt)}</p>
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
       <input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe yazılır" maxlength="160">`;
+    skip = true;
   }
-  const isDone = st.id && done.has(st.id);
   const keep = $('stInfo') && STEP.shown === STEP.i ? { v: $('stInfo').value, f: document.activeElement === $('stInfo') } : null;
   STEP.shown = STEP.i;
-  $('stepper').innerHTML = `<div class="st-top"><span>${esc(ph)} · ${STEP.i + 1} / ${steps.length}</span><button class="ib" id="stX" aria-label="Kapat">✕</button></div>
-    <div class="st-bar"><i style="width:${(STEP.i + 1) / steps.length * 100}%"></i></div>
-    <div class="st-body${isDone ? ' done' : ''}">${body}</div>
-    <div class="st-nav"><button class="btn" id="stBack" ${STEP.i ? '' : 'disabled'}>‹ Geri</button>
-      ${st.k === 'role' || st.k === 'struct' ? '<button class="btn ghost" id="stSkip">Atla</button>' : ''}
-      <button class="btn primary" id="stNext" ${STEP.i === steps.length - 1 ? 'hidden' : ''}>${st.k === 'role' || st.k === 'struct' ? '✓ Yapıldı' : 'Başla ›'}</button></div>`;
+  $('stepper').innerHTML = `<div class="st-top"><span>${esc(ph)} · ${STEP.i + 1}/${steps.length}</span><div class="st-bar"><i style="width:${(STEP.i + 1) / steps.length * 100}%"></i></div><button class="st-end" id="stX">Bitir ✕</button></div>
+    <div class="st-body">${body}</div>`;
+  $('stepNav').innerHTML = `<button class="btn" id="stBack" ${STEP.i ? '' : 'disabled'}>‹</button>${skip ? '<button class="btn ghost" id="stSkip">Atla</button>' : ''}<button class="btn primary" id="stNext">${next}</button>`;
   if (keep && $('stInfo')) { $('stInfo').value = keep.v; if (keep.f) $('stInfo').focus(); }
+  setTurn(turn);
+  const w = $('boardWrap');
+  w.style.setProperty('--stT', $('stepper').offsetHeight + 'px');
+  w.style.setProperty('--stB', $('stepNav').offsetHeight + 'px');
   $('stX').onclick = closeStepper;
   $('stBack').onclick = () => { STEP.i--; renderStep(); };
   if ($('stSkip')) $('stSkip').onclick = () => { STEP.i++; renderStep(); };
   $('stNext').onclick = () => {
+    if (st.k === 'dawn') { closeStepper(); return phaseStep(1); }
     const info = $('stInfo') ? $('stInfo').value.trim() : '';
     if (st.id) commit(S => {
       const d = new Set(S.night.done[tab] || []); d.add(st.id); S.night.done[tab] = [...d];
@@ -229,7 +254,6 @@ function renderStep() {
     }, true);
     STEP.i++; renderStep();
   };
-  if ($('stDay')) $('stDay').onclick = () => { closeStepper(); phaseStep(1); };
 }
 
 // ---- katlanır bölümler ----
@@ -699,6 +723,7 @@ function renderToolbar() {
 }
 function toggleFull() {
   const w = $('boardWrap'), on = !w.classList.contains('full');
+  if (!on && w.classList.contains('stepping')) { stepFull = false; closeStepper(); }
   w.classList.toggle('full', on);
   document.body.classList.toggle('noscroll', on);
   $('wrapFull').textContent = on ? '✕' : '⛶';
