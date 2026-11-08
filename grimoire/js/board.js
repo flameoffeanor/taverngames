@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261103-2129';
-import { remTr } from './data.js?v=20261103-2129';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2140';
+import { remTr } from './data.js?v=20261108-2140';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -55,13 +55,21 @@ function roleHTML(t, nums) {
   const r = role(t.role), s = roleSize(), w = W();
   const f = G.S.board.nums && nums.first[t.role], o = G.S.board.nums && nums.other[t.role];
   const linked = G.S.tokens.some(q => q.kind === 'rem' && q.owner === t.id);
-  return `<div class="tok role t-${r.team}${t.dead ? ' dead' : ''}${t.flip ? ' flip' : ''}${linked ? ' linked' : ''}" data-id="${t.id}"
+  const imp = impairOf(t);
+  return `<div class="tok role t-${r.team}${t.dead ? ' dead' : ''}${t.flip ? ' flip' : ''}${linked ? ' linked' : ''}${imp.length ? ' impaired' : ''}" data-id="${t.id}"
       style="--s:${s}px;z-index:${2 + (t.z || 0)};${linked ? `--gc:${colorOf(t.id)};` : ''}left:${t.x * w - s / 2}px;top:${t.y * w - s / 2}px">
     <div class="disc">${icon(t.role, 'ic')}<svg viewBox="0 0 100 100" aria-hidden="true">${arcText(r.name, 'arcB', 12.5)}</svg></div>
     ${f ? `<span class="nb nf">${f}</span>` : ''}${o ? `<span class="nb no">${o}</span>` : ''}
     ${t.dead ? `<span class="shroud"></span>${t.voteUsed ? '' : '<span class="vt" title="Ölü oyu var"></span>'}` : ''}
     ${t.name ? `<span class="pname">${esc(t.name)}</span>` : ''}
+    ${imp.length ? `<span class="impb">${imp.map(i => i.kind === 'Zehirli' ? 'Z' : 'S').join('')}</span>` : ''}
   </div>`;
+}
+// Sarhoş / zehirli: oyuncunun yanındaki hatırlatıcılardan anlaşılır
+const IMP_RE = /^(poisoned|drunk( \d)?|is the drunk)$/i;
+export function impairOf(t) {
+  return G.S.tokens.filter(x => x.kind === 'rem' && x.owner === t.id && IMP_RE.test(String(x.text || '').trim()))
+    .map(x => ({ kind: /poison/i.test(x.text) ? 'Zehirli' : 'Sarhoş', src: x.role || '' }));
 }
 function remHTML(t) {
   const s = remSize(), w = W();

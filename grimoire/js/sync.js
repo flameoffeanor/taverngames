@@ -6,8 +6,8 @@
 // İnternetsiz çalışma: cihaz, girdiği her odanın son halini ve henüz sunucuya ulaştığı onaylanmamış
 // değişiklikleri ("dirty" anahtarlar) localStorage'da tutar. İnternet yokken kayıtlı odalar arasında geçilebilir.
 // Bağlantı gelince: sunucudaki hal alınır, üstüne bu cihazın onaylanmamış değişiklikleri yazılır ve gönderilir.
-import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory, subscribe } from './core.js?v=20261103-2129';
-import { isDragging } from './board.js?v=20261103-2129';
+import { G, $, emit, hooks, sharedMap, applySharedMap, toast, uid, clearHistory, subscribe } from './core.js?v=20261108-2140';
+import { isDragging } from './board.js?v=20261108-2140';
 
 const SKEY = 'tg-g3-room', LOCAL = 'tg-g3-local', CPRE = 'tg-g3-rc:';
 const CID = uid();
@@ -112,6 +112,7 @@ function onSnap(snap) {
   const remote = {};
   for (const [k, v] of Object.entries(val.j || {})) remote['j/' + k] = v;
   for (const [k, v] of Object.entries(val.t || {})) remote['t/' + k] = v;
+  for (const [k, v] of Object.entries(val.l || {})) remote['l/' + k] = v;
   remoteMap = remote;
   const was = ready;
   ready = true;
