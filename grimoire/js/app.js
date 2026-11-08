@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2228';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2248';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2228';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2228';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2248';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2248';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2228';
-export const VERSION = '20261108-2228';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2248';
+export const VERSION = '20261108-2248';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -122,16 +122,22 @@ hooks.onLocal = (before, S) => {
   const whoOf = id => { const o = S.tokens.find(t => t.id === id); return o ? `${RN(o.role)}${o.name ? ' (' + o.name + ')' : ''}` : ''; };
   const now = new Set(S.tokens.map(t => t.id));
   const goneRoles = Object.keys(before).some(k => k.startsWith('t/') && !now.has(k.slice(2)) && JSON.parse(before[k]).kind === 'role');
+  // aynı evrede aynı hatırlatıcı için eski kaydı sil: fikir değişirse sadece son hali kalır
+  const dropPrev = rid => { const n = S.log.length; S.log = S.log.filter(e => !(e.rid === rid && e.ph === ph && (e.k === 'rem' || e.k === 'remoff'))); return S.log.length !== n; };
   for (const x of S.tokens) {
     if (x.kind !== 'rem' || !x.owner) continue;
     const b = before['t/' + x.id];
-    if (!b) S.log.push({ id: uid(), ph, k: 'rem', x: `${remName(x)} → ${whoOf(x.owner)}`, t: Date.now() });
-    else if (JSON.parse(b).owner !== x.owner) S.log.push({ id: uid(), ph, k: 'rem', x: `${remName(x)} → ${whoOf(x.owner)} (taşındı)`, t: Date.now() });
+    const moved = b && JSON.parse(b).owner !== x.owner;
+    if (b && !moved) continue;
+    const had = dropPrev(x.id);
+    S.log.push({ id: uid(), rid: x.id, ph, k: 'rem', x: `${remName(x)} → ${whoOf(x.owner)}${moved && !had ? ' (taşındı)' : ''}`, t: Date.now() });
   }
   if (!goneRoles) for (const k of Object.keys(before)) {
     if (!k.startsWith('t/') || now.has(k.slice(2))) continue;
     const x = JSON.parse(before[k]);
-    if (x.kind === 'rem' && x.owner) S.log.push({ id: uid(), ph, k: 'remoff', x: `${remName(x)} kaldırıldı${whoOf(x.owner) ? ' (' + whoOf(x.owner) + ')' : ''}`, t: Date.now() });
+    if (x.kind !== 'rem' || !x.owner) continue;
+    if (dropPrev(x.id)) continue; // bu evrede konup kaldırıldıysa hiç yazma
+    S.log.push({ id: uid(), rid: x.id, ph, k: 'remoff', x: `${remName(x)} kaldırıldı${whoOf(x.owner) ? ' (' + whoOf(x.owner) + ')' : ''}`, t: Date.now() });
   }
   if (S.log.length > 400) S.log.splice(0, S.log.length - 400);
 };
@@ -244,7 +250,7 @@ function renderStep() {
     turn = st.mine.map(t => t.id);
     const who = st.mine.map(t => `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : 'isimsiz'}${t.dead ? ' †' : ''}</span>`).join('');
     const imp = st.mine.flatMap(t => impairOf(t).map(i => `<span class="st-impb">⚠ ${st.mine.length > 1 && t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</span>`)).join('');
-    body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
+    body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}${allDead ? ' gone' : ''}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
       <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${rich(st.txt)}</p>
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
       <input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe" maxlength="160"></div>`;

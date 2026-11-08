@@ -498,3 +498,4 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .log p small { margin-left: auto; color: var(--muted); font-size: .7rem; }
 .log .lg-rem span, .log .lg-remoff span { color: #e8a838; }
 .log .lg-death span { color: #ff8a80; } .log .lg-revive span { color: #3fbf8a; } .log .lg-info span { color: #8fb8ff; }
+.stepper h2.gone { text-decoration: line-through; text-decoration-thickness: 2px; opacity: .7; }
