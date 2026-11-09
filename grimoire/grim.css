@@ -452,9 +452,9 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 /* ===== adım adım gece: tablayla birlikte ===== */
 .step-go { width: 100%; margin: 4px 0 10px; }
 .board-wrap.full.stepping { padding-top: calc(var(--stT, 160px) + 4px); padding-bottom: calc(var(--stB, 70px) + 4px); }
-.board-wrap.full.stepping .tokens { transform-origin: 50% 0; }
+.board-wrap.full.stepping .tokens { transform-origin: 0 0; }
 .board-wrap.full.stepping .board-tools { top: calc(var(--stT, 200px) + 10px); }
-.stepper { position: fixed; top: 0; left: 0; right: 0; z-index: 45; height: 25vh; min-height: 170px; box-sizing: border-box; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; padding: calc(var(--safe-t, 0px) + 5px) 10px 6px; background: linear-gradient(#1a2240, #121828); border-bottom: 2px solid var(--gold2); box-shadow: 0 6px 18px rgba(0,0,0,.55); color: var(--text); overflow: hidden; }
+.stepper { position: fixed; top: 0; left: 0; right: 0; z-index: 45; height: 20vh; min-height: 130px; box-sizing: border-box; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 4px; padding: calc(var(--safe-t, 0px) + 5px) 10px 6px; background: linear-gradient(#1a2240, #121828); border-bottom: 2px solid var(--gold2); box-shadow: 0 6px 18px rgba(0,0,0,.55); color: var(--text); overflow: hidden; }
 .stepper[hidden], .step-nav[hidden] { display: none; }
 .st-top { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; color: var(--muted); font-weight: 600; font-size: .72rem; }
 .st-bar { height: 3px; background: #222b40; border-radius: 3px; overflow: hidden; }
@@ -522,3 +522,26 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .st-inrow { display: flex; gap: 6px; }
 .st-inrow .st-in { flex: 1; min-width: 0; }
 .st-ok { flex: none; border: 1px solid var(--gold2); background: var(--panel); color: var(--gold); border-radius: 8px; padding: 0 12px; font: 700 .9rem Inter, sans-serif; }
+
+/* gece adımları v4: küçük yazılar, not kalemi, sağ sütun / ince alt sıra */
+.stepper h2 { font-size: .98rem; }
+.sp-ic { width: 26px; height: 26px; }
+.st-txt { font-size: .84rem; line-height: 1.32; }
+.st-p { font-size: .74rem; padding: 0 8px; }
+.st-impb, .st-dead { font-size: .66rem; }
+.st-impl { font-size: .74rem; }
+.stepper .rw { font-size: .66rem; padding: 1px 6px; }
+.st-top { grid-template-columns: auto 1fr auto auto; }
+.st-pen { border: 1px solid var(--line2); background: transparent; color: var(--text); border-radius: 999px; width: 30px; height: 22px; padding: 0; font-size: .85rem; line-height: 1; }
+.st-pen.on { background: var(--gold); color: #1a1405; border-color: var(--gold); }
+.st-in { padding: 5px 8px; font-size: .82rem; }
+.st-ok { font-size: .8rem; padding: 0 10px; }
+.board-wrap.full.stepping .board-tools { display: none; }
+.step-nav { grid-template-columns: 46px 46px; padding: 6px 10px calc(var(--safe-b, 0px) + 8px); gap: 6px; }
+.step-nav .btn { min-height: 42px; font-size: .92rem; padding: 0 8px; }
+.board-wrap.full.stepping.navcol { padding-bottom: 8px; }
+.step-nav.col { left: auto; right: 8px; top: calc(var(--stT, 140px) + 12px); bottom: calc(var(--safe-b, 0px) + 12px); width: var(--navW, 90px); padding: 0; background: none;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; }
+.step-nav.col .btn { min-height: 52px; width: 100%; }
+.step-nav.col #stNext { min-height: 120px; font-size: 1rem; white-space: normal; line-height: 1.2; }
+.step-nav.col #stUndo { margin-bottom: auto; min-height: 44px; }

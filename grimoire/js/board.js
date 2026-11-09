@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261108-2317';
-import { remTr } from './data.js?v=20261108-2317';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261109-0330';
+import { remTr } from './data.js?v=20261109-0330';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -18,16 +18,20 @@ export const H = () => (board().clientHeight || 400) / SCALE;
 // Gece adımlarında tabla, üst panel ve alt düğmeler arasına orantılı küçültülerek sığdırılır
 export let SCALE = 1;
 export const defaultRatio = () => (window.innerHeight > window.innerWidth ? 1.25 : 0.72);
+// tablanın doğal yüksekliği (ana sayfadaki oranı ya da en alttaki token), genişlik bw iken
+export function stepNeed(bw) {
+  const rs = roleSize();
+  const low = G.S.tokens.reduce((m, t) => Math.max(m, t.y * bw + (t.kind === 'rem' ? remSize() : rs) / 2 + (t.kind === 'role' ? 16 : 4)), 0);
+  return Math.max((G.S.board.ratio || defaultRatio()) * bw, low);
+}
 export function applyHeight() {
   const b = board(), wrap = $('boardWrap');
   if (wrap.classList.contains('full')) {
     b.style.height = '';
     let k = 1;
     if (wrap.classList.contains('stepping')) {
-      const bw = b.clientWidth || 320, rs = roleSize();
-      const low = G.S.tokens.reduce((m, t) => Math.max(m, t.y * bw + (t.kind === 'rem' ? remSize() : rs) / 2 + (t.kind === 'role' ? 16 : 4)), 0);
-      const need = Math.max((G.S.board.ratio || defaultRatio()) * bw, low);
-      k = Math.min(1, (b.clientHeight || need) / need);
+      const need = stepNeed(b.clientWidth || 320);
+      k = Math.min(1, (b.clientHeight || need) / need, G.stepMaxK || 1);
     }
     SCALE = k;
     $('tokens').style.transform = k < 1 ? `scale(${k})` : '';

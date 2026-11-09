@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261108-2317';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261109-0330';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261108-2317';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf } from './board.js?v=20261108-2317';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261109-0330';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed } from './board.js?v=20261109-0330';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261108-2317';
-export const VERSION = '20261108-2317';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261109-0330';
+export const VERSION = '20261109-0330';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -193,7 +193,7 @@ function openStepper() {
 function closeStepper() {
   $('stepper').hidden = true; $('stepNav').hidden = true;
   const w = $('boardWrap'); w.classList.remove('stepping');
-  setTurn([]); renderBoard();
+  G.stepMaxK = 1; setTurn([]); renderBoard();
   if (stepFull && w.classList.contains('full')) toggleFull();
   stepFull = false;
 }
@@ -248,34 +248,38 @@ function renderStep() {
   } else {
     const r = role(st.id), allDead = st.mine.every(t => t.dead);
     turn = st.mine.map(t => t.id);
-    const who = st.mine.map(t => `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : 'isimsiz'}${t.dead ? ' †' : ''}</span>`).join('');
+    const who = st.mine.filter(t => t.name || st.mine.length > 1).map(t => `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : '?'}${t.dead ? ' †' : ''}</span>`).join('');
     const imp = st.mine.flatMap(t => impairOf(t).map(i => `<span class="st-impb">⚠ ${st.mine.length > 1 && t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</span>`)).join('');
     body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}${allDead ? ' gone' : ''}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
       <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${rich(st.txt)}</p>
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
-      <div class="st-inrow"><input class="st-in" id="stInfo" placeholder="Verdiğin bilgi (isteğe bağlı) — günlüğe" maxlength="160" enterkeyhint="done"><button class="st-ok" id="stInOk">Tamam</button></div></div>`;
+      ${STEP.note ? '<div class="st-inrow"><input class="st-in" id="stInfo" placeholder="Verdiğin bilgi — günlüğe yazılır" maxlength="160" enterkeyhint="done"><button class="st-ok" id="stInOk">Tamam</button></div>' : ''}</div>`;
     skip = true;
   }
-  const keep = $('stInfo') && STEP.shown === STEP.i ? { v: $('stInfo').value, f: document.activeElement === $('stInfo') } : null;
-  STEP.shown = STEP.i;
-  $('stepper').innerHTML = `<div class="st-top"><span>${esc(ph)} · ${STEP.i + 1}/${steps.length}</span><div class="st-bar"><i style="width:${(STEP.i + 1) / steps.length * 100}%"></i></div><button class="st-end" id="stX">Bitir ✕</button></div>
+  if (STEP.infoAt !== STEP.i) { STEP.infoAt = STEP.i; STEP.info = ''; STEP.note = false; }
+  const focused = document.activeElement && document.activeElement.id === 'stInfo';
+  $('stepper').innerHTML = `<div class="st-top"><span>${esc(ph)} · ${STEP.i + 1}/${steps.length}</span><div class="st-bar"><i style="width:${(STEP.i + 1) / steps.length * 100}%"></i></div>${st.k === 'role' ? `<button class="st-pen${STEP.info ? ' on' : ''}" id="stPen" aria-label="Not ekle" title="Verdiğin bilgiyi yaz">✎</button>` : ''}<button class="st-end" id="stX">Bitir ✕</button></div>
     <div class="st-body">${body}</div>`;
-  $('stepNav').innerHTML = `<button class="btn" id="stBack" ${STEP.i ? '' : 'disabled'}>‹</button>${skip ? '<button class="btn ghost" id="stSkip">Atla</button>' : ''}<button class="btn primary" id="stNext">${next}</button>`;
-  if (keep && $('stInfo')) { $('stInfo').value = keep.v; if (keep.f) $('stInfo').focus(); }
-  setTurn(turn);
-  const w = $('boardWrap');
-  w.style.setProperty('--stT', $('stepper').offsetHeight + 'px');
-  w.style.setProperty('--stB', $('stepNav').offsetHeight + 'px');
+  $('stepNav').innerHTML = `<button class="btn" id="stUndo" aria-label="Geri al" title="Son işlemi geri al">↶</button><button class="btn" id="stBack" ${STEP.i ? '' : 'disabled'} aria-label="Önceki adım">‹</button>${skip ? '<button class="btn ghost" id="stSkip">Atla</button>' : ''}<button class="btn primary" id="stNext">${next}</button>`;
   if ($('stInfo')) {
-    $('stInfo').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } };
-    $('stInOk').onclick = () => $('stInfo').blur();
+    const inp = $('stInfo'); inp.value = STEP.info;
+    if (focused || STEP.focus) { STEP.focus = false; inp.focus(); }
+    inp.oninput = () => { STEP.info = inp.value; };
+    const done = () => { STEP.info = inp.value.trim(); STEP.note = false; inp.blur(); renderStep(); };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); done(); } };
+    $('stInOk').onclick = done;
   }
+  if ($('stPen')) $('stPen').onclick = () => { STEP.note = !STEP.note; STEP.focus = STEP.note; renderStep(); };
+  $('stUndo').disabled = !canUndo();
+  $('stUndo').onclick = () => $('wrapUndo').click();
+  setTurn(turn);
+  layoutStep();
   $('stX').onclick = closeStepper;
   $('stBack').onclick = () => { STEP.i--; renderStep(); };
   if ($('stSkip')) $('stSkip').onclick = () => { STEP.i++; renderStep(); };
   $('stNext').onclick = () => {
     if (st.k === 'dawn') { closeStepper(); return phaseStep(1); }
-    const info = $('stInfo') ? $('stInfo').value.trim() : '';
+    const info = (($('stInfo') ? $('stInfo').value : STEP.info) || '').trim();
     if (st.id) commit(S => {
       const d = new Set(S.night.done[tab] || []); d.add(st.id); S.night.done[tab] = [...d];
       if (info) S.log.push({ id: uid(), ph, k: 'info', x: `${RN(st.id)}${st.mine && st.mine[0].name ? ' (' + st.mine[0].name + ')' : ''}: ${info}`, t: Date.now() });
@@ -283,6 +287,25 @@ function renderStep() {
     STEP.i++; renderStep();
   };
 }
+
+// Tabla ana sayfadaki oranıyla, sola dayalı küçülür. Sağda yeterli boşluk kalırsa düğmeler oraya dikey dizilir,
+// kalmazsa altta ince bir sıra olur.
+function layoutStep() {
+  const w = $('boardWrap'), nav = $('stepNav');
+  const topH = $('stepper').offsetHeight;
+  w.style.setProperty('--stT', topH + 'px'); nav.style.setProperty('--stT', topH + 'px');
+  const bw = $('board').clientWidth || window.innerWidth - 20, need = stepNeed(bw);
+  const NAVW = 80, NAVH = 58;
+  const kCol = Math.min(1, (window.innerHeight - topH - 18) / need, (bw - NAVW - 8) / bw);
+  const kBot = Math.min(1, (window.innerHeight - topH - NAVH - 18) / need);
+  const col = kCol >= kBot && kCol < 1;
+  w.classList.toggle('navcol', col); nav.classList.toggle('col', col);
+  G.stepMaxK = col ? (bw - NAVW - 8) / bw : 1;
+  if (col) nav.style.setProperty('--navW', Math.max(NAVW, Math.min(130, (1 - kCol) * bw - 14)) + 'px');
+  w.style.setProperty('--stB', col ? '0px' : nav.offsetHeight + 'px');
+  renderBoard();
+}
+window.addEventListener('resize', () => { if (!$('stepper').hidden) layoutStep(); });
 
 // ---- katlanır bölümler ----
 function renderPanes() {
