@@ -545,3 +545,28 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .step-nav.col .btn { min-height: 52px; width: 100%; }
 .step-nav.col #stNext { min-height: 120px; font-size: 1rem; white-space: normal; line-height: 1.2; }
 .step-nav.col #stUndo { margin-bottom: auto; min-height: 44px; }
+
+/* ===== v6: alt çubuk, sade başlık, göz yormayan görünüm ===== */
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+#app { padding-bottom: calc(var(--safe-b, 0px) + 74px); }
+.phase { grid-template-columns: auto 36px 1fr 36px; }
+.phase .sync { position: static; max-width: 32vw; height: 34px; }
+.ph-s { grid-column: 1 / -1; }
+.botbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(3, 1fr); background: #0d121c; border-top: 1px solid var(--line); padding: 4px 6px calc(var(--safe-b, 0px) + 4px); }
+.botbar button { background: none; border: 0; color: var(--muted); font: 600 .74rem Inter, sans-serif; display: grid; justify-items: center; gap: 1px; padding: 6px 0; }
+.botbar button i { font-style: normal; font-size: 1.15rem; line-height: 1.2; color: var(--gold); }
+.botbar button:active { color: var(--gold); }
+body.stepping .botbar { display: none; }
+.toast { bottom: calc(var(--safe-b, 0px) + 78px); }
+.board { background: #121825 !important; }
+.tok.linked .disc { border: 2px solid var(--gc) !important; box-shadow: 0 3px 8px rgba(0,0,0,.55) !important; }
+.pname { font-size: max(.72rem, calc(var(--s) * .15)) !important; font-weight: 700; }
+
+/* gece adımı düğmeleri: hep altta, ince */
+.step-nav, .step-nav.col { left: 0; right: 0; top: auto; bottom: 0; width: auto; display: grid; grid-auto-flow: column; grid-template-columns: 40px 40px; grid-auto-columns: 1fr; gap: 6px; padding: 5px 8px calc(var(--safe-b, 0px) + 6px); background: #0d121c; border-top: 1px solid var(--line); }
+.step-nav .btn, .step-nav.col .btn, .step-nav.col #stNext, .step-nav.col #stUndo { min-height: 38px; height: 38px; font-size: .85rem; padding: 0 6px; margin: 0; width: auto; }
+.step-nav #stNext { grid-column: span 2; }
+.board-wrap.full.stepping.navcol { padding-bottom: calc(var(--stB, 50px) + 4px); }
+.board-wrap.full.stepping .board { touch-action: none; }
+.st-zoom { position: fixed; right: 10px; bottom: calc(var(--stB, 50px) + 10px); z-index: 46; border: 1px solid var(--gold2); background: rgba(13,18,28,.9); color: var(--gold); border-radius: 999px; padding: 6px 12px; font: 700 .8rem Inter, sans-serif; }
+.st-zoom[hidden] { display: none; }
