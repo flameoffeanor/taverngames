@@ -1,7 +1,7 @@
 // Grimoire tablası: simgelerin çizimi, sürükleme, ızgaraya yapışma, kilit.
 // Konumlar tabla genişliğine oranla saklanır (x, y = merkez / genişlik), böylece ekran boyu değişince düzen korunur.
-import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261110-1453';
-import { remTr } from './data.js?v=20261110-1453';
+import { G, $, esc, role, icon, commit, save, uid, syncNow } from './core.js?v=20261110-1457';
+import { remTr } from './data.js?v=20261110-1457';
 
 // Simge boyu tabla genişliğine göre ölçeklenir (telefon ≈ 60px, tablet ≈ 90px), ayar kaydırıcısı bunu çarpar
 const base = () => Math.min(92, Math.max(56, W() * 0.16));
@@ -17,6 +17,64 @@ export const W = () => board().clientWidth || 320;
 export const H = () => (board().clientHeight || 400) / SCALE;
 // Gece adımlarında tabla, üst panel ve alt düğmeler arasına orantılı küçültülerek sığdırılır
 export let SCALE = 1;
+// Gece adımlarında iki parmakla yakınlaştırma / tek parmakla kaydırma (boş alanda)
+export let ZOOM = 1;
+let PX = 0, PY = 0;
+function applyTf() {
+  const k = SCALE * ZOOM;
+  $('tokens').style.transform = k !== 1 || PX || PY ? `translate(${PX}px,${PY}px) scale(${k})` : '';
+  document.dispatchEvent(new CustomEvent('boardzoom', { detail: ZOOM }));
+}
+export function resetZoom() { ZOOM = 1; PX = 0; PY = 0; applyTf(); }
+const zoomable = () => $('boardWrap').classList.contains('stepping');
+const pts = new Map();
+let pinch = null, pan = null, lastTapEmpty = 0;
+function clampPan() {
+  const b = board(), bw = b.clientWidth, bh = b.clientHeight, k = SCALE * ZOOM;
+  const cw = bw * k, ch = stepNeed(bw) * k;
+  PX = Math.min(Math.max(PX, Math.min(0, bw - cw) - 30), Math.max(0, bw - cw) + 30);
+  PY = Math.min(Math.max(PY, Math.min(0, bh - ch) - 30), Math.max(0, bh - ch) + 30);
+}
+function zDown(e) {
+  if (!zoomable()) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pts.size === 2) {
+    // ikinci parmak: varsa token sürüklemeyi iptal et, yakınlaştırmaya geç
+    if (drag) { clearTimeout(drag.holdT); drag.el.classList.remove('drag'); drag = null; renderBoard(); }
+    const [a, c] = [...pts.values()], r = board().getBoundingClientRect();
+    pinch = { d0: Math.hypot(a.x - c.x, a.y - c.y) || 1, mx: (a.x + c.x) / 2 - r.left, my: (a.y + c.y) / 2 - r.top, z0: ZOOM, px: PX, py: PY };
+    pan = null; window.__tapAt = Date.now();
+    e.stopImmediatePropagation(); e.preventDefault();
+  } else if (pts.size === 1 && !e.target.closest('.tok')) {
+    const now = Date.now();
+    if (now - lastTapEmpty < 300 && ZOOM !== 1) { resetZoom(); lastTapEmpty = 0; return; } // boşluğa çift dokun: sıfırla
+    lastTapEmpty = now;
+    if (ZOOM > 1) pan = { sx: e.clientX, sy: e.clientY, px: PX, py: PY };
+  }
+}
+function zMove(e) {
+  if (!pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && pts.size >= 2) {
+    const [a, c] = [...pts.values()], r = board().getBoundingClientRect();
+    const d = Math.hypot(a.x - c.x, a.y - c.y), mx = (a.x + c.x) / 2 - r.left, my = (a.y + c.y) / 2 - r.top;
+    const z = Math.min(4, Math.max(1, pinch.z0 * d / pinch.d0));
+    const k0 = SCALE * pinch.z0, k = SCALE * z;
+    const qx = (pinch.mx - pinch.px) / k0, qy = (pinch.my - pinch.py) / k0; // parmakların altındaki tabla noktası
+    ZOOM = z; PX = mx - k * qx; PY = my - k * qy;
+    if (ZOOM === 1) { PX = 0; PY = 0; } else clampPan();
+    applyTf();
+    e.stopImmediatePropagation(); e.preventDefault();
+  } else if (pan) {
+    PX = pan.px + e.clientX - pan.sx; PY = pan.py + e.clientY - pan.sy; clampPan(); applyTf();
+    e.preventDefault();
+  }
+}
+function zUp(e) {
+  pts.delete(e.pointerId);
+  if (pts.size < 2 && pinch) { pinch = null; window.__tapAt = Date.now(); e.stopImmediatePropagation(); }
+  if (!pts.size) pan = null;
+}
 export const defaultRatio = () => (window.innerHeight > window.innerWidth ? 1.25 : 0.72);
 // tablanın doğal yüksekliği (ana sayfadaki oranı ya da en alttaki token), genişlik bw iken
 export function stepNeed(bw) {
@@ -34,10 +92,11 @@ export function applyHeight() {
       k = Math.min(1, (b.clientHeight || need) / need, G.stepMaxK || 1);
     }
     SCALE = k;
-    $('tokens').style.transform = k < 1 ? `scale(${k})` : '';
+    if (!wrap.classList.contains('stepping')) { ZOOM = 1; PX = 0; PY = 0; }
+    applyTf();
     return;
   }
-  SCALE = 1; $('tokens').style.transform = '';
+  SCALE = 1; ZOOM = 1; PX = 0; PY = 0; applyTf();
   const r = G.S.board.ratio || defaultRatio();
   b.style.height = Math.round(b.clientWidth * r) + 'px';
 }
@@ -232,7 +291,7 @@ function move(e) {
   if (!drag.moved && Math.hypot(dx, dy) < 6) return;
   if (!drag.moved) { clearTimeout(drag.holdT); drag.moved = true; drag.el.classList.add('drag'); }
   const w = W(), s = sizeOf(drag.t);
-  let [x, y] = clampXY(drag.ox + dx / (w * SCALE), drag.oy + dy / (w * SCALE), s);
+  let [x, y] = clampXY(drag.ox + dx / (w * SCALE * ZOOM), drag.oy + dy / (w * SCALE * ZOOM), s);
   if (drag.t.kind === 'rem') {
     // canlı önizleme: yaklaşınca renk değişir, uzaklaşınca eski haline döner
     const o = nearestOwner(x, y, drag.t.id), prev = drag.target;
@@ -291,6 +350,11 @@ function rzUp(e) {
 
 export function initBoard() {
   const t = $('tokens');
+  const bd = board();
+  bd.addEventListener('pointerdown', zDown, true);
+  bd.addEventListener('pointermove', zMove, true);
+  bd.addEventListener('pointerup', zUp, true);
+  bd.addEventListener('pointercancel', zUp, true);
   t.addEventListener('contextmenu', e => e.preventDefault());
   t.addEventListener('pointerdown', down);
   t.addEventListener('pointermove', move);

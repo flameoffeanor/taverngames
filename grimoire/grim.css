@@ -561,3 +561,12 @@ body.stepping .botbar { display: none; }
 .board { background: #121825 !important; }
 .tok.linked .disc { border: 2px solid var(--gc) !important; box-shadow: 0 3px 8px rgba(0,0,0,.55) !important; }
 .pname { font-size: max(.72rem, calc(var(--s) * .15)) !important; font-weight: 700; }
+
+/* gece adımı düğmeleri: hep altta, ince */
+.step-nav, .step-nav.col { left: 0; right: 0; top: auto; bottom: 0; width: auto; display: grid; grid-auto-flow: column; grid-template-columns: 40px 40px; grid-auto-columns: 1fr; gap: 6px; padding: 5px 8px calc(var(--safe-b, 0px) + 6px); background: #0d121c; border-top: 1px solid var(--line); }
+.step-nav .btn, .step-nav.col .btn, .step-nav.col #stNext, .step-nav.col #stUndo { min-height: 38px; height: 38px; font-size: .85rem; padding: 0 6px; margin: 0; width: auto; }
+.step-nav #stNext { grid-column: span 2; }
+.board-wrap.full.stepping.navcol { padding-bottom: calc(var(--stB, 50px) + 4px); }
+.board-wrap.full.stepping .board { touch-action: none; }
+.st-zoom { position: fixed; right: 10px; bottom: calc(var(--stB, 50px) + 10px); z-index: 46; border: 1px solid var(--gold2); background: rgba(13,18,28,.9); color: var(--gold); border-radius: 999px; padding: 6px 12px; font: 700 .8rem Inter, sans-serif; }
+.st-zoom[hidden] { display: none; }
