@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="grim.css?v=20261109-0330">
+<link rel="stylesheet" href="grim.css?v=20261110-1453">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -39,13 +39,11 @@
 </section>
 
 <div id="app" hidden>
-  <header class="top">
-    <h1 class="brand">Grimoire</h1>
-    <button class="sync off" id="syncDot" aria-label="Senkron durumu"></button>
-    <nav class="jump">
-      <a href="#secBoard">Grimoire</a><a href="#secNight">Gece</a><a href="#secMore">Diğer</a><a href="#chatBox" id="jChat" hidden>Sohbet</a>
-    </nav>
+  <header class="top" id="top">
+    <h1 class="brand vh">Grimoire</h1>
+    <a id="jChat" hidden></a>
     <div class="phase" id="phaseBar">
+      <button class="sync off" id="syncDot" aria-label="Masa / oda"></button>
       <button class="ph-b" id="phPrev" aria-label="Önceki evre">‹</button>
       <button class="ph-c" id="phNow"></button>
       <button class="ph-b" id="phNext" aria-label="Sonraki evre">›</button>
@@ -141,7 +139,7 @@
     <button class="pane-h" data-pane="more"><span class="car">▾</span>Diğer</button>
     <div class="pane-b">
       <div class="sub">
-        <h3>Bilgi kartları</h3>
+        <h3 id="infoHead">Bilgi kartları</h3>
         <div class="info-grid" id="infoGrid"></div>
         <div class="row-in"><input id="infoNew" placeholder="Kendi kartını yaz"><button class="btn small" id="bInfoAdd">Ekle</button></div>
       </div>
@@ -181,12 +179,17 @@
 <div id="show" class="show" hidden></div>
 <div id="toast" class="toast" hidden></div>
 <button id="noteAlert" class="note-alert" hidden></button>
+<nav class="botbar" id="botbar">
+  <button data-go="board|secBoard"><i>◎</i>Grimoire</button>
+  <button data-go="night|secNight"><i>☾</i>Gece</button>
+  <button data-go="more|infoHead"><i>▤</i>Bilgi kartları</button>
+</nav>
 <div id="stepper" class="stepper" hidden></div>
 <div id="stepNav" class="step-nav" hidden></div>
 
 <script>
 firebase.initializeApp({apiKey:"AIzaSyDtHAhzYNDf7PHrj-48EelC6OQtp3pkv4E",authDomain:"tavern-quiz.firebaseapp.com",databaseURL:"https://tavern-quiz-default-rtdb.europe-west1.firebasedatabase.app",projectId:"tavern-quiz",appId:"1:280835700622:web:043d61c02d689de87056df"});
 </script>
-<script type="module" src="js/app.js?v=20261109-0330"></script>
+<script type="module" src="js/app.js?v=20261110-1453"></script>
 </body>
 </html>

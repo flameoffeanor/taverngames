@@ -545,3 +545,19 @@ h4.t-townsfolk, h4.t-outsider, h4.t-minion, h4.t-demon, h4.t-traveller, h4.t-fab
 .step-nav.col .btn { min-height: 52px; width: 100%; }
 .step-nav.col #stNext { min-height: 120px; font-size: 1rem; white-space: normal; line-height: 1.2; }
 .step-nav.col #stUndo { margin-bottom: auto; min-height: 44px; }
+
+/* ===== v6: alt çubuk, sade başlık, göz yormayan görünüm ===== */
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+#app { padding-bottom: calc(var(--safe-b, 0px) + 74px); }
+.phase { grid-template-columns: auto 36px 1fr 36px; }
+.phase .sync { position: static; max-width: 32vw; height: 34px; }
+.ph-s { grid-column: 1 / -1; }
+.botbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: grid; grid-template-columns: repeat(3, 1fr); background: #0d121c; border-top: 1px solid var(--line); padding: 4px 6px calc(var(--safe-b, 0px) + 4px); }
+.botbar button { background: none; border: 0; color: var(--muted); font: 600 .74rem Inter, sans-serif; display: grid; justify-items: center; gap: 1px; padding: 6px 0; }
+.botbar button i { font-style: normal; font-size: 1.15rem; line-height: 1.2; color: var(--gold); }
+.botbar button:active { color: var(--gold); }
+body.stepping .botbar { display: none; }
+.toast { bottom: calc(var(--safe-b, 0px) + 78px); }
+.board { background: #121825 !important; }
+.tok.linked .disc { border: 2px solid var(--gc) !important; box-shadow: 0 3px 8px rgba(0,0,0,.55) !important; }
+.pname { font-size: max(.72rem, calc(var(--s) * .15)) !important; font-weight: 700; }

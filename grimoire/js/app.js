@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261109-0330';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261110-1453';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261109-0330';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed } from './board.js?v=20261109-0330';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261110-1453';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed } from './board.js?v=20261110-1453';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261109-0330';
-export const VERSION = '20261109-0330';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261110-1453';
+export const VERSION = '20261110-1453';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -184,7 +184,7 @@ function openStepper() {
   if (STEP.key !== key) STEP = { i: 0, key };
   const w = $('boardWrap');
   stepFull = !w.classList.contains('full');
-  w.classList.add('stepping');
+  w.classList.add('stepping'); document.body.classList.add('stepping');
   if (stepFull) toggleFull();
   $('stepper').hidden = false; $('stepNav').hidden = false;
   renderStep();
@@ -192,7 +192,7 @@ function openStepper() {
 }
 function closeStepper() {
   $('stepper').hidden = true; $('stepNav').hidden = true;
-  const w = $('boardWrap'); w.classList.remove('stepping');
+  const w = $('boardWrap'); w.classList.remove('stepping'); document.body.classList.remove('stepping');
   G.stepMaxK = 1; setTurn([]); renderBoard();
   if (stepFull && w.classList.contains('full')) toggleFull();
   stepFull = false;
@@ -869,7 +869,6 @@ function renderNight() {
     rem.push(`<div class="ne t-${role(t.role).team}${done.has(t.role) ? ' done' : ''}${allDead ? ' dead' : ''}" data-k="${t.role}">
       ${icon(t.role, 'ic')}<div><b class="ne-t">${esc(RN(t.role))}${who !== '—' ? ` <small>· ${who}</small>` : ''}</b><div class="rws">${chips}</div></div></div>`);
   });
-  if (rem.length) rows.unshift(`<section class="ne-rems"><h4 class="ne-h">Hatırlatmalar <small>· gece sırası değil</small></h4>${rem.join('')}</section>`);
   $('nightList').innerHTML = rows.join('') || '<p class="muted pad">Bu gece uyanan karakter yok.</p>';
 }
 
@@ -979,6 +978,12 @@ function wire() {
   $('optDead').onchange = e => commit(S => { S.night.showDead = e.target.checked; }, true);
   $('optOut').onchange = e => commit(S => { S.night.showOut = e.target.checked; }, true);
   $('bStep').onclick = openStepper;
+  // alt çubuk: sayfa aynı kalır, düğmeler ilgili bölüme kaydırır (kapalıysa açar)
+  document.querySelectorAll('#botbar [data-go]').forEach(b => b.onclick = () => {
+    const [pane, el] = b.dataset.go.split('|');
+    if (G.S.open[pane]) commit(S => { S.open[pane] = false; }, true);
+    setTimeout(() => { const t = $(el); const y = t.getBoundingClientRect().top + window.scrollY - $('top').offsetHeight - 8; window.scrollTo({ top: y, behavior: 'smooth' }); }, 30);
+  });
   $('phNext').onclick = () => phaseStep(1);
   $('phPrev').onclick = () => phaseStep(-1);
   $('phNow').onclick = openLog;
