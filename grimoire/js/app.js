@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261110-1501';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261110-1517';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261110-1501';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed, resetZoom } from './board.js?v=20261110-1501';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261110-1517';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed, resetZoom } from './board.js?v=20261110-1517';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261110-1501';
-export const VERSION = '20261110-1501';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261110-1517';
+export const VERSION = '20261110-1517';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -81,7 +81,8 @@ function renderAll() {
 const PH0 = { n: 1, day: false };
 const phaseLabel = p => (p.day ? `Gün ${p.n}` : `Gece ${p.n}`);
 const curPhase = () => G.S.phase || PH0;
-function players() { return boardRoles().filter(t => role(t.role).team !== 'fabled'); }
+// oyuncular: Efsanevi ve yönetici rolü (t.st: yöneticinin kendine hatırlatma için koyduğu token) sayılmaz
+function players() { return boardRoles().filter(t => role(t.role).team !== 'fabled' && !t.st); }
 let seenPhase = '';
 function renderPhase() {
   const p = curPhase();
@@ -164,7 +165,7 @@ function nightSteps() {
   const S = G.S, D = G.D, tab = S.night.tab;
   const list = tab === 'first' ? D.night.firstNight : D.night.otherNight;
   const toks = boardRoles();
-  const pc = toks.filter(t => !['fabled', 'traveller'].includes(role(t.role).team)).length;
+  const pc = toks.filter(t => !t.st && !['fabled', 'traveller'].includes(role(t.role).team)).length;
   const steps = [{ k: 'summary' }];
   for (const id of list) {
     if (id === 'dusk') continue;
@@ -236,7 +237,7 @@ function renderStep() {
     next = 'Başla ›';
   } else if (st.k === 'struct') {
     const [nm, txt] = STRUCT[st.id];
-    turn = toks.filter(t => ['minion', 'demon'].includes(role(t.role).team)).map(t => t.id);
+    turn = toks.filter(t => !t.st && ['minion', 'demon'].includes(role(t.role).team)).map(t => t.id);
     body = `<div class="sp-head"><span class="ne-ic s-${st.id}"></span><h2>${nm}</h2></div><div class="sp-scroll"><p class="st-txt">${esc(txt)}</p></div>`;
     skip = true;
   } else if (st.k === 'dawn') {
@@ -249,7 +250,7 @@ function renderStep() {
   } else {
     const r = role(st.id), allDead = st.mine.every(t => t.dead);
     turn = st.mine.map(t => t.id);
-    const who = st.mine.filter(t => t.name || st.mine.length > 1).map(t => `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : '?'}${t.dead ? ' †' : ''}</span>`).join('');
+    const who = st.mine.filter(t => t.name || t.st || st.mine.length > 1).map(t => t.st ? '<span class="st-p me">🎩 Sen (yönetici)</span>' : `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : '?'}${t.dead ? ' †' : ''}</span>`).join('');
     const imp = st.mine.flatMap(t => impairOf(t).map(i => `<span class="st-impb">⚠ ${st.mine.length > 1 && t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</span>`)).join('');
     body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}${allDead ? ' gone' : ''}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
       <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${rich(st.txt)}</p>
@@ -425,7 +426,7 @@ function placeChosen() {
   const list = [];
   Object.entries(G.S.setup.pick).forEach(([id, c]) => { for (let i = 0; i < c; i++) list.push(id); });
   list.sort((a, b) => order.indexOf(role(a).team) - order.indexOf(role(b).team));
-  const existing = boardRoles().filter(t => role(t.role).team !== 'fabled');
+  const existing = boardRoles().filter(t => role(t.role).team !== 'fabled' && !t.st);
   const replace = () => {
     closeModal();
     commit(S => {
@@ -447,7 +448,7 @@ function startDeal() {
   Object.entries(G.S.setup.pick).forEach(([id, c]) => { for (let i = 0; i < c; i++) list.push(id); });
   if (!list.length) { toast('Önce karakterleri seç.'); return openChars(); }
   for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
-  const existing = boardRoles().filter(t => role(t.role).team !== 'fabled');
+  const existing = boardRoles().filter(t => role(t.role).team !== 'fabled' && !t.st);
   const go = () => {
     commit(S => {
       const gone = new Set(existing.map(t => t.id));
@@ -562,6 +563,7 @@ function openToken(id) {
       <button class="btn" data-a="swap">Değiştir</button>
       ${fab ? '' : `<button class="btn" data-a="vote" ${t.dead ? '' : 'disabled'}>${t.dead ? (t.voteUsed ? 'Ölü oyu: kullandı' : 'Ölü oyu: var') : 'Ölü oyu'}</button>`}
     </div>
+    ${fab ? '' : `<button class="btn ghost wide st-btn" data-a="st">${t.st ? '👤 Oyuncu olarak say' : '🎩 Yönetici rolü (oyuncu sayılmasın)'}</button>`}
     <button class="btn warn wide" data-a="del">Simgeyi kaldır</button>
     ${trav ? '<p class="muted small">Gezginler idam edilmez, sürgün edilir.</p>' : ''}`, body => {
     const save1 = () => setName(t.id, $('tmName').value);
@@ -594,6 +596,7 @@ function openToken(id) {
         kill(); closeModal();
       }
       if (a === 'flip') { commit(S => { const q = tokById(id); q.flip = !q.flip; }); openToken(id); }
+      if (a === 'st') { const on = !t.st; commit(S => { const q = tokById(id); if (on) q.st = true; else delete q.st; }); toast(on ? 'Yönetici rolü: oyuncu sayılarına girmiyor. Geri almak için aynı düğme ya da ↶.' : 'Tekrar oyuncu olarak sayılıyor.', 3500); openToken(id); }
       if (a === 'vote') { commit(S => { const q = tokById(id); q.voteUsed = !q.voteUsed; }); openToken(id); }
       if (a === 'rem') pickReminder(id, () => openToken(id));
       if (a === 'swap') pickRole({ title: 'Yeni karakter' }, rid => { commit(S => { tokById(id).role = rid; }); openToken(id); }, () => openToken(id));
@@ -810,7 +813,7 @@ function renderNight() {
   const toks = boardRoles();
   const script = new Set(scriptIds());
   const done = new Set(S.night.done[tab] || []);
-  const players = toks.filter(t => role(t.role).team !== 'fabled' && role(t.role).team !== 'traveller').length;
+  const players = toks.filter(t => !t.st && role(t.role).team !== 'fabled' && role(t.role).team !== 'traveller').length;
   let n = 0;
   const rows = [];
   for (const id of list) {
@@ -842,7 +845,7 @@ function renderNight() {
         ? '<span class="rw fg">✔ Dönüşüm yapıldı: Yabancılar artık normal ölür</span>'
         : `<span class="rw fg">⚠ Yabancı seçerse (ilk kez): Fang Gu ölür, o oyuncu Fang Gu olur!${outs.length ? ' Yabancılar: <b>' + outs.join(', ') + '</b>' : ''}</span>`);
     }
-    const who = mine.map(t => `${t.name ? esc(t.name) : '—'}${t.dead ? ' †' : ''}`).join(', ');
+    const who = mine.map(t => t.st ? '🎩 Sen' : `${t.name ? esc(t.name) : '—'}${t.dead ? ' †' : ''}`).join(', ');
     rows.push(`<div class="ne t-${role(id).team}${done.has(id) ? ' done' : ''}${playing ? '' : ' out'}${allDead ? ' dead' : ''}" data-k="${id}">
       ${icon(id, 'ic')}<div><b class="ne-t">${num && S.board.nums ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${rich(txt)}</p>${warn.length ? `<div class="rws">${warn.join('')}</div>` : ''}</div></div>`);
   }
@@ -974,7 +977,11 @@ function wire() {
   $('nightTabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) commit(S => { S.night.tab = b.dataset.tab; }, true); };
   $('optDead').onchange = e => commit(S => { S.night.showDead = e.target.checked; }, true);
   $('optOut').onchange = e => commit(S => { S.night.showOut = e.target.checked; }, true);
-  $('bStep').onclick = openStepper;
+  $('bStep').onclick = () => {
+    if (curPhase().day) phaseStep(1); // gündüzden: sonraki geceye geç (sonraki geceler sırası, işaretler sıfır)
+    else { const t = curPhase().n === 1 ? 'first' : 'other'; if (G.S.night.tab !== t) commit(S => { S.night.tab = t; }, true); }
+    openStepper();
+  };
   // alt çubuk: sayfa aynı kalır, düğmeler ilgili bölüme kaydırır (kapalıysa açar)
   document.querySelectorAll('#botbar [data-go]').forEach(b => b.onclick = () => {
     const [pane, el] = b.dataset.go.split('|');

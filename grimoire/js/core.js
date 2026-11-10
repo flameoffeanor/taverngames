@@ -1,5 +1,5 @@
 // Ortak durum, kayıt, geri alma ve küçük yardımcılar.
-import { normId } from './data.js?v=20261110-1501';
+import { normId } from './data.js?v=20261110-1517';
 
 const KEY = 'tg-g3-state';
 export const G = { D: null, S: null };

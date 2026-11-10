@@ -570,3 +570,10 @@ body.stepping .botbar { display: none; }
 .board-wrap.full.stepping .board { touch-action: none; }
 .st-zoom { position: fixed; right: 10px; bottom: calc(var(--stB, 50px) + 10px); z-index: 46; border: 1px solid var(--gold2); background: rgba(13,18,28,.9); color: var(--gold); border-radius: 999px; padding: 6px 12px; font: 700 .8rem Inter, sans-serif; }
 .st-zoom[hidden] { display: none; }
+
+/* yönetici rolü tokenı: oyuncu sayılmaz */
+.tok.role.st .disc { border-style: dashed !important; opacity: .7; }
+.tok.role.st .pname { opacity: .7; }
+.stb { position: absolute; bottom: -2px; left: -4px; font-size: calc(var(--s) * .26); line-height: 1; filter: drop-shadow(0 1px 2px #000); z-index: 3; }
+.st-p.me { background: #3a3f52; color: #e6e9f2; }
+.st-btn { font-size: .85rem; }
