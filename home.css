@@ -30,3 +30,16 @@ section{margin-top:8px}
 .about p{color:var(--muted);max-width:40em}
 footer{margin-top:40px}
 .zone{position:relative;text-align:center}.zone .logo{display:inline-block;position:relative;z-index:1}
+/* Kart kimlikleri */
+.t-botc{background:radial-gradient(120% 90% at 100% 0,rgba(176,24,24,.32),transparent 60%),linear-gradient(160deg,#1d0a0a,#0d0606);border-color:rgba(224,74,63,.35)}
+.t-botc::before{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,transparent,#b3191c 20%,#e04a3f 50%,#b3191c 80%,transparent);opacity:.85}
+.t-botc h3{color:#f3d6c9;letter-spacing:.02em}
+.t-kutu .covers{display:flex;gap:6px;margin-top:12px}
+.tile .covers img{width:auto;height:58px;aspect-ratio:3/4;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,.12);box-shadow:0 4px 10px rgba(0,0,0,.45);transition:transform .25s}
+.tile .covers img:nth-child(odd){transform:rotate(-3deg)}.tile .covers img:nth-child(even){transform:rotate(2.5deg)}
+.tile:hover .covers img{transform:translateY(-3px)}
+@media(max-width:560px){.tile .covers img{height:48px}.tile .covers img:nth-child(n+6){display:none}}
+/* Mobilde ilk ekran: logo küçülsün, başlık ve buton görünür olsun */
+@media(max-width:560px){.hero .logo{width:min(44vw,170px)}.hero h1{margin-top:8px}}
+.t-kutu>div{flex:1;min-width:0}.t-kutu .covers{overflow:hidden;padding:4px 2px}
+.tile .covers img:nth-child(n+6){display:none}

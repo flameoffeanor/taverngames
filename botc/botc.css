@@ -5,7 +5,7 @@ header{position:relative;text-align:center;padding:30px 0 22px;margin-bottom:20p
 header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--r),transparent)}
 header .header-link{display:none}
 .header-subtext{font-size:.92rem;color:var(--text-muted)}
-.header-subtext strong{display:block;font-family:'Cinzel',serif;font-size:clamp(1.5rem,6.5vw,2.1rem);line-height:1.15;letter-spacing:.06em;color:var(--r);text-shadow:0 0 28px rgba(224,74,63,.45);margin-bottom:8px}
+.header-subtext .ttl{display:block;font-family:'Cinzel',serif;font-size:clamp(1.5rem,6.5vw,2.1rem);line-height:1.15;letter-spacing:.06em;color:var(--r);text-shadow:0 0 28px rgba(224,74,63,.45);margin-bottom:8px}
 .soc{margin:0 0 22px}
 .social-card{display:flex;flex-direction:row;flex-wrap:wrap;gap:10px;justify-content:center;background:none;border:0;box-shadow:none;padding:0;margin-bottom:20px}
 .social-card .social-link-item{flex:1 1 230px;display:flex;align-items:center;gap:12px;padding:10px 18px;border-radius:999px;background:var(--card-bg);border:1px solid var(--border-color);transition:.2s}
@@ -101,7 +101,7 @@ header .header-link{display:none}
 /* Script açıkken üst kısmı küçült */
 body.has-script header{padding:12px 0 10px;margin-bottom:10px}
 body.has-script .header-subtext{font-size:0}
-body.has-script .header-subtext strong{font-size:1.25rem;margin:0;text-shadow:none}
+body.has-script .header-subtext .ttl{font-size:1.25rem;margin:0;text-shadow:none}
 body.has-script .social-card{gap:8px;margin-bottom:12px}
 body.has-script .social-card .social-link-item{flex:1 1 0;padding:7px 12px;gap:8px;justify-content:center}
 body.has-script .social-sub{display:none}
@@ -142,3 +142,6 @@ body.has-script .notes-group{margin-bottom:14px}
  .btn-script{min-height:46px;padding:9px 14px!important}
 }
 .search-container{margin-bottom:16px}
+
+header .eyebrow{margin:0;font-weight:700}
+.header-subtext .ttl{font-weight:700}
