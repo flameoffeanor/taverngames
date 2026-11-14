@@ -4,6 +4,7 @@
 const SHEET_ID = '1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY';
 const CHAR_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`;
 const SCRIPT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=1395107313`;
+const JINX_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=929135324`;
 const CACHE_KEY = 'tg-g3-data';
 
 export const TEAMS = ['townsfolk', 'outsider', 'minion', 'demon', 'traveller', 'fabled'];
@@ -76,12 +77,14 @@ async function fetchText(url) {
   return r.text();
 }
 
+const oldJinx = () => { try { return JSON.parse(localStorage.getItem(CACHE_KEY)).jinx || []; } catch (e) { return []; } };
+
 export async function loadData(force = false) {
-  const official = await (await fetch('data/official.json?v=20261114-1759')).json();
+  const official = await (await fetch('data/official.json?v=20261114-1815')).json();
   let sheet, offline = false;
   try {
-    const [c, s] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL)]);
-    sheet = { chars: parseCSV(c), scripts: parseCSV(s), at: Date.now() };
+    const [c, s, j] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL), fetchText(JINX_URL).catch(() => '')]);
+    sheet = { chars: parseCSV(c), scripts: parseCSV(s), jinx: j ? parseCSV(j) : oldJinx(), at: Date.now() };
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(sheet)); } catch (e) {}
   } catch (e) {
     try { sheet = JSON.parse(localStorage.getItem(CACHE_KEY)); } catch (e2) {}
@@ -125,7 +128,10 @@ function build(official, sheet, offline) {
     const parsed = parseScript(row.id);
     if (name && parsed && parsed.roles.length) scripts.push({ name, roles: parsed.roles.filter(x => roles[x]) });
   }
-  return { roles, scripts, night: official.night, offline, at: sheet.at };
+  // Uğursuzluklar (jinx): Sheet'in Uğursuzluklar sekmesi — rol1, rol2, aciklama, aciklama_en
+  const jinx = (sheet.jinx || []).map(r => ({ a: normId(r.rol1), b: normId(r.rol2), tr: r.aciklama || '', en: r.aciklama_en || '' }))
+    .filter(j => j.a && j.b && (j.tr || j.en));
+  return { roles, scripts, jinx, night: official.night, offline, at: sheet.at };
 }
 
 // Script JSON'u: ["id", {"id": "..."}, {"id":"_meta","name":"..."}]

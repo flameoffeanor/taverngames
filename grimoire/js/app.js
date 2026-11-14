@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261114-1759';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261114-1815';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261114-1759';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed, resetZoom } from './board.js?v=20261114-1759';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261114-1815';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed, resetZoom } from './board.js?v=20261114-1815';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261114-1759';
-export const VERSION = '20261114-1759';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261114-1815';
+export const VERSION = '20261114-1815';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -162,6 +162,28 @@ function openLog() {
 // Sheet'te Türkçesi olmayan gece metni resmi İngilizceden gelir; işaretle
 const enTag = (id, tab) => (tab === 'first' ? role(id).firstEn : role(id).otherEn) ? '<span class="en-tag" title="Sheet\'te Türkçesi yok">EN</span>' : '';
 
+// ================= uğursuzluklar (jinx) =================
+// İki rol de tablada → "oyunda"; ikisi de script'te → "script'te" (script yoksa sadece tabla)
+function jinxes() {
+  const all = (G.D && G.D.jinx) || [], play = inPlay();
+  const sc = new Set(G.S.script.roles.length ? [...scriptIds(), ...play] : play);
+  const on = [], rest = [];
+  for (const j of all) {
+    if (play.has(j.a) && play.has(j.b)) on.push(j);
+    else if (sc.has(j.a) && sc.has(j.b)) rest.push(j);
+  }
+  return { on, rest };
+}
+const jxText = j => j.tr ? rich(j.tr) : `<span class="en-tag" title="Sheet'te Türkçesi yok">EN</span>${rich(j.en)}`;
+const jxRow = (j, on) => `<div class="jx${on ? ' on' : ''}"><span class="jx-ics">${icon(j.a, 'ic')}${icon(j.b, 'ic')}</span><div><b class="ne-t">${esc(RN(j.a))} <i>⚡</i> ${esc(RN(j.b))}</b><p>${jxText(j)}</p></div></div>`;
+function jinxSection() {
+  const { on, rest } = jinxes();
+  if (!on.length && !rest.length) return '';
+  return `<section class="ne-jx"><h4 class="ne-h">⚡ Uğursuzluklar <small>· ${on.length ? on.length + ' tanesi oyunda' : 'tablada yok'}</small></h4>
+    ${on.map(j => jxRow(j, true)).join('')}
+    ${rest.length ? `<details class="jx-more"${on.length ? '' : ' open'}><summary>Script'te olup tablada olmayanlar (${rest.length})</summary>${rest.map(j => jxRow(j, false)).join('')}</details>` : ''}</section>`;
+}
+
 // ================= adım adım gece =================
 let STEP = { i: 0, key: '' };
 function nightSteps() {
@@ -235,7 +257,7 @@ function renderStep() {
     const wake = steps.filter(s => s.k === 'role').length;
     turn = imp.map(t => t.id);
     body = `<div class="sp-head"><span class="sp-moon">🌙</span><h2>${tab === 'first' ? 'İlk gece' : esc(ph)}</h2><span class="muted small">${wake} karakter</span></div>
-      <div class="sp-scroll">${imp.map(t => `<div class="st-imp"><b>${t.name ? esc(t.name) + ' · ' : ''}${esc(RN(t.role))}</b> ${impairOf(t).map(i => i.kind + (i.src && i.src !== 'drunk' ? ` (${esc(RN(i.src))})` : '')).join(', ')}</div>`).join('')}
+      <div class="sp-scroll">${jinxes().on.length ? `<div class="rws">${jinxes().on.map(j => `<span class="rw jxc">⚡ ${esc(RN(j.a))} + ${esc(RN(j.b))}</span>`).join('')}</div>` : ''}${imp.map(t => `<div class="st-imp"><b>${t.name ? esc(t.name) + ' · ' : ''}${esc(RN(t.role))}</b> ${impairOf(t).map(i => i.kind + (i.src && i.src !== 'drunk' ? ` (${esc(RN(i.src))})` : '')).join(', ')}</div>`).join('')}
       ${rems.length ? `<div class="rws">${rems.map(t => remChips([t])).join('')}</div>` : ''}${!imp.length && !rems.length ? '<p class="muted small">Sarhoş/zehirli ya da hatırlatıcı yok.</p>' : ''}</div>`;
     next = 'Başla ›';
   } else if (st.k === 'struct') {
@@ -257,6 +279,7 @@ function renderStep() {
     const imp = st.mine.flatMap(t => impairOf(t).map(i => `<span class="st-impb">⚠ ${st.mine.length > 1 && t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</span>`)).join('');
     body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}${allDead ? ' gone' : ''}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
       <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${enTag(st.id, G.S.night.tab)}${rich(st.txt)}</p>
+      ${jinxes().on.filter(j => j.a === st.id || j.b === st.id).map(j => `<div class="st-jx"><b>⚡ ${esc(RN(j.a === st.id ? j.b : j.a))} ile uğursuzluk</b> ${jxText(j)}</div>`).join('')}
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
       ${STEP.note ? '<div class="st-inrow"><input class="st-in" id="stInfo" placeholder="Verdiğin bilgi — günlüğe yazılır" maxlength="160" enterkeyhint="done"><button class="st-ok" id="stInOk">Tamam</button></div>' : ''}</div>`;
     skip = true;
@@ -872,7 +895,9 @@ function renderNight() {
     rem.push(`<div class="ne t-${role(t.role).team}${done.has(t.role) ? ' done' : ''}${allDead ? ' dead' : ''}" data-k="${t.role}">
       ${icon(t.role, 'ic')}<div><b class="ne-t">${esc(RN(t.role))}${who !== '—' ? ` <small>· ${who}</small>` : ''}</b><div class="rws">${chips}</div></div></div>`);
   });
+  const jxs = jinxSection();
   if (rem.length) rows.unshift(`<section class="ne-rems"><h4 class="ne-h">Hatırlatmalar <small>· gece sırası değil</small></h4>${rem.join('')}</section>`);
+  if (jxs) rows.unshift(jxs);
   $('nightList').innerHTML = rows.join('') || '<p class="muted pad">Bu gece uyanan karakter yok.</p>';
 }
 

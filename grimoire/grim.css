@@ -578,3 +578,22 @@ body.stepping .botbar { display: none; }
 .st-p.me { background: #3a3f52; color: #e6e9f2; }
 .st-btn { font-size: .85rem; }
 .en-tag{display:inline-block;font-size:.68em;font-weight:700;letter-spacing:.04em;padding:1px 5px;margin-right:6px;border-radius:4px;background:#c9a227;color:#1a1a1a;vertical-align:1px}
+/* uğursuzluklar */
+.ne-jx { display: flex; flex-direction: column; gap: 6px; padding: 8px 8px 10px; margin: 0 0 16px; border-radius: 14px; background: rgba(124,92,214,.08); border: 1px solid rgba(160,130,240,.35); }
+.ne-jx .ne-h { margin: 0 2px; color: #b9a3ff; }
+.ne-jx .ne-h small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--muted); }
+.jx { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: start; padding: 6px 8px; border-radius: 10px; background: rgba(255,255,255,.03); }
+.jx.on { background: rgba(160,130,240,.12); }
+.jx-ics { display: flex; }
+.jx-ics .ic { width: 30px; height: 30px; flex: none; }
+.jx-ics .ic + .ic { margin-left: -8px; }
+.jx .ne-t { font-size: .9rem; }
+.jx .ne-t i { font-style: normal; color: #b9a3ff; }
+.jx p { margin: 2px 0 0; font-size: .82rem; line-height: 1.35; color: var(--muted); }
+.jx.on p { color: inherit; }
+.jx-more summary { cursor: pointer; font-size: .8rem; color: var(--muted); padding: 2px 4px; }
+.jx-more[open] summary { margin-bottom: 6px; }
+.jx-more .jx { margin-bottom: 6px; opacity: .8; }
+.st-jx { margin: 8px 0 0; padding: 6px 10px; border-radius: 10px; background: rgba(160,130,240,.14); border-left: 3px solid #a082f0; font-size: .9rem; line-height: 1.35; }
+.st-jx b { color: #c9b8ff; }
+.rw.jxc { border-color: #a082f0; color: #d6caff; background: rgba(160,130,240,.14); }
