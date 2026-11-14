@@ -455,6 +455,28 @@
       pointer-events: none;
     }
 
+    /* Uğursuzluklar kartı */
+    .jinx-card {
+      background: linear-gradient(160deg, rgba(120, 20, 20, 0.22), rgba(0, 0, 0, 0) 60%), var(--card-bg);
+      border: 1px solid rgba(224, 74, 63, 0.55);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+    }
+    .jinx-header {
+      font-family: 'Cinzel', serif; font-size: 1rem; font-weight: 700; color: #e04a3f;
+      border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .jinx-count { font-family: 'Inter', sans-serif; font-size: .72rem; background: rgba(224,74,63,.18); color: #f19a91; border-radius: 99px; padding: 1px 8px; }
+    .jinx-intro { font-size: .8rem; color: var(--text-muted); margin: 0 0 10px; }
+    .jinx-item { padding: 10px 0; border-top: 1px dashed rgba(255,255,255,.08); }
+    .jinx-item:first-of-type { border-top: 0; padding-top: 2px; }
+    .jinx-pair { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-weight: 700; font-size: .92rem; color: #fff; margin-bottom: 4px; }
+    .jinx-icon { width: 30px; height: 30px; object-fit: contain; }
+    .jinx-x { color: #e04a3f; margin: 0 2px; }
+    .jinx-text { font-size: .88rem; line-height: 1.45; color: var(--text-muted); }
+
     /* Dinamik Hatırlatmalar Özel Kartı */
     .reminder-single-card {
       background: var(--card-bg);
@@ -841,6 +863,8 @@
     };
 
     let allRolesData = [];
+    let jinxData = null;
+    const JINX_URL = `https://docs.google.com/spreadsheets/d/1CvS4Fa1Aht6-KG1EVdSeCiT3nUsBqZ2arLMqKSxxviY/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent('Uğursuzluklar')}`;
     let scriptsMeta = [];
     let pendingScriptName = '';
 
@@ -1097,9 +1121,13 @@
       document.getElementById('searchContainer').style.display = 'none';
       document.getElementById('qrcode-container').style.display = 'none';
 
-      const fetchPromise = allRolesData.length > 0 
+      const rolesPromise = allRolesData.length > 0 
         ? Promise.resolve() 
         : fetch(CSV_URL).then(res => res.text()).then(csvText => { allRolesData = parseCSV(csvText); });
+      const jinxPromise = jinxData
+        ? Promise.resolve()
+        : fetch(JINX_URL).then(res => res.text()).then(t => { jinxData = parseCSV(t).filter(j => j.rol1 && j.rol2 && j.aciklama); }).catch(() => { jinxData = []; });
+      const fetchPromise = Promise.all([rolesPromise, jinxPromise]);
 
       fetchPromise.then(() => {
         document.getElementById('loading').style.display = 'none';
@@ -1150,6 +1178,25 @@
               <div class="reminder-item">
                 <div class="reminder-item-title">${rem.name}</div>
                 <div class="reminder-item-ability">${rem.ability}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      const jinxes = (jinxData || []).filter(j => cleanSelectedIds.includes(cleanId(j.rol1)) && cleanSelectedIds.includes(cleanId(j.rol2)));
+      if (jinxes.length > 0) {
+        const roleOf = id => allRolesData.find(r => cleanId(r.id) === cleanId(id));
+        const nm = id => { const r = roleOf(id); return r && r.name ? r.name : id.charAt(0).toUpperCase() + id.slice(1); };
+        const ic = id => `<img src="/botc_assets/${cleanId(id)}.webp" alt="" class="jinx-icon" onerror="this.style.display='none'">`;
+        html += `
+          <div class="jinx-card">
+            <div class="jinx-header">⚡ Uğursuzluklar <span class="jinx-count">${jinxes.length}</span></div>
+            <p class="jinx-intro">Bu senaryodaki bazı karakterler birlikte oyundayken kuralları değişir:</p>
+            ${jinxes.map(j => `
+              <div class="jinx-item">
+                <div class="jinx-pair">${ic(j.rol1)}<span>${nm(j.rol1)}</span><span class="jinx-x">&amp;</span>${ic(j.rol2)}<span>${nm(j.rol2)}</span></div>
+                <div class="jinx-text">${j.aciklama}</div>
               </div>
             `).join('')}
           </div>
