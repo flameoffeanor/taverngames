@@ -77,7 +77,7 @@ async function fetchText(url) {
 }
 
 export async function loadData(force = false) {
-  const official = await (await fetch('data/official.json?v=20261110-1957')).json();
+  const official = await (await fetch('data/official.json?v=20261114-1759')).json();
   let sheet, offline = false;
   try {
     const [c, s] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL)]);
@@ -103,8 +103,11 @@ function build(official, sheet, offline) {
       id, team,
       name: row.name || o.name || id,
       ability: row.ability || '',
-      first: row.first_night || '',
-      other: row.other_night || '',
+      // Türkçe gece metni yoksa resmi İngilizcesi (botc-release) gösterilir
+      first: row.first_night || o.fn || '',
+      other: row.other_night || o.on || '',
+      firstEn: !row.first_night && !!o.fn,
+      otherEn: !row.other_night && !!o.on,
       reminders: o.reminders || [],
       remindersGlobal: o.remindersGlobal || [],
     };
@@ -112,7 +115,8 @@ function build(official, sheet, offline) {
   // Sheet'te olmayan resmi rolleri de tanı (yapıştırılan özel script'te çıkarsa diye)
   for (const [id, o] of Object.entries(official.roles)) {
     if (roles[id]) continue;
-    roles[id] = { id, name: o.name, team: o.team, ability: '', first: '', other: '',
+    roles[id] = { id, name: o.name, team: o.team, ability: o.ab || '', first: o.fn || '', other: o.on || '',
+      firstEn: !!o.fn, otherEn: !!o.on,
       reminders: o.reminders || [], remindersGlobal: o.remindersGlobal || [], english: true };
   }
   const scripts = [];

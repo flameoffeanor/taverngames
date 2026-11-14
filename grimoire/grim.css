@@ -577,3 +577,4 @@ body.stepping .botbar { display: none; }
 .stb { position: absolute; bottom: -2px; left: -4px; font-size: calc(var(--s) * .26); line-height: 1; filter: drop-shadow(0 1px 2px #000); z-index: 3; }
 .st-p.me { background: #3a3f52; color: #e6e9f2; }
 .st-btn { font-size: .85rem; }
+.en-tag{display:inline-block;font-size:.68em;font-weight:700;letter-spacing:.04em;padding:1px 5px;margin-right:6px;border-radius:4px;background:#c9a227;color:#1a1a1a;vertical-align:1px}

@@ -1,11 +1,11 @@
 // Giriş noktası: oturum, veri, dört bölüm (Kurulum, Grimoire, Gece Sırası, Diğer) ve tüm pencereler.
-import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261110-1957';
+import { loadData, TEAMS, TEAM_TR, TEAM_PL, DIST, GOOD, remTr, parseScript } from './data.js?v=20261114-1759';
 import { G, $, esc, rich, role, icon, bigTok, commit, emit, save, load, subscribe, undo, canUndo, uid, toast, noteAlert,
-  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261110-1957';
-import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed, resetZoom } from './board.js?v=20261110-1957';
+  openModal, closeModal, confirmBox, showFull, scriptIds, boardRoles, inPlay, hooks } from './core.js?v=20261114-1759';
+import { arcText, glyphHTML, initBoard, renderBoard, onTap, addRoleToken, ovalSpots, freeSpot, remSpot, colorOf, clockwise, applyHeight, W, H, impairOf, stepNeed, resetZoom } from './board.js?v=20261114-1759';
 
-import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261110-1957';
-export const VERSION = '20261110-1957';
+import { setChatHook, getChat, chatMe, sendChat, enterRoom, leaveToLocal, listRooms, deleteRoom, resumeSession, stopSync, currentRoom, normRoom } from './sync.js?v=20261114-1759';
+export const VERSION = '20261114-1759';
 const show = id => ['boot', 'login', 'app'].forEach(x => { $(x).hidden = x !== id; });
 const RN = id => role(id).name;
 const tokById = id => G.S.tokens.find(t => t.id === id);
@@ -159,6 +159,9 @@ function openLog() {
   });
 }
 
+// Sheet'te Türkçesi olmayan gece metni resmi İngilizceden gelir; işaretle
+const enTag = (id, tab) => (tab === 'first' ? role(id).firstEn : role(id).otherEn) ? '<span class="en-tag" title="Sheet\'te Türkçesi yok">EN</span>' : '';
+
 // ================= adım adım gece =================
 let STEP = { i: 0, key: '' };
 function nightSteps() {
@@ -253,7 +256,7 @@ function renderStep() {
     const who = st.mine.filter(t => t.name || t.st || st.mine.length > 1).map(t => t.st ? '<span class="st-p me">🎩 Sen (yönetici)</span>' : `<span class="st-p${t.dead ? ' dead' : ''}">${t.name ? esc(t.name) : '?'}${t.dead ? ' †' : ''}</span>`).join('');
     const imp = st.mine.flatMap(t => impairOf(t).map(i => `<span class="st-impb">⚠ ${st.mine.length > 1 && t.name ? esc(t.name) + ' ' : ''}${i.kind.toLocaleUpperCase('tr')}</span>`)).join('');
     body = `<div class="sp-head"><span class="sp-ic">${icon(st.id, 'ic')}</span><h2 class="t-${r.team}${allDead ? ' gone' : ''}">${esc(r.name)}${done.has(st.id) ? ' <i class="ok">✓</i>' : ''}</h2>${who}${allDead ? '<span class="st-dead">ÖLÜ</span>' : ''}${imp}</div>
-      <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${rich(st.txt)}</p>
+      <div class="sp-scroll">${imp ? '<p class="st-impl">Zehirli/sarhoş: bilgi yanlış olabilir, yeteneği çalışmaz.</p>' : ''}<p class="st-txt">${enTag(st.id, G.S.night.tab)}${rich(st.txt)}</p>
       ${remChips(st.mine) ? `<div class="rws">${remChips(st.mine)}</div>` : ''}
       ${STEP.note ? '<div class="st-inrow"><input class="st-in" id="stInfo" placeholder="Verdiğin bilgi — günlüğe yazılır" maxlength="160" enterkeyhint="done"><button class="st-ok" id="stInOk">Tamam</button></div>' : ''}</div>`;
     skip = true;
@@ -847,7 +850,7 @@ function renderNight() {
     }
     const who = mine.map(t => t.st ? '🎩 Sen' : `${t.name ? esc(t.name) : '—'}${t.dead ? ' †' : ''}`).join(', ');
     rows.push(`<div class="ne t-${role(id).team}${done.has(id) ? ' done' : ''}${playing ? '' : ' out'}${allDead ? ' dead' : ''}" data-k="${id}">
-      ${icon(id, 'ic')}<div><b class="ne-t">${num && S.board.nums ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${rich(txt)}</p>${warn.length ? `<div class="rws">${warn.join('')}</div>` : ''}</div></div>`);
+      ${icon(id, 'ic')}<div><b class="ne-t">${num && S.board.nums ? `<span class="nn">${num}</span>` : ''}${esc(RN(id))}${playing && who !== '—' ? ` <small>· ${who}</small>` : ''}</b><p>${enTag(id, tab)}${rich(txt)}</p>${warn.length ? `<div class="rws">${warn.join('')}</div>` : ''}</div></div>`);
   }
   // Yanında hatırlatıcı token'ı olan tüm roller: en üstte "Hatırlatmalar"
   const rem = [];
