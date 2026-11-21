@@ -80,7 +80,7 @@ async function fetchText(url) {
 const oldJinx = () => { try { return JSON.parse(localStorage.getItem(CACHE_KEY)).jinx || []; } catch (e) { return []; } };
 
 export async function loadData(force = false) {
-  const official = await (await fetch('data/official.json?v=20261121-1036')).json();
+  const official = await (await fetch('data/official.json?v=20261121-1042')).json();
   let sheet, offline = false;
   try {
     const [c, s, j] = await Promise.all([fetchText(CHAR_URL), fetchText(SCRIPT_URL), fetchText(JINX_URL).catch(() => '')]);
