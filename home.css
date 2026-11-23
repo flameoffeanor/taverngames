@@ -53,3 +53,5 @@ footer{margin-top:40px}
 /* Giriş animasyonu (logo yerine) */
 .hero .logo.intro{width:min(92vw,460px);height:auto;aspect-ratio:720/440;filter:none;display:block;margin:0 auto}
 @media(max-width:560px){.hero .logo.intro{width:min(84vw,330px)}}
+/* "Blood on the Clocktower" başlıkta hep tek satır: dar ekranda yazı küçülür */
+.hero h1 .one{white-space:nowrap;display:inline-block;font-size:min(1em,5.3vw)}
