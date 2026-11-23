@@ -59,3 +59,4 @@ body>.fab.fab.fab{position:fixed;right:16px;bottom:16px;left:auto;width:auto;max
 
 /* nav.js gelmeden yerini ayır (düzen kaymasını önler) */
 body{padding-top:63px}body.has-nav{padding-top:0}
+.fl{height:auto}
