@@ -43,3 +43,10 @@ footer{margin-top:40px}
 @media(max-width:560px){.hero .logo{width:min(44vw,170px)}.hero h1{margin-top:8px}}
 .t-kutu>div{flex:1;min-width:0}.t-kutu .covers{overflow:hidden;padding:4px 2px}
 .tile .covers img:nth-child(n+6){display:none}
+
+/* yaklaşan etkinlikler yüklenirken yer ayır (düzen kaymasını önler) */
+#soonlist.loading{min-height:262px;border-radius:14px;background:linear-gradient(90deg,var(--s1),var(--s2),var(--s1));background-size:200% 100%;animation:sk 1.4s linear infinite;opacity:.5;margin-top:10px}
+@keyframes sk{to{background-position:-200% 0}}
+@media(max-width:480px){#soonlist.loading{min-height:438px}}
+/* Bilet Al okunabilirliği: koyu yazı, kırmızıda beyaz */
+.ev .buy{color:#1a1008}.ev[style*="e04a3f"] .buy{color:#fff}

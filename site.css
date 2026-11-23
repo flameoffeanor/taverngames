@@ -56,3 +56,6 @@ body>.fab.fab.fab{position:fixed;right:16px;bottom:16px;left:auto;width:auto;max
 .fab .ig{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285aeb 90%)}
 .fab .wa{background:#25d366}
 @media print{.fab{display:none}}
+
+/* nav.js gelmeden yerini ayır (düzen kaymasını önler) */
+body{padding-top:63px}body.has-nav{padding-top:0}
